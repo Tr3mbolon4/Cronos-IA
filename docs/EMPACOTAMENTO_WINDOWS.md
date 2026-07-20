@@ -183,3 +183,32 @@ Limite mantido:
 ```text
 Nenhum backend sidecar foi implementado nesta etapa.
 ```
+
+## Backend sidecar integrado
+
+Em 2026-07-20:
+
+- Backend real: `backend\cronos\server.py`.
+- Build PyInstaller: `backend\packaging\cronos-backend.spec`.
+- Variante diagnostico: `backend\dist\cronos-backend-console.exe`.
+- Variante producao: `backend\dist\cronos-backend.exe`.
+- Sidecar preparado para Tauri: `frontend\src-tauri\binaries\cronos-backend-x86_64-pc-windows-msvc.exe`.
+- Copia no build Tauri: `frontend\src-tauri\target\release\cronos-backend.exe`.
+
+Validacoes:
+
+- `.\scripts\build-backend.ps1`: aprovado.
+- `.\scripts\test-backend-package.ps1`: aprovado.
+- `.\scripts\test-desktop-runtime.ps1`: aprovado.
+- Teste externo em `C:\Temp\Cronos Desktop Test`: aprovado.
+
+Hashes da ultima validacao registrada:
+
+- Backend producao SHA-256: `969AA934E331C248FEF0BBF9943AAA3000442DF031615C9BC75F22CFC0DA1CBF`.
+- Desktop SHA-256: `69EEAC596C2994259007DEAAD2F5E4B9595BF3E5064C5E1314A24542C5FDB9CC`.
+
+Limite mantido:
+
+```text
+Instalador final ainda nao foi gerado.
+```

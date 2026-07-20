@@ -18,7 +18,7 @@ Esta base contem o MVP local inicial:
 - backup local em `.zip`.
 - identidade visual oficial escura/neon inspirada no nucleo CRONOS.
 
-O instalador `CronosSetup.exe` ainda depende da etapa de sidecar Python e empacotamento final. A base desktop ja possui shell Tauri 2 inicial, com Rust/MSVC/WebView2 validados e build Windows gerando `frontend\src-tauri\target\release\cronos-desktop.exe`.
+O instalador `CronosSetup.exe` ainda depende da etapa final de empacotamento/assinatura. A base desktop ja possui shell Tauri 2 com backend Python real integrado como sidecar, usando porta local dinamica, token runtime em memoria e diretorios em `%LOCALAPPDATA%\CRONOS`.
 
 ## Layout oficial
 
@@ -66,13 +66,24 @@ http://127.0.0.1:5173
 
 ## Desktop Tauri
 
-Com o ambiente Windows validado, a interface pode ser executada como aplicativo desktop:
+Com o ambiente Windows validado, a interface pode ser executada como aplicativo desktop com sidecar:
 
 ```powershell
-cd frontend
-npm run tauri:info
-npm run tauri:dev
-npm run tauri:build
+.\scripts\desktop-dev.ps1
+.\scripts\desktop-build.ps1
 ```
 
-Esta etapa ainda nao inclui sidecar Python. O backend local permanece separado ate a proxima fase de integracao.
+Testes principais:
+
+```powershell
+.\scripts\test.ps1
+.\scripts\visual-test.ps1
+.\scripts\test-backend-package.ps1
+.\scripts\test-desktop-runtime.ps1
+```
+
+Artefatos locais gerados:
+
+- `backend\dist\cronos-backend.exe`
+- `backend\dist\cronos-backend-console.exe`
+- `frontend\src-tauri\target\release\cronos-desktop.exe`

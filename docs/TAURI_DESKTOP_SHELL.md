@@ -6,7 +6,7 @@ Branch: `feature/windows-desktop-installer`
 
 ## Escopo
 
-Esta etapa adiciona uma casca desktop Tauri 2 para a interface React aprovada do CRONOS.
+Esta etapa adiciona uma casca desktop Tauri 2 para a interface React aprovada do CRONOS e integra o backend Python real como sidecar.
 
 O objetivo e validar que o Windows consegue compilar e abrir o aplicativo desktop antes de integrar qualquer sidecar Python.
 
@@ -19,6 +19,7 @@ frontend\src-tauri\
   tauri.conf.json
   capabilities\default.json
   icons\
+  src\runtime\
   src\lib.rs
   src\main.rs
 ```
@@ -56,6 +57,7 @@ npm run preview
 - `npm run tauri:info`: aprovado.
 - `npm run tauri:build`: aprovado.
 - `npm run tauri:dev`: app desktop detectado em modo debug.
+- `.\scripts\test-desktop-runtime.ps1`: sidecar, login, chat, PDF, bloqueio e encerramento aprovados.
 
 Artefato de build:
 
@@ -68,14 +70,16 @@ frontend\src-tauri\target\release\cronos-desktop.exe
 - O layout visual aprovado nao foi alterado.
 - O shell usa WebView2 local via Tauri.
 - O plugin Rust `tauri-plugin-single-instance` foi adicionado para evitar multiplas instancias.
+- O plugin `tauri-plugin-shell` inicia apenas o sidecar declarado em `externalBin`.
+- O backend e iniciado em `127.0.0.1` com porta dinamica.
+- O frontend recebe a conexao runtime via comando Tauri e guarda o token apenas em memoria.
 - O bundle/instalador final ainda nao foi ativado.
 
 ## Fora do escopo
 
-- Sidecar Python.
 - Instalador `CronosSetup.exe`.
 - Auto-update.
 - Assinatura de codigo.
-- Comunicacao desktop-backend por comandos Tauri.
+- Migracao automatica de dados reais.
 
-Proxima etapa: integrar o backend Python como sidecar depois que o contrato de processo, porta, healthcheck e encerramento estiver definido.
+Proxima etapa: revisar a experiencia desktop e somente depois gerar instalador final.
