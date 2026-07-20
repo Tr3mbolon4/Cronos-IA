@@ -136,3 +136,24 @@ Proxima etapa autorizada:
 ```text
 Preparar ambiente isolado de empacotamento Python e, depois, adicionar Tauri 2 ao frontend.
 ```
+
+## Ambiente Python de empacotamento
+
+Em 2026-07-20:
+
+- Ambiente criado em `.venv-packaging`.
+- Python: `3.13.14`.
+- PyInstaller: `6.13.0`.
+- pypdf: `6.10.0`.
+- Arquivo de dependencias criado: `backend\requirements-packaging.txt`.
+- Artefatos locais ignorados: `.venv-packaging`, `backend\build`, `backend\dist`.
+
+Observacao: o acesso direto do `pip` ao indice externo falhou com proxy `407 Proxy Authentication Required`. Para manter o projeto sem instalacoes globais novas, a venv foi criada isolada para packaging e os pacotes ja presentes no ambiente local foram reaproveitados quando necessario.
+
+Validacoes executadas:
+
+- Executavel simples `--onefile`: aprovado.
+- Executavel servidor local `--onefile`: aprovado.
+- Servidor empacotado abriu em `127.0.0.1` com porta dinamica.
+- Endpoint `/health`: respondeu `{"status":"ok","service":"cronos-packaging-test"}`.
+- Processo do servidor foi encerrado pelo PID especifico do teste.
