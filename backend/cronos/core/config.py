@@ -1,11 +1,26 @@
+import os
 from pathlib import Path
-from pydantic import BaseModel
 
 
-class Settings(BaseModel):
-    app_name: str = "CRONOS"
-    data_dir: Path = Path(__file__).resolve().parents[3] / "data"
-    session_minutes: int = 60
+def _default_data_dir() -> Path:
+    env_dir = os.environ.get("CRONOS_DATA_DIR")
+    if env_dir:
+        return Path(env_dir)
+    if os.environ.get("CRONOS_ENV") == "visual-test":
+        return Path(__file__).resolve().parents[3] / "data" / "visual-test"
+    return Path(__file__).resolve().parents[3] / "data"
+
+
+class Settings:
+    def __init__(self) -> None:
+        self.app_name = "CRONOS"
+        self.env = os.environ.get("CRONOS_ENV", "development")
+        self.data_dir = _default_data_dir()
+        self.session_minutes = int(os.environ.get("CRONOS_SESSION_MINUTES", "60"))
+
+    @property
+    def is_visual_test(self) -> bool:
+        return self.env == "visual-test"
 
     @property
     def db_path(self) -> Path:

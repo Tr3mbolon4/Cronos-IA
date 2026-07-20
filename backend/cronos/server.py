@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
@@ -121,7 +122,9 @@ class CronosHandler(BaseHTTPRequestHandler):
         self._send({"detail": error.detail}, status=error.status_code)
 
     def _cors(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:5173")
+        origin = self.headers.get("Origin", "http://127.0.0.1:5173")
+        allowed = os.environ.get("CRONOS_ALLOWED_ORIGINS", "http://127.0.0.1:5173").split(",")
+        self.send_header("Access-Control-Allow-Origin", origin if origin in allowed else allowed[0])
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization")
 
@@ -131,8 +134,10 @@ class CronosHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     init_db()
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), CronosHandler)
-    print("CRONOS API rodando em http://127.0.0.1:8000")
+    host = os.environ.get("CRONOS_HOST", "127.0.0.1")
+    port = int(os.environ.get("CRONOS_PORT", "8000"))
+    server = ThreadingHTTPServer((host, port), CronosHandler)
+    print(f"CRONOS API rodando em http://{host}:{port}")
     server.serve_forever()
 
 
