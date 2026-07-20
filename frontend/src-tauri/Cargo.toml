@@ -2,7 +2,7 @@
 name = "cronos-desktop"
 version = "0.1.0"
 description = "CRONOS Desktop"
-authors = ["CRONOS"]
+authors = ["Kalion Tecnologia"]
 edition = "2021"
 
 [lib]

@@ -1,0 +1,34 @@
+{
+    "product":  "CRONOS",
+    "version":  "0.1.0",
+    "identifier":  "com.kalion.cronos",
+    "manufacturer":  "Kalion Tecnologia",
+    "generatedAt":  "2026-07-20T18:10:16.7296555Z",
+    "installer":  "CronosSetup-0.1.0.exe",
+    "msi":  null,
+    "installMode":  "perMachine",
+    "defaultInstallDir":  "C:\\Program Files\\CRONOS",
+    "dataDirPolicy":  "%LOCALAPPDATA%\\CRONOS",
+    "autoUpdate":  false,
+    "codeSigned":  false,
+    "artifacts":  [
+                      {
+                          "file":  "CronosSetup-0.1.0.exe",
+                          "path":  "G:\\Cronos-IA\\release\\CRONOS-0.1.0\\CronosSetup-0.1.0.exe",
+                          "bytes":  17086824,
+                          "sha256":  "7818A5240488F41741C4D80CBE253446F6E173F050735E039E469EDE18DBAA63"
+                      },
+                      {
+                          "file":  "cronos-desktop.exe",
+                          "path":  "G:\\Cronos-IA\\frontend\\src-tauri\\target\\release\\cronos-desktop.exe",
+                          "bytes":  11161600,
+                          "sha256":  "26F7E51B07F195650EAB2D63515057D3AE49DB49B90988A1F6D95F67009A367A"
+                      },
+                      {
+                          "file":  "cronos-backend-x86_64-pc-windows-msvc.exe",
+                          "path":  "G:\\Cronos-IA\\frontend\\src-tauri\\binaries\\cronos-backend-x86_64-pc-windows-msvc.exe",
+                          "bytes":  14571513,
+                          "sha256":  "5429105AB80344152B38A1EC709A6D801DE32BC81C98DFE37997FF0CB435B5AA"
+                      }
+                  ]
+}
