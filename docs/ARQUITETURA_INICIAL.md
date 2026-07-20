@@ -12,8 +12,28 @@ Construir primeiro um CRONOS pessoal, local, instalavel, protegido e funcional p
 - Backend MVP executavel neste ambiente: servidor HTTP leve em Python padrao, mantendo as mesmas rotas previstas para migracao ao FastAPI.
 - Banco local: SQLite.
 - Documentos: extracao inicial de PDF com `pypdf`.
-- Diagnostico: `psutil` e chamadas do sistema.
+- Diagnostico: chamadas do sistema e biblioteca padrao do Python.
 - Backup: pacote `.zip` local com banco, documentos e configuracoes.
+
+## Identidade visual oficial
+
+O layout de referencia da versao 1.0 do CRONOS usa uma interface escura, densa e limpa, com detalhes em azul neon. O nucleo circular central passa a ser o sinal visual principal da IA pessoal e deve refletir o estado real do sistema:
+
+- Azul: disponivel.
+- Verde: ouvindo.
+- Amarelo: aguardando autorizacao.
+- Laranja: processando.
+- Vermelho: erro ou alerta.
+- Cinza: offline.
+
+A tela inicial deve priorizar quatro areas funcionais:
+
+- conversa com o CRONOS;
+- tarefas em execucao;
+- recursos do computador;
+- atividades recentes.
+
+Elementos visuais nao devem ser apenas decorativos. Graficos e indicadores precisam refletir dados reais sempre que houver fonte confiavel no backend. No MVP atual, CPU, RAM e armazenamento usam metricas locais reais; GPU, VRAM e temperatura ficam marcadas como pendentes ate a implementacao da deteccao por WMI/NVIDIA/DirectX.
 
 ## Forma de empacotamento
 

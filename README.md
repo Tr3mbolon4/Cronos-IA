@@ -16,8 +16,13 @@ Esta base contem o MVP local inicial:
 - perguntas sobre PDF com citacoes simples;
 - diagnostico de hardware;
 - backup local em `.zip`.
+- identidade visual oficial escura/neon inspirada no nucleo CRONOS.
 
 O instalador `CronosSetup.exe` ainda depende da etapa Tauri/Rust e empacotamento Windows. Nesta maquina, Rust/Cargo nao estao instalados e o pip esta bloqueado por proxy, entao o MVP atual foi feito para rodar sem novas dependencias Python obrigatorias.
+
+## Layout oficial
+
+A versao 1.0 adota uma interface escura com detalhes em azul neon, menu lateral modular, nucleo central animado e dashboard com conversa, tarefas, recursos do computador e atividades recentes. Os indicadores devem ser funcionais: no MVP, CPU, RAM e armazenamento ja usam metricas locais reais; GPU, VRAM e temperatura ficam preparados para a proxima etapa de deteccao.
 
 ## Local de trabalho
 
