@@ -119,3 +119,20 @@ Decisao:
 ```text
 Nao iniciar Tauri enquanto o Visual Studio Installer nao confirmar instalacao completa/lancavel e sem reinicializacao pendente.
 ```
+
+## Ambiente desktop aprovado para Tauri
+
+Em 2026-07-20, apos nova reinicializacao:
+
+- `vswhere`: `isComplete=true`, `isLaunchable=true`, `isRebootRequired=false`.
+- MSVC x64: `14.44.35207`.
+- Windows SDK: `10.0.26100.0`.
+- Teste C++ temporario: aprovado.
+- Rust/Cargo com target `x86_64-pc-windows-msvc`: aprovado.
+- Teste Rust release: aprovado.
+
+Proxima etapa autorizada:
+
+```text
+Preparar ambiente isolado de empacotamento Python e, depois, adicionar Tauri 2 ao frontend.
+```

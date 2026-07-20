@@ -36,7 +36,7 @@ Proxima acao:
 4. Confirmar `isComplete: true`, `isLaunchable: true`, `isRebootRequired: false`.
 5. Validar MSVC x64 e Windows SDK antes de iniciar Tauri.
 
-## Validacao apos reinicializacao
+## Validacao apos reinicializacao inicial
 
 Data: 2026-07-20
 
@@ -69,4 +69,40 @@ Conclusao:
 
 ```text
 MSVC x64 esta operacional para compilacao simples, mas o Visual Studio Installer ainda marca a instalacao como incompleta e requer reinicializacao. Tauri nao foi iniciado.
+```
+
+## Validacao completa apos nova reinicializacao
+
+Data: 2026-07-20
+
+Resultado de `vswhere`:
+
+```text
+isComplete: true
+isLaunchable: true
+isRebootRequired: false
+installationVersion: 17.14.37502.11
+installationPath: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+```
+
+Ferramentas detectadas:
+
+```text
+MSVC x64: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe
+Windows SDK: 10.0.26100.0
+```
+
+Teste C++ temporario:
+
+```text
+VsDevCmd.bat -arch=x64
+cl /nologo /EHsc main.cpp
+main.exe
+Saida: CRONOS C++ toolchain OK
+```
+
+Conclusao:
+
+```text
+Build Tools, MSVC x64 e Windows SDK aprovados para iniciar a estrutura Tauri.
 ```
