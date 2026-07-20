@@ -35,3 +35,38 @@ Proxima acao:
 3. Rodar novamente `vswhere`.
 4. Confirmar `isComplete: true`, `isLaunchable: true`, `isRebootRequired: false`.
 5. Validar MSVC x64 e Windows SDK antes de iniciar Tauri.
+
+## Validacao apos reinicializacao
+
+Data: 2026-07-20
+
+Resultado apos reinicializacao informada:
+
+```text
+isComplete: false
+isLaunchable: false
+isRebootRequired: true
+state: 11
+```
+
+Componentes detectados apesar do estado pendente:
+
+```text
+Build Tools: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+MSVC x64 cl.exe: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe
+Windows SDK: 10.0.26100.0
+```
+
+Teste C++ temporario:
+
+```text
+VsDevCmd.bat -arch=x64 carregou o ambiente.
+cl /nologo /EHsc main.cpp compilou com sucesso.
+main.exe retornou: CRONOS C++ toolchain OK
+```
+
+Conclusao:
+
+```text
+MSVC x64 esta operacional para compilacao simples, mas o Visual Studio Installer ainda marca a instalacao como incompleta e requer reinicializacao. Tauri nao foi iniciado.
+```

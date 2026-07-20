@@ -32,3 +32,30 @@ G:\Cronos-IA\data\project-backups\cronos-before-tauri-integration-2026-07-20-124
 ## Bloqueio
 
 A instalacao do Microsoft Visual Studio Build Tools 2022 exige reinicializacao e ainda aparece como incompleta. Por seguranca, a integracao Tauri nao foi iniciada nesta etapa.
+
+## Revalidacao apos reinicializacao
+
+Data: 2026-07-20
+
+Resultados:
+
+```text
+Branch: feature/windows-desktop-installer
+Commit de partida: e12a690
+Tag mvp-before-tauri: existente
+Repositorio: limpo antes da validacao
+.\scripts\test.ps1: OK
+.\scripts\visual-test.ps1: OK
+```
+
+Bloqueio persistente:
+
+```text
+vswhere ainda informa isComplete=false, isLaunchable=false, isRebootRequired=true.
+```
+
+Acao tomada:
+
+```text
+Tauri nao foi iniciado. Resultados de MSVC e Rust foram documentados para continuidade.
+```

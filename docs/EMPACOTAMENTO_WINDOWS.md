@@ -103,3 +103,19 @@ Somente continuar para Tauri quando:
 - Build Tools estiver `isLaunchable: true`;
 - `isRebootRequired` estiver `false`;
 - compilador MSVC x64 e Windows SDK forem localizados.
+
+## Validacao apos reinicializacao
+
+Em 2026-07-20, apos a reinicializacao informada:
+
+- `.\scripts\test.ps1`: aprovado.
+- `.\scripts\visual-test.ps1`: aprovado.
+- MSVC x64 compilou um programa C++ temporario com sucesso.
+- Rust compilou um projeto temporario em release com sucesso usando `%USERPROFILE%\.cargo\bin\cargo.exe`.
+- `vswhere` ainda retornou `isComplete: false`, `isLaunchable: false`, `isRebootRequired: true`.
+
+Decisao:
+
+```text
+Nao iniciar Tauri enquanto o Visual Studio Installer nao confirmar instalacao completa/lancavel e sem reinicializacao pendente.
+```
