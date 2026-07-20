@@ -157,3 +157,29 @@ Validacoes executadas:
 - Servidor empacotado abriu em `127.0.0.1` com porta dinamica.
 - Endpoint `/health`: respondeu `{"status":"ok","service":"cronos-packaging-test"}`.
 - Processo do servidor foi encerrado pelo PID especifico do teste.
+
+## Shell desktop Tauri 2
+
+Em 2026-07-20:
+
+- Tauri CLI local: `@tauri-apps/cli 2.11.4`.
+- API Tauri frontend: `@tauri-apps/api 2.11.1`.
+- Rust crate Tauri: `tauri 2.11.5`.
+- Plugin Rust single-instance: `tauri-plugin-single-instance 2.4.3`.
+- Shell criado em `frontend\src-tauri`.
+- Janela principal: `1366x768`, minimo `1100x720`, fundo `#02050a`.
+- Icone Windows criado em `frontend\src-tauri\icons\icon.ico`.
+
+Validacoes:
+
+- `npm run build`: aprovado.
+- `npm run tauri:info`: aprovado.
+- `npm run tauri:build`: aprovado.
+- Executavel gerado: `frontend\src-tauri\target\release\cronos-desktop.exe`.
+- `npm run tauri:dev`: abriu `target\debug\cronos-desktop.exe`; o processo foi encerrado manualmente apos a deteccao para nao deixar sessoes em segundo plano.
+
+Limite mantido:
+
+```text
+Nenhum backend sidecar foi implementado nesta etapa.
+```
