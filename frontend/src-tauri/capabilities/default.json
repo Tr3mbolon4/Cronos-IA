@@ -3,5 +3,17 @@
   "identifier": "default",
   "description": "Default CRONOS desktop permissions",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/cronos-backend",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
+  ]
 }

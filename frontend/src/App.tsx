@@ -42,8 +42,10 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
+import { mergeHeaders } from './services/apiClient'
+import { resolveRuntimeConnection } from './services/runtimeConnection'
 
-const API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
+const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
 const CRONOS_VERSION = 'v0.1.0'
 
 type SetupStatus = {
@@ -105,6 +107,9 @@ const menuItems = [
 
 function App() {
   const [setup, setSetup] = useState<SetupStatus | null>(null)
+  const [runtimeReady, setRuntimeReady] = useState(false)
+  const [apiBaseUrl, setApiBaseUrl] = useState(DEFAULT_API_URL)
+  const [runtimeToken, setRuntimeToken] = useState('')
   const [token, setToken] = useState(() => localStorage.getItem('cronos.token') || '')
   const [ownerName, setOwnerName] = useState('')
   const [password, setPassword] = useState('')
@@ -133,7 +138,10 @@ function App() {
   )
 
   async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${API_URL}${path}`, options)
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      ...options,
+      headers: mergeHeaders(options.headers, runtimeToken),
+    })
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ detail: 'Erro inesperado.' }))
       throw new Error(payload.detail || 'Erro inesperado.')
@@ -155,13 +163,28 @@ function App() {
   }
 
   useEffect(() => {
+    resolveRuntimeConnection()
+      .then((connection) => {
+        setApiBaseUrl(connection.base_url)
+        setRuntimeToken(connection.runtime_token)
+        setRuntimeReady(true)
+        setCoreState(connection.state === 'ready' || connection.state === 'web' ? 'authorization' : 'offline')
+      })
+      .catch((error) => {
+        setNotice(error instanceof Error ? error.message : 'Backend local indisponivel.')
+        setCoreState('offline')
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!runtimeReady) return
     api<SetupStatus>('/setup/status')
       .then(setSetup)
       .catch((error) => {
         setNotice(error.message)
         setCoreState('offline')
       })
-  }, [])
+  }, [runtimeReady, apiBaseUrl, runtimeToken])
 
   useEffect(() => {
     const updateOnline = () => setInternetOnline(navigator.onLine)
@@ -254,9 +277,9 @@ function App() {
     setCoreState('processing')
     const formData = new FormData()
     formData.append('file', file)
-    await fetch(`${API_URL}/documents/upload`, {
+    await fetch(`${apiBaseUrl}/documents/upload`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: mergeHeaders({ Authorization: `Bearer ${token}` }, runtimeToken),
       body: formData,
     }).then(async (response) => {
       if (!response.ok) throw new Error((await response.json()).detail)
@@ -294,8 +317,8 @@ function App() {
     { label: 'Gerando documentacao', value: Math.min(92, Math.max(8, messages.length * 9)), tone: 'violet' },
   ]
 
-  if (!setup) {
-    return <main className="loading">Inicializando CRONOS...</main>
+  if (!runtimeReady || !setup) {
+    return <main className="loading">{runtimeReady ? 'Carregando identidade...' : 'Iniciando núcleo local...'}</main>
   }
 
   return (
