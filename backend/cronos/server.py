@@ -141,7 +141,7 @@ class CronosHandler(BaseHTTPRequestHandler):
                 continue
             header, _, content = part.partition(b"\r\n\r\n")
             disposition = header.decode("utf-8", errors="ignore")
-            filename_match = re.search(r'filename="([^"]+)"', disposition)
+            filename_match = re.search(r'filename="?([^";\r\n]+)"?', disposition)
             filename = filename_match.group(1) if filename_match else "upload.bin"
             return filename, content.rstrip(b"\r\n-")
         raise CronosError(400, "Arquivo nao encontrado no envio.")
