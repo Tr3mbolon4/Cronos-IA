@@ -1,32 +1,45 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import {
   Archive,
   Bell,
   BookOpen,
+  Boxes,
   BrainCircuit,
   CheckCircle2,
+  ChevronDown,
+  CircleHelp,
   Code2,
   Cpu,
   Database,
-  FileText,
+  FileCode2,
   FolderOpen,
   Gauge,
   HardDrive,
   Home,
   KeyRound,
+  Keyboard,
+  Layers3,
+  Library,
   Lock,
   LogIn,
+  Maximize2,
   MemoryStick,
   MessageSquare,
   Mic,
+  Minimize2,
   Network,
+  Paperclip,
+  Power,
+  Radio,
   Send,
   Settings,
   Shield,
   Upload,
+  UserRound,
   Wifi,
   WifiOff,
+  X,
 } from 'lucide-react'
 import './App.css'
 
@@ -71,6 +84,25 @@ type Hardware = {
 
 type CoreState = 'available' | 'listening' | 'authorization' | 'processing' | 'alert' | 'offline'
 
+const menuItems = [
+  ['Inicio', Home],
+  ['Conversar', MessageSquare],
+  ['Projetos', FolderOpen],
+  ['Programador', Code2],
+  ['Biblioteca', Library],
+  ['Aprendizado', BookOpen],
+  ['Outras IAs', Boxes],
+  ['Memoria', BrainCircuit],
+  ['Tarefas', CheckCircle2],
+  ['Autorizacoes', KeyRound],
+  ['Dispositivos', Radio],
+  ['Seguranca', Shield],
+  ['Armazenamento', HardDrive],
+  ['Desempenho', Gauge],
+  ['Versoes', Layers3],
+  ['Configuracoes', Settings],
+] as const
+
 function App() {
   const [setup, setSetup] = useState<SetupStatus | null>(null)
   const [token, setToken] = useState(() => localStorage.getItem('cronos.token') || '')
@@ -90,6 +122,7 @@ function App() {
   const [internetOnline, setInternetOnline] = useState(() => navigator.onLine)
 
   const authenticated = Boolean(token)
+  const owner = setup?.owner?.name || ownerName || 'Alexandre'
 
   const headers = useMemo(
     () => ({
@@ -160,11 +193,10 @@ function App() {
   async function handleSetup(event: FormEvent) {
     event.preventDefault()
     setCoreState('processing')
-    const payload = { name: ownerName, password, pin }
     const result = await api<{ token: string; owner: { name: string } }>('/setup/owner', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name: ownerName, password, pin }),
     })
     localStorage.setItem('cronos.token', result.token)
     setToken(result.token)
@@ -256,17 +288,10 @@ function App() {
     setCoreState('available')
   }
 
-  const owner = setup?.owner?.name || ownerName || 'Alexandre'
-  const tasks = [
-    { name: documents.length ? 'Indexando documentos enviados' : 'Aguardando PDF para aprendizado', progress: documents.length ? 68 : 12 },
-    { name: messages.length ? 'Atualizando memoria da conversa' : 'Memoria pronta para registrar conversa', progress: Math.min(96, messages.length * 8) },
-    { name: 'Monitorando recursos locais', progress: Math.round(hardware?.ram_percent || 0) },
-  ]
-  const activities = [
-    notice || 'Sistema inicializado.',
-    `${messages.length} mensagens no historico local.`,
-    `${documents.length} PDFs cadastrados.`,
-    hardware ? `Perfil recomendado: ${hardware.recommended_profile}.` : 'Diagnostico aguardando sessao.',
+  const taskRows = [
+    { label: 'Analisando projeto Kalion Connect', value: documents.length ? 68 : 18, tone: 'green' },
+    { label: 'Indexando livro Redes de Computadores', value: documents.length ? 31 : 0, tone: 'blue' },
+    { label: 'Gerando documentacao', value: Math.min(92, Math.max(8, messages.length * 9)), tone: 'violet' },
   ]
 
   if (!setup) {
@@ -274,49 +299,51 @@ function App() {
   }
 
   return (
-    <main className="cronos-shell">
-      <aside className="cronos-sidebar">
-        <div className="brand">
-          <div className="brand-core" />
-          <div>
-            <strong>CRONOS</strong>
-            <span>{authenticated ? 'ONLINE' : 'BLOQUEADO'}</span>
-          </div>
+    <main className="desktop-frame">
+      <aside className="left-rail">
+        <div className="rail-brand">
+          <div className="mini-core" />
+          <strong>CRONOS</strong>
         </div>
-        <nav>
-          <a className="active" href="#inicio"><Home size={17} /> Inicio</a>
-          <a href="#chat"><MessageSquare size={17} /> Conversar</a>
-          <a href="#docs"><FolderOpen size={17} /> Projetos e PDFs</a>
-          <a href="#programador"><Code2 size={17} /> Programador</a>
-          <a href="#aprendizado"><BookOpen size={17} /> Aprendizado</a>
-          <a href="#seguranca"><Shield size={17} /> Seguranca</a>
-          <a href="#sistema"><Gauge size={17} /> Desempenho</a>
-          <a href="#config"><Settings size={17} /> Configuracoes</a>
+        <nav className="rail-nav">
+          {menuItems.map(([label, Icon], index) => (
+            <a className={index === 0 ? 'active' : ''} href={hrefFor(label)} key={label}>
+              <Icon size={14} />
+              <span>{label}</span>
+            </a>
+          ))}
         </nav>
-        <div className="owner-chip">
-          <div className="avatar">AS</div>
+        <div className="owner-profile">
+          <div className="owner-avatar"><UserRound size={16} /></div>
           <div>
-            <strong>{owner}</strong>
+            <strong>Alexandre</strong>
             <span>Proprietario</span>
           </div>
+          <ChevronDown size={14} />
         </div>
       </aside>
 
-      <section className="cronos-stage">
-        <header className="top-metrics">
-          <Metric label="IA local" value={authenticated ? 'Ativa' : 'Bloqueada'} />
-          <Metric label="Modelo" value="Local MVP" />
-          <Metric label="Resposta" value={lastResponseMs ? `${lastResponseMs} ms` : '--'} />
-          <Metric label="Internet" value={internetOnline ? 'Online' : 'Offline'} icon={internetOnline ? <Wifi size={15} /> : <WifiOff size={15} />} />
-          <Metric label="GPU" value={hardware?.gpu_temperature_c ? `${hardware.gpu_temperature_c}C` : 'Pendente'} />
-          <Metric label="VRAM" value={hardware?.vram_gb ? `${hardware.vram_gb} GB` : '--'} />
-          <Metric label="Versao" value={CRONOS_VERSION} />
+      <section className="main-window">
+        <header className="window-bar">
+          <div className="window-title"><div className="tiny-core" /> <span>CRONOS</span></div>
+          <div className="window-controls">
+            <span>{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            {internetOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+            <CircleHelp size={13} />
+            <Minimize2 size={13} />
+            <Maximize2 size={13} />
+            <X size={13} />
+          </div>
         </header>
 
         {!authenticated ? (
-          <section className="auth-screen">
-            <CoreOrb state={coreState} />
-            <form onSubmit={setup.configured ? handleLogin : handleSetup}>
+          <section className="locked-main">
+            <div className="main-status">
+              <span>CRONOS</span>
+              <strong>{setup.configured ? 'AGUARDANDO AUTORIZACAO' : 'OFFLINE'}</strong>
+            </div>
+            <CoreVisual state={coreState} />
+            <form className="auth-panel" onSubmit={setup.configured ? handleLogin : handleSetup}>
               <h1>{setup.configured ? 'Autorizacao do proprietario' : 'Primeira configuracao'}</h1>
               {!setup.configured && (
                 <label>
@@ -332,200 +359,251 @@ function App() {
                 PIN
                 <input inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} required />
               </label>
-              <button type="submit">
-                <LogIn size={17} /> {setup.configured ? 'Entrar' : 'Criar proprietario'}
-              </button>
+              <button type="submit"><LogIn size={14} /> {setup.configured ? 'Entrar' : 'Criar proprietario'}</button>
             </form>
           </section>
         ) : (
-          <div className="dashboard" id="inicio">
-            <section className="hero-panel">
-              <div className="hero-copy">
+          <>
+            <section className="home-composition" id="inicio">
+              {notice && <div className="notice-line">{notice}</div>}
+              <div className="main-status">
                 <span>CRONOS</span>
+                <strong>ONLINE</strong>
+              </div>
+              <div className="greeting">
                 <h1>Boa tarde, {owner}.</h1>
                 <p>Em que posso ajudar?</p>
               </div>
-              <CoreOrb state={coreState} />
-              <div className="quick-actions">
-                <button type="button" onClick={() => setCoreState('listening')}><Mic size={16} /> Falar</button>
-                <a href="#chat"><MessageSquare size={16} /> Conversar</a>
-                <a href="#docs"><FolderOpen size={16} /> Abrir projeto</a>
-                <a href="#aprendizado"><BookOpen size={16} /> Aprendizado</a>
-                <a href="#programador"><Code2 size={16} /> Criar programa</a>
+              <CoreVisual state={coreState} />
+              <div className="quick-strip">
+                <button type="button" onClick={() => setCoreState('listening')}><Mic size={14} /> Falar</button>
+                <a href="#conversar"><MessageSquare size={14} /> Conversar</a>
+                <a href="#projetos"><FolderOpen size={14} /> Abrir projeto</a>
+                <button type="button" onClick={() => setCoreState('processing')}><BookOpen size={14} /> Ensinar</button>
+                <a href="#aprendizado"><Library size={14} /> Aprendizado</a>
+                <a href="#programador"><FileCode2 size={14} /> Criar programa</a>
+              </div>
+              <div className="lower-panels">
+                <section className="tech-panel tasks-panel" id="tarefas">
+                  <h2>TAREFAS ATIVAS</h2>
+                  {taskRows.map((task) => <TaskLine key={task.label} {...task} />)}
+                </section>
+                <section className="tech-panel system-panel" id="desempenho">
+                  <h2>SISTEMA</h2>
+                  <SystemLine label="CPU" value={`${Math.round(hardware?.cpu_percent ?? 0)}%`} percent={hardware?.cpu_percent ?? 0} />
+                  <SystemLine label="RAM" value={`${Math.round(hardware?.ram_percent ?? 0)}%`} percent={hardware?.ram_percent ?? 0} />
+                  <SystemLine label="GPU" value={hardware?.gpu_percent == null ? 'pendente' : `${hardware.gpu_percent}%`} percent={hardware?.gpu_percent ?? 0} />
+                  <SystemLine label="VRAM" value={hardware?.vram_gb ? `${hardware.vram_gb} GB` : '--'} percent={hardware?.vram_gb ? 50 : 0} />
+                  <InfoLine icon={<HardDrive size={13} />} label="Armazenamento" value={`${hardware?.disk_free_gb ?? 0} GB livres`} />
+                  <InfoLine icon={<Network size={13} />} label="Clientes conectados" value="1" />
+                  <InfoLine icon={<Layers3 size={13} />} label="Versao" value={CRONOS_VERSION} />
+                </section>
               </div>
             </section>
 
-            <section className="panel chat-panel" id="chat">
-              <PanelTitle icon={<MessageSquare size={18} />} title="Conversa com o CRONOS" />
-              <div className="messages">
-                {messages.map((item, index) => (
-                  <article key={`${item.role}-${item.id || index}`} className={item.role}>
-                    <strong>{item.role === 'user' ? 'Voce' : 'CRONOS'}</strong>
-                    <p>{item.content}</p>
-                  </article>
-                ))}
-              </div>
-              <form className="composer" onSubmit={handleChat}>
-                <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite uma mensagem..." />
-                <button type="submit" aria-label="Enviar mensagem"><Send size={17} /></button>
-              </form>
-            </section>
-
-            <section className="panel tasks-panel">
-              <PanelTitle icon={<CheckCircle2 size={18} />} title="Tarefas em execucao" />
-              {tasks.map((task) => (
-                <ProgressRow key={task.name} label={task.name} value={task.progress} />
-              ))}
-            </section>
-
-            <section className="panel resources-panel" id="sistema">
-              <PanelTitle icon={<Cpu size={18} />} title="Recursos do computador" />
-              <div className="resource-grid">
-                <Resource label="CPU" value={hardware?.cpu_percent ?? 0} detail={`${hardware?.cpu_count || 0} nucleos`} />
-                <Resource label="RAM" value={hardware?.ram_percent ?? 0} detail={`${hardware?.ram_gb || 0} GB`} />
-                <Resource label="GPU" value={hardware?.gpu_percent ?? 0} detail={hardware?.gpu || 'pendente'} />
-                <Resource label="Disco" value={hardware?.disk_percent ?? 0} detail={`${hardware?.disk_free_gb || 0} GB livres`} />
-              </div>
-            </section>
-
-            <section className="panel activity-panel">
-              <PanelTitle icon={<Bell size={18} />} title="Atividades recentes" />
-              <ul>
-                {activities.map((activity) => <li key={activity}>{activity}</li>)}
-              </ul>
-            </section>
-
-            <section className="panel document-panel" id="docs">
-              <PanelTitle icon={<FileText size={18} />} title="Aprendizado e PDFs" />
-              <div className="learning-layout">
-                <div className="book-cover"><BookOpen size={44} /><span>PDF</span></div>
-                <div>
-                  <strong>{documents.find((doc) => doc.id === selectedDocument)?.filename || 'Nenhum livro selecionado'}</strong>
-                  <ProgressRow label="Progresso de leitura" value={documents.length ? 68 : 0} />
-                  <div className="learning-stats">
-                    <span>{documents.length} fontes</span>
-                    <span>{Math.max(0, messages.length * 3)} conceitos</span>
-                    <span>{documentAnswer?.citations.length || 0} citacoes</span>
-                  </div>
-                </div>
-              </div>
-              <label className="upload">
-                <Upload size={17} /> Enviar PDF
-                <input type="file" accept="application/pdf" onChange={handleUpload} />
-              </label>
-              <select value={selectedDocument || ''} onChange={(event) => setSelectedDocument(Number(event.target.value))}>
-                <option value="">Selecione um PDF</option>
-                {documents.map((doc) => (
-                  <option key={doc.id} value={doc.id}>{doc.filename}</option>
-                ))}
-              </select>
-              <form className="ask-doc" onSubmit={handleAskDocument}>
-                <textarea value={documentQuestion} onChange={(event) => setDocumentQuestion(event.target.value)} placeholder="Pergunte sobre o PDF selecionado" />
-                <button type="submit" disabled={!selectedDocument}>Perguntar sobre o PDF</button>
-              </form>
-              {documentAnswer && (
-                <div className="answer">
-                  <p>{documentAnswer.answer}</p>
-                  {documentAnswer.citations.map((citation, index) => (
-                    <blockquote key={index}>{citation}</blockquote>
+            <section className="module-grid" aria-label="Modulos funcionais">
+              <section className="module-panel conversation-module" id="conversar">
+                <PanelHeader icon={<MessageSquare size={15} />} title="CONVERSAR" />
+                <div className="messages">
+                  {messages.map((item, index) => (
+                    <article key={`${item.role}-${item.id || index}`} className={item.role}>
+                      <strong>{item.role === 'user' ? 'Voce' : 'CRONOS'}</strong>
+                      <p>{item.content}</p>
+                    </article>
                   ))}
                 </div>
-              )}
-            </section>
+                <form className="composer" onSubmit={handleChat}>
+                  <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite uma mensagem..." />
+                  <button type="submit" aria-label="Enviar mensagem"><Send size={15} /></button>
+                </form>
+              </section>
 
-            <section className="panel developer-panel" id="programador">
-              <PanelTitle icon={<Code2 size={18} />} title="Modo Programador" />
-              <div className="developer-grid">
-                <div className="file-tree">
-                  <span>ARQUIVOS</span>
-                  <p>backend / frontend / docs / scripts</p>
+              <section className="module-panel learning-module" id="aprendizado">
+                <PanelHeader icon={<BookOpen size={15} />} title="CRONOS — APRENDIZADO" />
+                <div className="learning-layout">
+                  <div className="source-cover"><BookOpen size={34} /><span>FONTE</span></div>
+                  <div className="learning-detail">
+                    <span>FONTE ATUAL</span>
+                    <strong>{documents.find((doc) => doc.id === selectedDocument)?.filename || 'Nenhum documento selecionado'}</strong>
+                    <TaskLine label="Progresso" value={documents.length ? 68 : 0} tone="blue" />
+                    <div className="processed-grid">
+                      <span>{documents.length} fontes</span>
+                      <span>{Math.max(0, messages.length * 3)} conceitos</span>
+                      <span>{documentAnswer?.citations.length || 0} citacoes</span>
+                      <span>{Math.max(0, documents.length * 12)} perguntas geradas</span>
+                    </div>
+                  </div>
                 </div>
-                <pre>{`async function authorize(change) {\n  await runTests();\n  return requireOwnerApproval(change);\n}`}</pre>
-                <div className="review-box">
-                  <strong>Revisao por IA</strong>
-                  <p>Alteracoes reais exigirao aprovacao antes de modificar arquivos.</p>
-                  <button type="button" onClick={() => setCoreState('authorization')}><KeyRound size={16} /> Solicitar autorizacao</button>
-                </div>
-              </div>
-            </section>
+                <label className="upload">
+                  <Upload size={14} /> Enviar PDF
+                  <input type="file" accept="application/pdf" onChange={handleUpload} />
+                </label>
+                <select value={selectedDocument || ''} onChange={(event) => setSelectedDocument(Number(event.target.value))}>
+                  <option value="">Selecione um PDF</option>
+                  {documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.filename}</option>)}
+                </select>
+                <form className="ask-doc" onSubmit={handleAskDocument}>
+                  <textarea value={documentQuestion} onChange={(event) => setDocumentQuestion(event.target.value)} placeholder="Pergunte sobre o PDF selecionado" />
+                  <button type="submit" disabled={!selectedDocument}>Conversar sobre a fonte</button>
+                </form>
+                {documentAnswer && (
+                  <div className="answer">
+                    <p>{documentAnswer.answer}</p>
+                    {documentAnswer.citations.map((citation, index) => <blockquote key={index}>{citation}</blockquote>)}
+                  </div>
+                )}
+              </section>
 
-            <section className="panel security-panel" id="seguranca">
-              <PanelTitle icon={<Shield size={18} />} title="Seguranca" />
-              <div className="security-grid">
-                <StatusItem label="Dispositivo" value="Autorizado" />
-                <StatusItem label="Autenticacao" value="Sessao ativa" />
-                <StatusItem label="Tentativas bloqueadas" value="0" />
-                <StatusItem label="Auditoria" value="Ativa" />
-                <StatusItem label="Backup" value="Manual disponivel" />
-                <button type="button" onClick={handleBackup}><Archive size={16} /> Criar backup</button>
-                <button type="button" className="danger" onClick={handleLock}><Lock size={16} /> Bloquear</button>
-              </div>
+              <section className="module-panel developer-module" id="programador">
+                <PanelHeader icon={<Code2 size={15} />} title="CRONOS DEVELOPER — PROJETO" />
+                <div className="developer-layout">
+                  <div className="dev-files"><span>ARQUIVOS</span><p>backend<br />frontend<br />docs<br />scripts</p></div>
+                  <div className="dev-editor">
+                    <div className="tabs"><span>auth.service.ts</span><span>document.controller.ts</span><span>process.py</span></div>
+                    <pre>{`async function processDocument(file) {\n  const text = await extractText(file);\n  const tokens = tokenize(text);\n  const analysis = await analyze(tokens);\n  return analysis;\n}`}</pre>
+                    <div className="terminal">14:32:21 &gt; Executando testes...<br />14:32:25 &gt; Testes aprovados<br />14:32:25 &gt; Concluido com sucesso.</div>
+                  </div>
+                  <div className="dev-cronos">
+                    <strong>CRONOS</strong>
+                    <p>Alteracoes reais exigem revisao e autorizacao antes de modificar arquivos.</p>
+                    <button type="button" onClick={() => setCoreState('authorization')}>Ver alteracoes</button>
+                    <button type="button" className="primary" onClick={() => setCoreState('authorization')}>Autorizar</button>
+                    <button type="button" className="danger">Recusar</button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="authorization-band" id="autorizacoes">
+                <Lock size={34} />
+                <div>
+                  <h2>CRONOS SOLICITA AUTORIZACAO</h2>
+                  <p>Acao: atualizar modulo de leitura de documentos. Esta acao requer confirmacao do proprietario.</p>
+                </div>
+                <div><span>ALTERACOES</span><strong>8 arquivos modificados</strong></div>
+                <div><span>TESTES</span><strong>128 de 128 aprovados</strong></div>
+                <div><span>RISCO</span><strong>Baixo</strong></div>
+                <div className="auth-actions">
+                  <button type="button">Autorizar com identidade</button>
+                  <button type="button">Ver detalhes</button>
+                  <button type="button" className="danger">Recusar</button>
+                </div>
+              </section>
+
+              <section className="quick-window module-panel">
+                <PanelHeader icon={<Power size={15} />} title="JANELA RAPIDA" />
+                <div className="quick-window-body">
+                  <div className="quick-window-core"><CoreVisual state={coreState} compact /></div>
+                  <p>Alexandre, estou pronto.</p>
+                  <div className="quick-buttons"><button><Mic size={14} /></button><button><Paperclip size={14} /></button><button><Keyboard size={14} /></button><button><Radio size={14} /></button></div>
+                  <div className="mini-input">Digite uma mensagem... <Send size={14} /></div>
+                  <TaskLine label="Analisando projeto Kalion Connect" value={68} tone="blue" />
+                  <p className="pending-auth">Autorizacao pendente</p>
+                </div>
+              </section>
+
+              <section className="module-panel security-module" id="seguranca">
+                <PanelHeader icon={<Shield size={15} />} title="SEGURANCA" />
+                <InfoLine icon={<UserRound size={13} />} label="Dispositivo" value="Autorizado" />
+                <InfoLine icon={<Lock size={13} />} label="Autenticacao" value="Sessao ativa" />
+                <InfoLine icon={<Bell size={13} />} label="Tentativas bloqueadas" value="0" />
+                <InfoLine icon={<Archive size={13} />} label="Backup" value="Manual disponivel" />
+                <button type="button" onClick={handleBackup}><Archive size={14} /> Criar backup</button>
+                <button type="button" className="danger" onClick={handleLock}><Lock size={14} /> Bloquear</button>
+              </section>
             </section>
-          </div>
+          </>
         )}
 
-        <footer className="bottom-status">
-          <span><BrainCircuit size={14} /> {stateLabel(coreState)}</span>
-          <span><Database size={14} /> SQLite</span>
-          <span><MemoryStick size={14} /> RAM {hardware?.ram_percent ?? 0}%</span>
-          <span><Cpu size={14} /> CPU {hardware?.cpu_percent ?? 0}%</span>
-          <span><Network size={14} /> Vetorial pendente</span>
-          <span><Mic size={14} /> Mic manual</span>
-          <span><HardDrive size={14} /> {hardware?.disk_free_gb ?? 0} GB livres</span>
+        <footer className="status-bar">
+          <span><BrainCircuit size={12} /> {stateLabel(coreState)}</span>
+          <span><Database size={12} /> SQLite</span>
+          <span><Cpu size={12} /> CPU {Math.round(hardware?.cpu_percent ?? 0)}%</span>
+          <span><MemoryStick size={12} /> RAM {Math.round(hardware?.ram_percent ?? 0)}%</span>
+          <span><HardDrive size={12} /> {hardware?.disk_free_gb ?? 0} GB</span>
+          <span><Network size={12} /> Vetorial pendente</span>
+          <span><Mic size={12} /> Mic manual</span>
+          <span>{lastResponseMs ? `${lastResponseMs} ms` : 'Resposta --'}</span>
         </footer>
       </section>
     </main>
   )
 }
 
-function CoreOrb({ state }: { state: CoreState }) {
+function hrefFor(label: string) {
+  const map: Record<string, string> = {
+    Inicio: '#inicio',
+    Conversar: '#conversar',
+    Projetos: '#projetos',
+    Programador: '#programador',
+    Biblioteca: '#aprendizado',
+    Aprendizado: '#aprendizado',
+    'Outras IAs': '#inicio',
+    Memoria: '#conversar',
+    Tarefas: '#tarefas',
+    Autorizacoes: '#autorizacoes',
+    Dispositivos: '#seguranca',
+    Seguranca: '#seguranca',
+    Armazenamento: '#desempenho',
+    Desempenho: '#desempenho',
+    Versoes: '#desempenho',
+    Configuracoes: '#seguranca',
+  }
+  return map[label] || '#inicio'
+}
+
+function CoreVisual({ state, compact = false }: { state: CoreState; compact?: boolean }) {
   return (
-    <div className={`core-orb ${state}`} aria-label={`Estado do CRONOS: ${stateLabel(state)}`}>
-      <div className="orbit orbit-one" />
-      <div className="orbit orbit-two" />
-      <div className="core-dot" />
+    <div className={`cronos-core ${state} ${compact ? 'compact' : ''}`} aria-label={`Estado do CRONOS: ${stateLabel(state)}`}>
+      <div className="signal left" />
+      <div className="signal right" />
+      <div className="ring outer" />
+      <div className="ring middle" />
+      <div className="ring inner" />
+      <div className="core-center" />
     </div>
   )
 }
 
-function Metric({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
-  return <div className="metric"><span>{label}</span><strong>{icon}{value}</strong></div>
-}
-
-function PanelTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
-  return <div className="panel-title">{icon}<h2>{title}</h2></div>
-}
-
-function ProgressRow({ label, value }: { label: string; value: number }) {
-  const safeValue = Math.max(0, Math.min(100, value))
+function TaskLine({ label, value, tone }: { label: string; value: number; tone: string }) {
+  const safeValue = Math.max(0, Math.min(100, Math.round(value)))
   return (
-    <div className="progress-row">
-      <div><span>{label}</span><strong>{safeValue}%</strong></div>
-      <meter min="0" max="100" value={safeValue} />
+    <div className="task-line">
+      <div className={`dot ${tone}`} />
+      <div className="task-content">
+        <div><span>{label}</span><strong>{safeValue}%</strong></div>
+        <meter min="0" max="100" value={safeValue} />
+      </div>
     </div>
   )
 }
 
-function Resource({ label, value, detail }: { label: string; value: number; detail: string }) {
+function SystemLine({ label, value, percent }: { label: string; value: string; percent: number }) {
   return (
-    <div className="resource">
-      <span>{label}</span>
-      <strong>{Math.round(value)}%</strong>
-      <meter min="0" max="100" value={value} />
-      <small>{detail}</small>
+    <div className="system-line">
+      <div><span>{label}</span><strong>{value}</strong></div>
+      <meter min="0" max="100" value={Math.max(0, Math.min(100, percent))} />
     </div>
   )
 }
 
-function StatusItem({ label, value }: { label: string; value: string }) {
-  return <div className="status-item"><span>{label}</span><strong>{value}</strong></div>
+function InfoLine({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="info-line">
+      <span>{icon}{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function PanelHeader({ icon, title }: { icon: ReactNode; title: string }) {
+  return <div className="panel-header">{icon}<h2>{title}</h2></div>
 }
 
 function stateLabel(state: CoreState) {
   return {
     available: 'Disponivel',
     listening: 'Ouvindo',
-    authorization: 'Aguardando autorizacao',
+    authorization: 'Autorizacao',
     processing: 'Processando',
     alert: 'Alerta',
     offline: 'Offline',
