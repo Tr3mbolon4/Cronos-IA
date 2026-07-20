@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+.venv-packaging/
+backend/build/
+backend/dist/
+*.spec.bak
 
 # Node
 node_modules/

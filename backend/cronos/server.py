@@ -1,11 +1,29 @@
+import argparse
+import hmac
 import json
+import os
 import re
+import sys
+import threading
+import time
+import traceback
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+from cronos.core.config import settings
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
 from cronos.services import auth, backup, chat, diagnostics, documents
+
+
+STARTED_AT = time.monotonic()
+RUNTIME_TOKEN = ""
+SHUTTING_DOWN = False
+
+
+def _runtime_event(event: str, **payload: object) -> None:
+    print(json.dumps({"event": event, **payload}, ensure_ascii=False), flush=True)
 
 
 class CronosHandler(BaseHTTPRequestHandler):
@@ -18,7 +36,32 @@ class CronosHandler(BaseHTTPRequestHandler):
         try:
             path = urlparse(self.path).path
             if path == "/health":
-                self._send({"ok": True, "name": "CRONOS", "version": "0.1.0"})
+                self._send(
+                    {
+                        "status": "ok" if not SHUTTING_DOWN else "stopping",
+                        "version": settings.version,
+                        "environment": settings.env,
+                        "uptime": round(time.monotonic() - STARTED_AT, 3),
+                        "readiness": "ready" if not SHUTTING_DOWN else "stopping",
+                    }
+                )
+            elif path == "/runtime/status":
+                self._require_runtime_token()
+                self._send(
+                    {
+                        "session_id": settings.session_id,
+                        "readiness": "ready" if not SHUTTING_DOWN else "stopping",
+                        "version": settings.version,
+                        "active_tasks": [],
+                        "database": {"ready": settings.db_path.exists()},
+                        "directories": {
+                            "data": settings.data_dir.exists(),
+                            "documents": settings.documents_dir.exists(),
+                            "backups": settings.backups_dir.exists(),
+                            "logs": settings.log_dir.exists(),
+                        },
+                    }
+                )
             elif path == "/setup/status":
                 self._send(auth.setup_status())
             elif path == "/auth/session":
@@ -70,6 +113,8 @@ class CronosHandler(BaseHTTPRequestHandler):
                 self._session()
                 filename, content = self._multipart_file()
                 self._send(backup.restore_backup(filename, content))
+            elif path == "/runtime/shutdown":
+                self._shutdown()
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
@@ -96,7 +141,7 @@ class CronosHandler(BaseHTTPRequestHandler):
                 continue
             header, _, content = part.partition(b"\r\n\r\n")
             disposition = header.decode("utf-8", errors="ignore")
-            filename_match = re.search(r'filename="([^"]+)"', disposition)
+            filename_match = re.search(r'filename="?([^";\r\n]+)"?', disposition)
             filename = filename_match.group(1) if filename_match else "upload.bin"
             return filename, content.rstrip(b"\r\n-")
         raise CronosError(400, "Arquivo nao encontrado no envio.")
@@ -106,6 +151,31 @@ class CronosHandler(BaseHTTPRequestHandler):
         if not authorization.startswith("Bearer "):
             raise CronosError(401, "Sessao obrigatoria.")
         return auth.get_session(authorization.removeprefix("Bearer ").strip())
+
+    def _require_runtime_token(self) -> None:
+        if not RUNTIME_TOKEN:
+            raise CronosError(403, "Runtime token indisponivel.")
+        provided = self.headers.get("X-Cronos-Runtime-Token", "")
+        if not hmac.compare_digest(provided, RUNTIME_TOKEN):
+            raise CronosError(401, "Runtime token invalido.")
+
+    def _require_local_client(self) -> None:
+        client_host = self.client_address[0]
+        if client_host not in {"127.0.0.1", "::1", "localhost"}:
+            raise CronosError(403, "Runtime disponivel apenas localmente.")
+
+    def _shutdown(self) -> None:
+        global SHUTTING_DOWN
+        self._require_local_client()
+        self._require_runtime_token()
+        SHUTTING_DOWN = True
+        self._send({"accepted": True, "readiness": "stopping"})
+
+        def stop() -> None:
+            time.sleep(0.1)
+            self.server.shutdown()
+
+        threading.Thread(target=stop, daemon=True).start()
 
     def _send(self, payload: object, status: int = 200) -> None:
         raw = b"" if status == 204 else json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -121,19 +191,84 @@ class CronosHandler(BaseHTTPRequestHandler):
         self._send({"detail": error.detail}, status=error.status_code)
 
     def _cors(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:5173")
+        origin = self.headers.get("Origin", "http://127.0.0.1:5173")
+        allowed = os.environ.get("CRONOS_ALLOWED_ORIGINS", "http://127.0.0.1:5173").split(",")
+        self.send_header("Access-Control-Allow-Origin", origin if origin in allowed else allowed[0])
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Cronos-Runtime-Token")
 
     def log_message(self, format: str, *args: object) -> None:
         print(f"{self.address_string()} - {format % args}")
 
 
 def main() -> None:
-    init_db()
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), CronosHandler)
-    print("CRONOS API rodando em http://127.0.0.1:8000")
-    server.serve_forever()
+    parser = argparse.ArgumentParser(description="CRONOS local backend")
+    parser.add_argument("--host", default=os.environ.get("CRONOS_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("CRONOS_PORT", "8000")))
+    parser.add_argument("--data-dir", default=os.environ.get("CRONOS_DATA_DIR"))
+    parser.add_argument("--log-dir", default=os.environ.get("CRONOS_LOG_DIR"))
+    parser.add_argument("--runtime-token", default=os.environ.get("CRONOS_RUNTIME_TOKEN", ""))
+    parser.add_argument("--session-id", default=os.environ.get("CRONOS_SESSION_ID", ""))
+    parser.add_argument("--parent-pid", default=os.environ.get("CRONOS_PARENT_PID", ""))
+    parser.add_argument("--environment", default=os.environ.get("CRONOS_ENV", "development"))
+    args = parser.parse_args()
+
+    global RUNTIME_TOKEN
+    RUNTIME_TOKEN = args.runtime_token
+
+    if args.environment in {"desktop", "production"} and args.host != "127.0.0.1":
+        _runtime_event(
+            "cronos_backend_error",
+            code="INVALID_HOST",
+            message="Desktop production backend must bind only to 127.0.0.1.",
+        )
+        sys.exit(2)
+
+    settings.configure(
+        env=args.environment,
+        data_dir=args.data_dir,
+        log_dir=args.log_dir,
+        session_id=args.session_id or str(uuid.uuid4()),
+        parent_pid=args.parent_pid,
+    )
+
+    try:
+        settings.ensure_directories()
+        init_db()
+        server = ThreadingHTTPServer((args.host, args.port), CronosHandler)
+    except OSError as error:
+        _runtime_event("cronos_backend_error", code="PORT_BIND_FAILED", message=str(error))
+        sys.exit(3)
+    except Exception as error:
+        _write_technical_error(error)
+        _runtime_event("cronos_backend_error", code="STARTUP_FAILED", message=str(error))
+        sys.exit(4)
+
+    actual_host, actual_port = server.server_address[:2]
+    _runtime_event(
+        "cronos_backend_ready",
+        host=actual_host,
+        port=actual_port,
+        pid=os.getpid(),
+        session_id=settings.session_id,
+        version=settings.version,
+    )
+    try:
+        server.serve_forever()
+    finally:
+        server.server_close()
+
+
+def _write_technical_error(error: Exception) -> None:
+    try:
+        settings.ensure_directories()
+        log_path = settings.log_dir / "cronos-backend.log"
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} STARTUP_FAILED {error}\n")
+            handle.write(traceback.format_exc())
+            handle.write("\n")
+    except Exception:
+        return
 
 
 if __name__ == "__main__":

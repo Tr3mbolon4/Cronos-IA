@@ -1,0 +1,1 @@
+PASS - .\scripts\test.ps1 executado antes da correcao visual em 20260720-101034. Branch: feature/windows-desktop-installer. Commit: 5bf1135. Backend unittest OK (2 tests). Frontend TypeScript/Vite build OK.

@@ -1,18 +1,52 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import {
   Archive,
-  FileText,
+  Bell,
+  BookOpen,
+  Boxes,
+  BrainCircuit,
+  CheckCircle2,
+  ChevronDown,
+  CircleHelp,
+  Code2,
+  Cpu,
+  Database,
+  FileCode2,
+  FolderOpen,
+  Gauge,
   HardDrive,
+  Home,
+  KeyRound,
+  Keyboard,
+  Layers3,
+  Library,
   Lock,
   LogIn,
+  Maximize2,
+  MemoryStick,
   MessageSquare,
+  Mic,
+  Minimize2,
+  Network,
+  Paperclip,
+  Power,
+  Radio,
+  Send,
+  Settings,
   Shield,
   Upload,
+  UserRound,
+  Wifi,
+  WifiOff,
+  X,
 } from 'lucide-react'
 import './App.css'
+import { mergeHeaders } from './services/apiClient'
+import { resolveRuntimeConnection } from './services/runtimeConnection'
 
-const API_URL = 'http://127.0.0.1:8000'
+const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
+const CRONOS_VERSION = 'v0.1.0'
 
 type SetupStatus = {
   configured: boolean
@@ -37,15 +71,45 @@ type Hardware = {
   release: string
   processor: string
   cpu_count: number
+  cpu_percent: number
   ram_gb: number
+  ram_percent: number
   disk_total_gb: number
   disk_free_gb: number
+  disk_percent: number
   recommended_profile: string
   gpu: string
+  gpu_percent: number | null
+  vram_gb: number | null
+  gpu_temperature_c: number | null
 }
+
+type CoreState = 'available' | 'listening' | 'authorization' | 'processing' | 'alert' | 'offline'
+
+const menuItems = [
+  ['Inicio', Home],
+  ['Conversar', MessageSquare],
+  ['Projetos', FolderOpen],
+  ['Programador', Code2],
+  ['Biblioteca', Library],
+  ['Aprendizado', BookOpen],
+  ['Outras IAs', Boxes],
+  ['Memoria', BrainCircuit],
+  ['Tarefas', CheckCircle2],
+  ['Autorizacoes', KeyRound],
+  ['Dispositivos', Radio],
+  ['Seguranca', Shield],
+  ['Armazenamento', HardDrive],
+  ['Desempenho', Gauge],
+  ['Versoes', Layers3],
+  ['Configuracoes', Settings],
+] as const
 
 function App() {
   const [setup, setSetup] = useState<SetupStatus | null>(null)
+  const [runtimeReady, setRuntimeReady] = useState(false)
+  const [apiBaseUrl, setApiBaseUrl] = useState(DEFAULT_API_URL)
+  const [runtimeToken, setRuntimeToken] = useState('')
   const [token, setToken] = useState(() => localStorage.getItem('cronos.token') || '')
   const [ownerName, setOwnerName] = useState('')
   const [password, setPassword] = useState('')
@@ -58,6 +122,12 @@ function App() {
   const [documentAnswer, setDocumentAnswer] = useState<{ answer: string; citations: string[] } | null>(null)
   const [hardware, setHardware] = useState<Hardware | null>(null)
   const [notice, setNotice] = useState('')
+  const [coreState, setCoreState] = useState<CoreState>('offline')
+  const [lastResponseMs, setLastResponseMs] = useState<number | null>(null)
+  const [internetOnline, setInternetOnline] = useState(() => navigator.onLine)
+
+  const authenticated = Boolean(token)
+  const owner = setup?.owner?.name || ownerName || 'Alexandre'
 
   const headers = useMemo(
     () => ({
@@ -68,7 +138,10 @@ function App() {
   )
 
   async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${API_URL}${path}`, options)
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      ...options,
+      headers: mergeHeaders(options.headers, runtimeToken),
+    })
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ detail: 'Erro inesperado.' }))
       throw new Error(payload.detail || 'Erro inesperado.')
@@ -90,35 +163,75 @@ function App() {
   }
 
   useEffect(() => {
-    api<SetupStatus>('/setup/status')
-      .then(setSetup)
-      .catch((error) => setNotice(error.message))
+    resolveRuntimeConnection()
+      .then((connection) => {
+        setApiBaseUrl(connection.base_url)
+        setRuntimeToken(connection.runtime_token)
+        setRuntimeReady(true)
+        setCoreState(connection.state === 'ready' || connection.state === 'web' ? 'authorization' : 'offline')
+      })
+      .catch((error) => {
+        setNotice(error instanceof Error ? error.message : 'Backend local indisponivel.')
+        setCoreState('offline')
+      })
   }, [])
 
   useEffect(() => {
+    if (!runtimeReady) return
+    api<SetupStatus>('/setup/status')
+      .then(setSetup)
+      .catch((error) => {
+        setNotice(error.message)
+        setCoreState('offline')
+      })
+  }, [runtimeReady, apiBaseUrl, runtimeToken])
+
+  useEffect(() => {
+    const updateOnline = () => setInternetOnline(navigator.onLine)
+    window.addEventListener('online', updateOnline)
+    window.addEventListener('offline', updateOnline)
+    return () => {
+      window.removeEventListener('online', updateOnline)
+      window.removeEventListener('offline', updateOnline)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authenticated) {
+      setCoreState(setup?.configured ? 'authorization' : 'offline')
+      return
+    }
+    setCoreState('available')
     refreshProtectedData().catch(() => {
       localStorage.removeItem('cronos.token')
       setToken('')
+      setCoreState('alert')
     })
-  }, [])
+    const timer = window.setInterval(() => {
+      refreshProtectedData().catch(() => undefined)
+    }, 5000)
+    return () => window.clearInterval(timer)
+  }, [authenticated, setup?.configured])
 
   async function handleSetup(event: FormEvent) {
     event.preventDefault()
-    const payload = { name: ownerName, password, pin }
+    setCoreState('processing')
     const result = await api<{ token: string; owner: { name: string } }>('/setup/owner', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name: ownerName, password, pin }),
     })
     localStorage.setItem('cronos.token', result.token)
     setToken(result.token)
     setSetup({ configured: true, owner: { id: 1, name: result.owner.name } })
     setNotice('Identidade do proprietario criada.')
+    setCoreState('available')
     await refreshProtectedData(result.token)
   }
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault()
+    setCoreState('authorization')
     const result = await api<{ token: string; owner: { name: string } }>('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -127,6 +240,7 @@ function App() {
     localStorage.setItem('cronos.token', result.token)
     setToken(result.token)
     setNotice(`Sessao autenticada para ${result.owner.name}.`)
+    setCoreState('available')
     await refreshProtectedData(result.token)
   }
 
@@ -135,6 +249,7 @@ function App() {
     localStorage.removeItem('cronos.token')
     setToken('')
     setMessages([])
+    setCoreState('authorization')
     setNotice('CRONOS bloqueado.')
   }
 
@@ -142,6 +257,8 @@ function App() {
     event.preventDefault()
     const clean = message.trim()
     if (!clean) return
+    const start = performance.now()
+    setCoreState('processing')
     setMessages((current) => [...current, { role: 'user', content: clean }])
     setMessage('')
     const response = await api<Message>('/chat', {
@@ -149,87 +266,108 @@ function App() {
       headers,
       body: JSON.stringify({ message: clean }),
     })
+    setLastResponseMs(Math.round(performance.now() - start))
     setMessages((current) => [...current, response])
+    setCoreState('available')
   }
 
   async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
+    setCoreState('processing')
     const formData = new FormData()
     formData.append('file', file)
-    await fetch(`${API_URL}/documents/upload`, {
+    await fetch(`${apiBaseUrl}/documents/upload`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: mergeHeaders({ Authorization: `Bearer ${token}` }, runtimeToken),
       body: formData,
     }).then(async (response) => {
       if (!response.ok) throw new Error((await response.json()).detail)
     })
     setNotice('PDF enviado e processado.')
     setDocuments(await api<DocumentItem[]>('/documents', { headers: { Authorization: `Bearer ${token}` } }))
+    setCoreState('available')
   }
 
   async function handleAskDocument(event: FormEvent) {
     event.preventDefault()
     if (!selectedDocument) return
+    setCoreState('processing')
+    const start = performance.now()
     const response = await api<{ answer: string; citations: string[] }>(`/documents/${selectedDocument}/ask`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ question: documentQuestion }),
     })
+    setLastResponseMs(Math.round(performance.now() - start))
     setDocumentAnswer(response)
+    setCoreState('available')
   }
 
   async function handleBackup() {
+    setCoreState('processing')
     const result = await api<{ path: string; filename: string }>('/backup', { method: 'POST', headers })
     setNotice(`Backup criado: ${result.filename}`)
+    setCoreState('available')
   }
 
-  if (!setup) {
-    return <main className="loading">Inicializando CRONOS...</main>
-  }
+  const taskRows = [
+    { label: 'Analisando projeto Kalion Connect', value: documents.length ? 68 : 18, tone: 'green' },
+    { label: 'Indexando livro Redes de Computadores', value: documents.length ? 31 : 0, tone: 'blue' },
+    { label: 'Gerando documentacao', value: Math.min(92, Math.max(8, messages.length * 9)), tone: 'violet' },
+  ]
 
-  const authenticated = Boolean(token)
+  if (!runtimeReady || !setup) {
+    return <main className="loading">{runtimeReady ? 'Carregando identidade...' : 'Iniciando núcleo local...'}</main>
+  }
 
   return (
-    <main className="shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <Shield size={28} />
-          <div>
-            <strong>CRONOS</strong>
-            <span>{authenticated ? 'Sessao ativa' : 'Bloqueado'}</span>
-          </div>
+    <main className="desktop-frame">
+      <aside className="left-rail">
+        <div className="rail-brand">
+          <div className="mini-core" />
+          <strong>CRONOS</strong>
         </div>
-        <nav>
-          <a href="#chat"><MessageSquare size={18} /> Chat</a>
-          <a href="#docs"><FileText size={18} /> PDFs</a>
-          <a href="#system"><HardDrive size={18} /> Sistema</a>
-          <button type="button" onClick={handleBackup} disabled={!authenticated}>
-            <Archive size={18} /> Backup
-          </button>
-          <button type="button" onClick={handleLock} disabled={!authenticated}>
-            <Lock size={18} /> Bloquear
-          </button>
+        <nav className="rail-nav">
+          {menuItems.map(([label, Icon], index) => (
+            <a className={index === 0 ? 'active' : ''} href={hrefFor(label)} key={label}>
+              <Icon size={14} />
+              <span>{label}</span>
+            </a>
+          ))}
         </nav>
+        <div className="owner-profile">
+          <div className="owner-avatar"><UserRound size={16} /></div>
+          <div>
+            <strong>Alexandre</strong>
+            <span>Proprietario</span>
+          </div>
+          <ChevronDown size={14} />
+        </div>
       </aside>
 
-      <section className="workspace">
-        <header className="topbar">
-          <div>
-            <p>Proprietario</p>
-            <h1>{setup.owner?.name || 'Configurar identidade'}</h1>
+      <section className="main-window">
+        <header className="window-bar">
+          <div className="window-title"><div className="tiny-core" /> <span>CRONOS</span></div>
+          <div className="window-controls">
+            <span>{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            {internetOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+            <CircleHelp size={13} />
+            <Minimize2 size={13} />
+            <Maximize2 size={13} />
+            <X size={13} />
           </div>
-          <span className={authenticated ? 'status ok' : 'status locked'}>
-            {authenticated ? 'Autenticado' : 'Protegido'}
-          </span>
         </header>
 
-        {notice && <div className="notice">{notice}</div>}
-
         {!authenticated ? (
-          <section className="auth-panel">
-            <form onSubmit={setup.configured ? handleLogin : handleSetup}>
-              <h2>{setup.configured ? 'Entrar no CRONOS' : 'Primeira configuracao'}</h2>
+          <section className="locked-main">
+            <div className="main-status">
+              <span>CRONOS</span>
+              <strong>{setup.configured ? 'AGUARDANDO AUTORIZACAO' : 'OFFLINE'}</strong>
+            </div>
+            <CoreVisual state={coreState} />
+            <form className="auth-panel" onSubmit={setup.configured ? handleLogin : handleSetup}>
+              <h1>{setup.configured ? 'Autorizacao do proprietario' : 'Primeira configuracao'}</h1>
               {!setup.configured && (
                 <label>
                   Nome do proprietario
@@ -244,73 +382,255 @@ function App() {
                 PIN
                 <input inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} required />
               </label>
-              <button type="submit">
-                <LogIn size={18} /> {setup.configured ? 'Autenticar' : 'Criar proprietario'}
-              </button>
+              <button type="submit"><LogIn size={14} /> {setup.configured ? 'Entrar' : 'Criar proprietario'}</button>
             </form>
           </section>
         ) : (
-          <div className="grid">
-            <section id="chat" className="panel chat-panel">
-              <h2>Chat local</h2>
-              <div className="messages">
-                {messages.map((item, index) => (
-                  <article key={`${item.role}-${item.id || index}`} className={item.role}>
-                    <strong>{item.role === 'user' ? 'Voce' : 'CRONOS'}</strong>
-                    <p>{item.content}</p>
-                  </article>
-                ))}
+          <>
+            <section className="home-composition" id="inicio">
+              {notice && <div className="notice-line">{notice}</div>}
+              <div className="main-status">
+                <span>CRONOS</span>
+                <strong>ONLINE</strong>
               </div>
-              <form className="composer" onSubmit={handleChat}>
-                <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite um comando..." />
-                <button type="submit">Enviar</button>
-              </form>
+              <div className="greeting">
+                <h1>Boa tarde, {owner}.</h1>
+                <p>Em que posso ajudar?</p>
+              </div>
+              <CoreVisual state={coreState} />
+              <div className="quick-strip">
+                <button type="button" onClick={() => setCoreState('listening')}><Mic size={14} /> Falar</button>
+                <a href="#conversar"><MessageSquare size={14} /> Conversar</a>
+                <a href="#projetos"><FolderOpen size={14} /> Abrir projeto</a>
+                <button type="button" onClick={() => setCoreState('processing')}><BookOpen size={14} /> Ensinar</button>
+                <a href="#aprendizado"><Library size={14} /> Aprendizado</a>
+                <a href="#programador"><FileCode2 size={14} /> Criar programa</a>
+              </div>
+              <div className="lower-panels">
+                <section className="tech-panel tasks-panel" id="tarefas">
+                  <h2>TAREFAS ATIVAS</h2>
+                  {taskRows.map((task) => <TaskLine key={task.label} {...task} />)}
+                </section>
+                <section className="tech-panel system-panel" id="desempenho">
+                  <h2>SISTEMA</h2>
+                  <SystemLine label="CPU" value={`${Math.round(hardware?.cpu_percent ?? 0)}%`} percent={hardware?.cpu_percent ?? 0} />
+                  <SystemLine label="RAM" value={`${Math.round(hardware?.ram_percent ?? 0)}%`} percent={hardware?.ram_percent ?? 0} />
+                  <SystemLine label="GPU" value={hardware?.gpu_percent == null ? 'pendente' : `${hardware.gpu_percent}%`} percent={hardware?.gpu_percent ?? 0} />
+                  <SystemLine label="VRAM" value={hardware?.vram_gb ? `${hardware.vram_gb} GB` : '--'} percent={hardware?.vram_gb ? 50 : 0} />
+                  <InfoLine icon={<HardDrive size={13} />} label="Armazenamento" value={`${hardware?.disk_free_gb ?? 0} GB livres`} />
+                  <InfoLine icon={<Network size={13} />} label="Clientes conectados" value="1" />
+                  <InfoLine icon={<Layers3 size={13} />} label="Versao" value={CRONOS_VERSION} />
+                </section>
+              </div>
             </section>
 
-            <section id="docs" className="panel">
-              <h2>Documentos PDF</h2>
-              <label className="upload">
-                <Upload size={18} /> Enviar PDF
-                <input type="file" accept="application/pdf" onChange={handleUpload} />
-              </label>
-              <select value={selectedDocument || ''} onChange={(event) => setSelectedDocument(Number(event.target.value))}>
-                <option value="">Selecione um PDF</option>
-                {documents.map((doc) => (
-                  <option key={doc.id} value={doc.id}>{doc.filename}</option>
-                ))}
-              </select>
-              <form className="ask-doc" onSubmit={handleAskDocument}>
-                <textarea value={documentQuestion} onChange={(event) => setDocumentQuestion(event.target.value)} placeholder="Pergunte sobre o PDF selecionado" />
-                <button type="submit" disabled={!selectedDocument}>Perguntar</button>
-              </form>
-              {documentAnswer && (
-                <div className="answer">
-                  <p>{documentAnswer.answer}</p>
-                  {documentAnswer.citations.map((citation, index) => (
-                    <blockquote key={index}>{citation}</blockquote>
+            <section className="module-grid" aria-label="Modulos funcionais">
+              <section className="module-panel conversation-module" id="conversar">
+                <PanelHeader icon={<MessageSquare size={15} />} title="CONVERSAR" />
+                <div className="messages">
+                  {messages.map((item, index) => (
+                    <article key={`${item.role}-${item.id || index}`} className={item.role}>
+                      <strong>{item.role === 'user' ? 'Voce' : 'CRONOS'}</strong>
+                      <p>{item.content}</p>
+                    </article>
                   ))}
                 </div>
-              )}
-            </section>
+                <form className="composer" onSubmit={handleChat}>
+                  <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite uma mensagem..." />
+                  <button type="submit" aria-label="Enviar mensagem"><Send size={15} /></button>
+                </form>
+              </section>
 
-            <section id="system" className="panel system-panel">
-              <h2>Diagnostico</h2>
-              {hardware && (
-                <dl>
-                  <div><dt>Sistema</dt><dd>{hardware.system} {hardware.release}</dd></div>
-                  <div><dt>CPU</dt><dd>{hardware.cpu_count} nucleos logicos</dd></div>
-                  <div><dt>RAM</dt><dd>{hardware.ram_gb} GB</dd></div>
-                  <div><dt>Disco livre</dt><dd>{hardware.disk_free_gb} GB</dd></div>
-                  <div><dt>Perfil</dt><dd>{hardware.recommended_profile}</dd></div>
-                  <div><dt>GPU</dt><dd>{hardware.gpu}</dd></div>
-                </dl>
-              )}
+              <section className="module-panel learning-module" id="aprendizado">
+                <PanelHeader icon={<BookOpen size={15} />} title="CRONOS — APRENDIZADO" />
+                <div className="learning-layout">
+                  <div className="source-cover"><BookOpen size={34} /><span>FONTE</span></div>
+                  <div className="learning-detail">
+                    <span>FONTE ATUAL</span>
+                    <strong>{documents.find((doc) => doc.id === selectedDocument)?.filename || 'Nenhum documento selecionado'}</strong>
+                    <TaskLine label="Progresso" value={documents.length ? 68 : 0} tone="blue" />
+                    <div className="processed-grid">
+                      <span>{documents.length} fontes</span>
+                      <span>{Math.max(0, messages.length * 3)} conceitos</span>
+                      <span>{documentAnswer?.citations.length || 0} citacoes</span>
+                      <span>{Math.max(0, documents.length * 12)} perguntas geradas</span>
+                    </div>
+                  </div>
+                </div>
+                <label className="upload">
+                  <Upload size={14} /> Enviar PDF
+                  <input type="file" accept="application/pdf" onChange={handleUpload} />
+                </label>
+                <select value={selectedDocument || ''} onChange={(event) => setSelectedDocument(Number(event.target.value))}>
+                  <option value="">Selecione um PDF</option>
+                  {documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.filename}</option>)}
+                </select>
+                <form className="ask-doc" onSubmit={handleAskDocument}>
+                  <textarea value={documentQuestion} onChange={(event) => setDocumentQuestion(event.target.value)} placeholder="Pergunte sobre o PDF selecionado" />
+                  <button type="submit" disabled={!selectedDocument}>Conversar sobre a fonte</button>
+                </form>
+                {documentAnswer && (
+                  <div className="answer">
+                    <p>{documentAnswer.answer}</p>
+                    {documentAnswer.citations.map((citation, index) => <blockquote key={index}>{citation}</blockquote>)}
+                  </div>
+                )}
+              </section>
+
+              <section className="module-panel developer-module" id="programador">
+                <PanelHeader icon={<Code2 size={15} />} title="CRONOS DEVELOPER — PROJETO" />
+                <div className="developer-layout">
+                  <div className="dev-files"><span>ARQUIVOS</span><p>backend<br />frontend<br />docs<br />scripts</p></div>
+                  <div className="dev-editor">
+                    <div className="tabs"><span>auth.service.ts</span><span>document.controller.ts</span><span>process.py</span></div>
+                    <pre>{`async function processDocument(file) {\n  const text = await extractText(file);\n  const tokens = tokenize(text);\n  const analysis = await analyze(tokens);\n  return analysis;\n}`}</pre>
+                    <div className="terminal">14:32:21 &gt; Executando testes...<br />14:32:25 &gt; Testes aprovados<br />14:32:25 &gt; Concluido com sucesso.</div>
+                  </div>
+                  <div className="dev-cronos">
+                    <strong>CRONOS</strong>
+                    <p>Alteracoes reais exigem revisao e autorizacao antes de modificar arquivos.</p>
+                    <button type="button" onClick={() => setCoreState('authorization')}>Ver alteracoes</button>
+                    <button type="button" className="primary" onClick={() => setCoreState('authorization')}>Autorizar</button>
+                    <button type="button" className="danger">Recusar</button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="authorization-band" id="autorizacoes">
+                <Lock size={34} />
+                <div>
+                  <h2>CRONOS SOLICITA AUTORIZACAO</h2>
+                  <p>Acao: atualizar modulo de leitura de documentos. Esta acao requer confirmacao do proprietario.</p>
+                </div>
+                <div><span>ALTERACOES</span><strong>8 arquivos modificados</strong></div>
+                <div><span>TESTES</span><strong>128 de 128 aprovados</strong></div>
+                <div><span>RISCO</span><strong>Baixo</strong></div>
+                <div className="auth-actions">
+                  <button type="button">Autorizar com identidade</button>
+                  <button type="button">Ver detalhes</button>
+                  <button type="button" className="danger">Recusar</button>
+                </div>
+              </section>
+
+              <section className="quick-window module-panel">
+                <PanelHeader icon={<Power size={15} />} title="JANELA RAPIDA" />
+                <div className="quick-window-body">
+                  <div className="quick-window-core"><CoreVisual state={coreState} compact /></div>
+                  <p>Alexandre, estou pronto.</p>
+                  <div className="quick-buttons"><button><Mic size={14} /></button><button><Paperclip size={14} /></button><button><Keyboard size={14} /></button><button><Radio size={14} /></button></div>
+                  <div className="mini-input">Digite uma mensagem... <Send size={14} /></div>
+                  <TaskLine label="Analisando projeto Kalion Connect" value={68} tone="blue" />
+                  <p className="pending-auth">Autorizacao pendente</p>
+                </div>
+              </section>
+
+              <section className="module-panel security-module" id="seguranca">
+                <PanelHeader icon={<Shield size={15} />} title="SEGURANCA" />
+                <InfoLine icon={<UserRound size={13} />} label="Dispositivo" value="Autorizado" />
+                <InfoLine icon={<Lock size={13} />} label="Autenticacao" value="Sessao ativa" />
+                <InfoLine icon={<Bell size={13} />} label="Tentativas bloqueadas" value="0" />
+                <InfoLine icon={<Archive size={13} />} label="Backup" value="Manual disponivel" />
+                <button type="button" onClick={handleBackup}><Archive size={14} /> Criar backup</button>
+                <button type="button" className="danger" onClick={handleLock}><Lock size={14} /> Bloquear</button>
+              </section>
             </section>
-          </div>
+          </>
         )}
+
+        <footer className="status-bar">
+          <span><BrainCircuit size={12} /> {stateLabel(coreState)}</span>
+          <span><Database size={12} /> SQLite</span>
+          <span><Cpu size={12} /> CPU {Math.round(hardware?.cpu_percent ?? 0)}%</span>
+          <span><MemoryStick size={12} /> RAM {Math.round(hardware?.ram_percent ?? 0)}%</span>
+          <span><HardDrive size={12} /> {hardware?.disk_free_gb ?? 0} GB</span>
+          <span><Network size={12} /> Vetorial pendente</span>
+          <span><Mic size={12} /> Mic manual</span>
+          <span>{lastResponseMs ? `${lastResponseMs} ms` : 'Resposta --'}</span>
+        </footer>
       </section>
     </main>
   )
+}
+
+function hrefFor(label: string) {
+  const map: Record<string, string> = {
+    Inicio: '#inicio',
+    Conversar: '#conversar',
+    Projetos: '#projetos',
+    Programador: '#programador',
+    Biblioteca: '#aprendizado',
+    Aprendizado: '#aprendizado',
+    'Outras IAs': '#inicio',
+    Memoria: '#conversar',
+    Tarefas: '#tarefas',
+    Autorizacoes: '#autorizacoes',
+    Dispositivos: '#seguranca',
+    Seguranca: '#seguranca',
+    Armazenamento: '#desempenho',
+    Desempenho: '#desempenho',
+    Versoes: '#desempenho',
+    Configuracoes: '#seguranca',
+  }
+  return map[label] || '#inicio'
+}
+
+function CoreVisual({ state, compact = false }: { state: CoreState; compact?: boolean }) {
+  return (
+    <div className={`cronos-core ${state} ${compact ? 'compact' : ''}`} aria-label={`Estado do CRONOS: ${stateLabel(state)}`}>
+      <div className="signal left" />
+      <div className="signal right" />
+      <div className="ring outer" />
+      <div className="ring middle" />
+      <div className="ring inner" />
+      <div className="core-center" />
+    </div>
+  )
+}
+
+function TaskLine({ label, value, tone }: { label: string; value: number; tone: string }) {
+  const safeValue = Math.max(0, Math.min(100, Math.round(value)))
+  return (
+    <div className="task-line">
+      <div className={`dot ${tone}`} />
+      <div className="task-content">
+        <div><span>{label}</span><strong>{safeValue}%</strong></div>
+        <meter min="0" max="100" value={safeValue} />
+      </div>
+    </div>
+  )
+}
+
+function SystemLine({ label, value, percent }: { label: string; value: string; percent: number }) {
+  return (
+    <div className="system-line">
+      <div><span>{label}</span><strong>{value}</strong></div>
+      <meter min="0" max="100" value={Math.max(0, Math.min(100, percent))} />
+    </div>
+  )
+}
+
+function InfoLine({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="info-line">
+      <span>{icon}{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function PanelHeader({ icon, title }: { icon: ReactNode; title: string }) {
+  return <div className="panel-header">{icon}<h2>{title}</h2></div>
+}
+
+function stateLabel(state: CoreState) {
+  return {
+    available: 'Disponivel',
+    listening: 'Ouvindo',
+    authorization: 'Autorizacao',
+    processing: 'Processando',
+    alert: 'Alerta',
+    offline: 'Offline',
+  }[state]
 }
 
 export default App

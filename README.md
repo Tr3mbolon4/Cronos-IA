@@ -16,8 +16,13 @@ Esta base contem o MVP local inicial:
 - perguntas sobre PDF com citacoes simples;
 - diagnostico de hardware;
 - backup local em `.zip`.
+- identidade visual oficial escura/neon inspirada no nucleo CRONOS.
 
-O instalador `CronosSetup.exe` ainda depende da etapa Tauri/Rust e empacotamento Windows. Nesta maquina, Rust/Cargo nao estao instalados e o pip esta bloqueado por proxy, entao o MVP atual foi feito para rodar sem novas dependencias Python obrigatorias.
+O instalador `CronosSetup.exe` ainda depende da etapa final de empacotamento/assinatura. A base desktop ja possui shell Tauri 2 com backend Python real integrado como sidecar, usando porta local dinamica, token runtime em memoria e diretorios em `%LOCALAPPDATA%\CRONOS`.
+
+## Layout oficial
+
+A versao 1.0 adota uma interface escura com detalhes em azul neon, menu lateral modular, nucleo central animado e dashboard com conversa, tarefas, recursos do computador e atividades recentes. Os indicadores devem ser funcionais: no MVP, CPU, RAM e armazenamento ja usam metricas locais reais; GPU, VRAM e temperatura ficam preparados para a proxima etapa de deteccao.
 
 ## Local de trabalho
 
@@ -58,3 +63,27 @@ http://127.0.0.1:5173
 ```powershell
 .\scripts\test.ps1
 ```
+
+## Desktop Tauri
+
+Com o ambiente Windows validado, a interface pode ser executada como aplicativo desktop com sidecar:
+
+```powershell
+.\scripts\desktop-dev.ps1
+.\scripts\desktop-build.ps1
+```
+
+Testes principais:
+
+```powershell
+.\scripts\test.ps1
+.\scripts\visual-test.ps1
+.\scripts\test-backend-package.ps1
+.\scripts\test-desktop-runtime.ps1
+```
+
+Artefatos locais gerados:
+
+- `backend\dist\cronos-backend.exe`
+- `backend\dist\cronos-backend-console.exe`
+- `frontend\src-tauri\target\release\cronos-desktop.exe`
