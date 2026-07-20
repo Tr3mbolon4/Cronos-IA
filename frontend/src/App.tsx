@@ -43,10 +43,15 @@ import {
 } from 'lucide-react'
 import './App.css'
 import { mergeHeaders } from './services/apiClient'
-import { resolveRuntimeConnection } from './services/runtimeConnection'
+import {
+  openRuntimeLogs,
+  resolveRuntimeConnection,
+  restartRuntimeConnection,
+  shutdownCronos,
+} from './services/runtimeConnection'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
-const CRONOS_VERSION = 'v0.1.0'
+const CRONOS_VERSION = 'v0.1.2'
 
 type SetupStatus = {
   configured: boolean
@@ -85,6 +90,23 @@ type Hardware = {
 }
 
 type CoreState = 'available' | 'listening' | 'authorization' | 'processing' | 'alert' | 'offline'
+type StartupPhase =
+  | 'initializing'
+  | 'backend_starting'
+  | 'backend_ready'
+  | 'loading_identity'
+  | 'owner_exists'
+  | 'owner_not_registered'
+  | 'authentication_required'
+  | 'error'
+  | 'retrying'
+
+type StartupError = {
+  code: string
+  message: string
+  detail?: string
+  phase: StartupPhase
+}
 
 const menuItems = [
   ['Inicio', Home],
@@ -108,6 +130,8 @@ const menuItems = [
 function App() {
   const [setup, setSetup] = useState<SetupStatus | null>(null)
   const [runtimeReady, setRuntimeReady] = useState(false)
+  const [startupPhase, setStartupPhase] = useState<StartupPhase>('initializing')
+  const [startupError, setStartupError] = useState<StartupError | null>(null)
   const [apiBaseUrl, setApiBaseUrl] = useState(DEFAULT_API_URL)
   const [runtimeToken, setRuntimeToken] = useState('')
   const [token, setToken] = useState(() => localStorage.getItem('cronos.token') || '')
@@ -138,7 +162,7 @@ function App() {
   )
 
   async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetchWithTimeout(`${apiBaseUrl}${path}`, {
       ...options,
       headers: mergeHeaders(options.headers, runtimeToken),
     })
@@ -163,28 +187,40 @@ function App() {
   }
 
   useEffect(() => {
-    resolveRuntimeConnection()
-      .then((connection) => {
-        setApiBaseUrl(connection.base_url)
-        setRuntimeToken(connection.runtime_token)
-        setRuntimeReady(true)
-        setCoreState(connection.state === 'ready' || connection.state === 'web' ? 'authorization' : 'offline')
-      })
-      .catch((error) => {
-        setNotice(error instanceof Error ? error.message : 'Backend local indisponivel.')
-        setCoreState('offline')
-      })
+    initializeStartup('initializing').catch(() => undefined)
   }, [])
 
-  useEffect(() => {
-    if (!runtimeReady) return
-    api<SetupStatus>('/setup/status')
-      .then(setSetup)
-      .catch((error) => {
-        setNotice(error.message)
-        setCoreState('offline')
+  async function initializeStartup(phase: StartupPhase = 'backend_starting') {
+    try {
+      setStartupError(null)
+      setSetup(null)
+      setRuntimeReady(false)
+      setStartupPhase(phase)
+      setCoreState('offline')
+      const connection = phase === 'retrying' ? await restartRuntimeConnection() : await resolveRuntimeConnection()
+      setStartupPhase('backend_ready')
+      setApiBaseUrl(connection.base_url)
+      setRuntimeToken(connection.runtime_token)
+      setRuntimeReady(true)
+      setCoreState(connection.state === 'ready' || connection.state === 'web' ? 'authorization' : 'offline')
+      setStartupPhase('loading_identity')
+      const setupStatus = await loadSetupStatus(connection.base_url, connection.runtime_token)
+      setSetup(setupStatus)
+      setStartupPhase(setupStatus.configured ? 'owner_exists' : 'owner_not_registered')
+      setCoreState(setupStatus.configured ? 'authorization' : 'offline')
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Backend local indisponivel.'
+      setNotice(detail)
+      setCoreState('offline')
+      setStartupPhase('error')
+      setStartupError({
+        code: detail.toLowerCase().includes('timeout') ? 'CRONOS-STARTUP-002' : 'CRONOS-STARTUP-001',
+        message: 'Nao foi possivel iniciar o nucleo local do CRONOS.',
+        detail,
+        phase,
       })
-  }, [runtimeReady, apiBaseUrl, runtimeToken])
+    }
+  }
 
   useEffect(() => {
     const updateOnline = () => setInternetOnline(navigator.onLine)
@@ -277,11 +313,11 @@ function App() {
     setCoreState('processing')
     const formData = new FormData()
     formData.append('file', file)
-    await fetch(`${apiBaseUrl}/documents/upload`, {
+    await fetchWithTimeout(`${apiBaseUrl}/documents/upload`, {
       method: 'POST',
       headers: mergeHeaders({ Authorization: `Bearer ${token}` }, runtimeToken),
       body: formData,
-    }).then(async (response) => {
+    }, 15000).then(async (response) => {
       if (!response.ok) throw new Error((await response.json()).detail)
     })
     setNotice('PDF enviado e processado.')
@@ -317,8 +353,19 @@ function App() {
     { label: 'Gerando documentacao', value: Math.min(92, Math.max(8, messages.length * 9)), tone: 'violet' },
   ]
 
+  if (startupError) {
+    return (
+      <StartupErrorScreen
+        error={startupError}
+        onRetry={() => initializeStartup('retrying')}
+        onOpenLogs={() => openRuntimeLogs().catch((error) => setNotice(error instanceof Error ? error.message : 'Nao foi possivel abrir os logs.'))}
+        onClose={() => shutdownCronos().catch(() => window.close())}
+      />
+    )
+  }
+
   if (!runtimeReady || !setup) {
-    return <main className="loading">{runtimeReady ? 'Carregando identidade...' : 'Iniciando núcleo local...'}</main>
+    return <main className="loading">{startupMessage(startupPhase)}</main>
   }
 
   return (
@@ -620,6 +667,78 @@ function InfoLine({ icon, label, value }: { icon: ReactNode; label: string; valu
 
 function PanelHeader({ icon, title }: { icon: ReactNode; title: string }) {
   return <div className="panel-header">{icon}<h2>{title}</h2></div>
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 12000) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Timeout apos ${timeoutMs} ms.`)
+    }
+    throw error
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
+async function loadSetupStatus(baseUrl: string, runtimeToken: string): Promise<SetupStatus> {
+  const response = await fetchWithTimeout(`${baseUrl}/setup/status`, {
+    headers: mergeHeaders(undefined, runtimeToken),
+  }, 15000)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ detail: 'Falha ao carregar identidade.' }))
+    throw new Error(payload.detail || 'Falha ao carregar identidade.')
+  }
+  return response.json()
+}
+
+function startupMessage(phase: StartupPhase) {
+  return {
+    initializing: 'Iniciando nucleo local...',
+    backend_starting: 'Iniciando nucleo local...',
+    backend_ready: 'Nucleo local pronto...',
+    loading_identity: 'Carregando identidade...',
+    owner_exists: 'Identidade carregada...',
+    owner_not_registered: 'Preparando primeiro cadastro...',
+    authentication_required: 'Aguardando autorizacao...',
+    error: 'Falha na inicializacao.',
+    retrying: 'Tentando reiniciar o nucleo local...',
+  }[phase]
+}
+
+function StartupErrorScreen({
+  error,
+  onRetry,
+  onOpenLogs,
+  onClose,
+}: {
+  error: StartupError
+  onRetry: () => void
+  onOpenLogs: () => void
+  onClose: () => void
+}) {
+  return (
+    <main className="startup-error">
+      <section className="startup-error-panel">
+        <div className="mini-core alert-core" />
+        <span>{error.code}</span>
+        <h1>Nao foi possivel iniciar o CRONOS</h1>
+        <p>O nucleo local nao respondeu dentro do tempo esperado.</p>
+        <details>
+          <summary>Mostrar detalhes tecnicos</summary>
+          <code>{error.detail || startupMessage(error.phase)}</code>
+        </details>
+        <div className="startup-actions">
+          <button type="button" className="primary" onClick={onRetry}>Tentar novamente</button>
+          <button type="button" onClick={onOpenLogs}>Abrir pasta de logs</button>
+          <button type="button" className="danger" onClick={onClose}>Fechar CRONOS</button>
+        </div>
+      </section>
+    </main>
+  )
 }
 
 function stateLabel(state: CoreState) {

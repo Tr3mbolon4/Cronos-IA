@@ -36,7 +36,7 @@ Write-TextFile -Path $tauriConfigPath -Value $tauriConfig
 
 $cargoTomlPath = Join-Path $root "frontend\src-tauri\Cargo.toml"
 $cargoToml = Read-TextFile -Path $cargoTomlPath
-$cargoToml = $cargoToml -replace '(?m)^version = ".+"$', "version = `"$Version`""
+$cargoToml = $cargoToml -replace '(?m)^version\s*=\s*".+"$', "version = `"$Version`""
 Write-TextFile -Path $cargoTomlPath -Value $cargoToml
 
 $pyprojectPath = Join-Path $root "backend\pyproject.toml"
