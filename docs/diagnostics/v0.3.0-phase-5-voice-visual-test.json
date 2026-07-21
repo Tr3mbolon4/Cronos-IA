@@ -1,0 +1,2039 @@
+{
+  "createdAt": "2026-07-21T21:30:53.954Z",
+  "results": [
+    {
+      "viewport": {
+        "name": "1920",
+        "width": 1920,
+        "height": 1080
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1262
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1262
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1166
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1232,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1920.png",
+          "chatValidation": {
+            "ok": true,
+            "ownerMenu": {
+              "x": 619,
+              "y": 359,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "left"
+            },
+            "cronosMenu": {
+              "x": 1332,
+              "y": 560,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "right"
+            },
+            "contextVisibleAfterToggle": 1,
+            "horizontalOverflow": false,
+            "messageCount": 0
+          },
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1920.png",
+          "chatValidation": null,
+          "memoryValidation": {
+            "ok": true,
+            "cardCount": 1,
+            "gridMode": true,
+            "tableMode": true,
+            "horizontalOverflow": false
+          },
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1177
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1177
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1081
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1147,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": {
+            "ok": true,
+            "documentCount": 1,
+            "pagesVisible": 1,
+            "chunksVisible": 1,
+            "horizontalOverflow": false
+          },
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1107
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1107
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1011
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1077,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": {
+            "ok": true,
+            "diagnostics": 3,
+            "horizontalOverflow": false
+          },
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": -23,
+              "width": 1920,
+              "height": 1289
+            },
+            "sidebar": {
+              "x": 0,
+              "y": -23,
+              "width": 248,
+              "height": 1289
+            },
+            "topbar": {
+              "x": 248,
+              "y": -23,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 43,
+              "width": 1672,
+              "height": 1193
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1236,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1920.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1920.png"
+      },
+      "lock": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-lock-1920.png"
+      },
+      "coreStates": [
+        {
+          "state": "ready",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-ready-1920.png",
+          "label": "Pronto",
+          "description": "Backend, banco e sessao estao prontos."
+        },
+        {
+          "state": "thinking",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-thinking-1920.png",
+          "label": "Pensando",
+          "description": "Preparando interpretacao do pedido."
+        },
+        {
+          "state": "speaking",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-speaking-1920.png",
+          "label": "Falando",
+          "description": "Estado visual reservado para resposta falada da Fase 5."
+        },
+        {
+          "state": "warning",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-warning-1920.png",
+          "label": "Atencao",
+          "description": "Existe uma condicao degradada ou experimental."
+        },
+        {
+          "state": "error",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-error-1920.png",
+          "label": "Erro",
+          "description": "O CRONOS encontrou uma falha que exige atencao."
+        },
+        {
+          "state": "locked",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-locked-1920.png",
+          "label": "Bloqueado",
+          "description": "Sessao protegida aguardando autorizacao do proprietario."
+        },
+        {
+          "state": "offline",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-offline-1920.png",
+          "label": "Offline",
+          "description": "Nucleo local indisponivel ou em inicializacao."
+        }
+      ],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 73,
+          "domContentLoadedMs": 1195,
+          "corePresent": true,
+          "dashboardTextLength": 1419,
+          "domNodes": 509,
+          "heapUsed": 35612996
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 509,
+          "heapUsed": 23471422
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1600",
+        "width": 1600,
+        "height": 900
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 1516
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1516
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 1420
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1486,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1600.png",
+          "chatValidation": {
+            "ok": true,
+            "ownerMenu": {
+              "x": 468,
+              "y": 426,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "left"
+            },
+            "cronosMenu": {
+              "x": 1332,
+              "y": 627,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "right"
+            },
+            "contextVisibleAfterToggle": 1,
+            "horizontalOverflow": false,
+            "messageCount": 0
+          },
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1600.png",
+          "chatValidation": null,
+          "memoryValidation": {
+            "ok": true,
+            "cardCount": 1,
+            "gridMode": true,
+            "tableMode": true,
+            "horizontalOverflow": false
+          },
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 1177
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1177
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 1081
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1147,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": {
+            "ok": true,
+            "documentCount": 1,
+            "pagesVisible": 1,
+            "chunksVisible": 1,
+            "horizontalOverflow": false
+          },
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 971
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 971
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 875
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 941,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": {
+            "ok": true,
+            "diagnostics": 3,
+            "horizontalOverflow": false
+          },
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": -389,
+              "width": 1600,
+              "height": 1289
+            },
+            "sidebar": {
+              "x": 0,
+              "y": -389,
+              "width": 248,
+              "height": 1289
+            },
+            "topbar": {
+              "x": 248,
+              "y": -389,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": -323,
+              "width": 1352,
+              "height": 1193
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1600.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1600.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 73,
+          "domContentLoadedMs": 135,
+          "corePresent": true,
+          "dashboardTextLength": 1582,
+          "domNodes": 518,
+          "heapUsed": 32594832
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 518,
+          "heapUsed": 32594832
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1366",
+        "width": 1366,
+        "height": 768
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 2174
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 2174
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 2078
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 2144,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1366.png",
+          "chatValidation": {
+            "ok": true,
+            "ownerMenu": {
+              "x": 1127,
+              "y": 192,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "left"
+            },
+            "cronosMenu": {
+              "x": 552,
+              "y": 405,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "right"
+            },
+            "contextVisibleAfterToggle": 1,
+            "horizontalOverflow": false,
+            "messageCount": 0
+          },
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1366.png",
+          "chatValidation": null,
+          "memoryValidation": {
+            "ok": true,
+            "cardCount": 1,
+            "gridMode": true,
+            "tableMode": true,
+            "horizontalOverflow": false
+          },
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 1587
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 1587
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 1491
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 1557,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": {
+            "ok": true,
+            "documentCount": 1,
+            "pagesVisible": 1,
+            "chunksVisible": 1,
+            "horizontalOverflow": false
+          },
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 1312
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 1312
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 1216
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 1282,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": {
+            "ok": true,
+            "diagnostics": 3,
+            "horizontalOverflow": false
+          },
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": -493,
+              "width": 1366,
+              "height": 1261
+            },
+            "sidebar": {
+              "x": 0,
+              "y": -493,
+              "width": 218,
+              "height": 1261
+            },
+            "topbar": {
+              "x": 218,
+              "y": -493,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": -427,
+              "width": 1148,
+              "height": 1165
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1366.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1366.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 70,
+          "domContentLoadedMs": 130,
+          "corePresent": true,
+          "dashboardTextLength": 1606,
+          "domNodes": 518,
+          "heapUsed": 40827129
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 518,
+          "heapUsed": 40827129
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 720
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 2103
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 2103
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 2007
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 2073,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1280.png",
+          "chatValidation": {
+            "ok": false,
+            "ownerMenu": {
+              "x": 1041,
+              "y": 337,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
+              "placement": "left"
+            },
+            "cronosMenu": {
+              "x": 530,
+              "y": 538,
+              "width": 170,
+              "height": 196,
+              "insideViewport": false,
+              "placement": "right"
+            },
+            "contextVisibleAfterToggle": 1,
+            "horizontalOverflow": false,
+            "messageCount": 0
+          },
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1280.png",
+          "chatValidation": null,
+          "memoryValidation": {
+            "ok": true,
+            "cardCount": 1,
+            "gridMode": true,
+            "tableMode": true,
+            "horizontalOverflow": false
+          },
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 1587
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 1587
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 1491
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 1557,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": {
+            "ok": true,
+            "documentCount": 1,
+            "pagesVisible": 1,
+            "chunksVisible": 1,
+            "horizontalOverflow": false
+          },
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": -9,
+              "width": 1280,
+              "height": 1312
+            },
+            "sidebar": {
+              "x": 0,
+              "y": -9,
+              "width": 196,
+              "height": 1312
+            },
+            "topbar": {
+              "x": 196,
+              "y": -9,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 57,
+              "width": 1084,
+              "height": 1216
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 1273,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": {
+            "ok": true,
+            "diagnostics": 3,
+            "horizontalOverflow": false
+          },
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": -541,
+              "width": 1280,
+              "height": 1261
+            },
+            "sidebar": {
+              "x": 0,
+              "y": -541,
+              "width": 196,
+              "height": 1261
+            },
+            "topbar": {
+              "x": 196,
+              "y": -541,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": -475,
+              "width": 1084,
+              "height": 1165
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1280.png",
+          "chatValidation": null,
+          "memoryValidation": null,
+          "libraryValidation": null,
+          "voiceValidation": null,
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1280.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 71,
+          "domContentLoadedMs": 129,
+          "corePresent": true,
+          "dashboardTextLength": 1606,
+          "domNodes": 518,
+          "heapUsed": 38141773
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 518,
+          "heapUsed": 38141773
+        }
+      }
+    }
+  ]
+}

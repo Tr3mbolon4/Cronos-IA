@@ -43,6 +43,7 @@ async function run() {
     for (const viewport of viewports) {
       console.log(`visual: viewport ${viewport.name}`);
       const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+      await installVoiceMocks(page);
       await login(page);
       if (viewport.name === '1920') await seedKnowledge(page);
       const routeResults = [];
@@ -54,6 +55,7 @@ async function run() {
         const chatValidation = check.route === '/chat' ? await validateChatWorkspace(page, viewport.name) : null;
         const memoryValidation = check.route === '/memory' ? await validateMemoryWorkspace(page, viewport.name) : null;
         const libraryValidation = check.route === '/library' ? await validateLibraryWorkspace(page, viewport.name) : null;
+        const voiceValidation = check.route === '/settings' ? await validateVoiceWorkspace(page, viewport.name) : null;
         const screenshotPath = path.join(outputDir, `cronos-v030-${slug(check.label)}-${viewport.name}.png`);
         await page.screenshot({ path: screenshotPath, fullPage: false });
         routeResults.push({
@@ -63,6 +65,7 @@ async function run() {
           chatValidation,
           memoryValidation,
           libraryValidation,
+          voiceValidation,
           metrics: await collectMetrics(page),
         });
       }
@@ -77,7 +80,7 @@ async function run() {
     await browser.close();
   }
 
-  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-4-memory-library-visual-test.json');
+  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-5-voice-visual-test.json');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify({ createdAt: new Date().toISOString(), results }, null, 2));
   console.log(JSON.stringify({ ok: true, reportPath }, null, 2));
@@ -198,6 +201,62 @@ async function validateLibraryWorkspace(page, viewportName) {
   }
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   return { ok: !horizontalOverflow, documentCount, pagesVisible: 0, chunksVisible: 0, horizontalOverflow };
+}
+
+async function validateVoiceWorkspace(page, viewportName) {
+  console.log(`visual: voice workspace ${viewportName}`);
+  await page.locator('[data-visual="voice-settings"]').waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByLabel('Habilitar recursos de voz').check();
+  await page.getByRole('button', { name: 'Testar microfone' }).click();
+  await page.locator('.audio-level-meter').waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('button', { name: 'Encerrar teste' }).click();
+  await page.getByRole('button', { name: 'Reproduzir' }).click();
+  await page.locator('[data-visual="voice-settings"]').waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('button', { name: 'Parar' }).click();
+  const diagnostics = await page.locator('.voice-diagnostics article').count();
+  const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  return { ok: diagnostics >= 3 && !horizontalOverflow, diagnostics, horizontalOverflow };
+}
+
+async function installVoiceMocks(page) {
+  await page.addInitScript(() => {
+    class MockSpeechRecognition extends EventTarget {
+      constructor() {
+        super();
+        this.lang = 'pt-BR';
+        this.interimResults = false;
+        this.continuous = false;
+        this.maxAlternatives = 1;
+        this.onresult = null;
+        this.onerror = null;
+        this.onend = null;
+      }
+      start() {
+        setTimeout(() => {
+          this.onresult?.({
+            results: [[{ transcript: 'Cronos mostre o estado do sistema', confidence: 0.91 }]],
+          });
+          this.onend?.();
+        }, 120);
+      }
+      stop() { this.onend?.(); }
+      abort() { this.onend?.(); }
+    }
+    window.SpeechRecognition = MockSpeechRecognition;
+    window.webkitSpeechRecognition = MockSpeechRecognition;
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        enumerateDevices: async () => [
+          { deviceId: 'default', kind: 'audioinput', label: 'Microfone padrao' },
+          { deviceId: 'speaker-default', kind: 'audiooutput', label: 'Saida padrao' },
+        ],
+        getUserMedia: async () => ({
+          getTracks: () => [{ stop: () => undefined }],
+        }),
+      },
+    });
+  });
 }
 
 async function menuMetrics(page, selector) {

@@ -1,0 +1,45 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5",
+  "scope": "voice-ui-and-provider-architecture",
+  "environment": {
+    "runtime": "Tauri WebView frontend",
+    "sttProvider": "web-speech-recognition",
+    "ttsProvider": "web-speech-synthesis",
+    "wakeWordProvider": "wake-word-cronos-future",
+    "audioStorageDefault": false
+  },
+  "measurements": {
+    "visualViewportsValidated": 4,
+    "voiceDiagnosticsPanels": 3,
+    "microphoneOpenMs": "manual-hardware-test-required",
+    "recordingStartLatencyMs": "manual-hardware-test-required",
+    "transcriptionLatencyMs": "provider-runtime-dependent",
+    "ttsStartLatencyMs": "provider-runtime-dependent",
+    "microphoneCloseMs": "manual-hardware-test-required",
+    "bundleCssKb": 50.7,
+    "bundleJsKb": 316.74
+  },
+  "automation": {
+    "usesHardwareAudio": false,
+    "usesVoiceMocks": true,
+    "audioPersisted": false,
+    "externalServiceConfigured": false
+  },
+  "manualHardwareChecklist": [
+    "Selecionar microfone real",
+    "Habilitar voz",
+    "Pressionar para falar",
+    "Falar: Cronos, abra uma nova conversa e mostre o estado do sistema.",
+    "Revisar transcricao sem executar acao automaticamente",
+    "Enviar ao chat pelo fluxo normal",
+    "Ouvir resposta",
+    "Parar fala",
+    "Bloquear sessao e confirmar encerramento de captura/fala"
+  ],
+  "risks": [
+    "SpeechRecognition pode nao estar disponivel ou pode variar por runtime do WebView.",
+    "STT offline garantido exige provider local dedicado em fase futura.",
+    "Wake word nao foi implementada como deteccao real."
+  ]
+}
