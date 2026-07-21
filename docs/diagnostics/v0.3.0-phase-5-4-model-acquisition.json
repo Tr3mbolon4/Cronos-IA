@@ -5,8 +5,9 @@
   "model": {
     "name": "ggml-base.bin",
     "variant": "multilingual",
-    "officialSource": "https://huggingface.co/ggerganov/whisper.cpp",
-    "publishedSha": "465707469ff3a37a2b9b8d8f89f2f99de7299dac",
+    "officialSource": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "publishedSha": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+    "rejectedSha1LikeValue": "465707469ff3a37a2b9b8d8f89f2f99de7299dac",
     "englishOnlyRejected": true,
     "presentOnThisMachine": false
   },

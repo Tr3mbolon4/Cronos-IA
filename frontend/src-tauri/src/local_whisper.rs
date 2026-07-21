@@ -30,6 +30,13 @@ struct LocalWhisperManifest {
     model_version: String,
     model_file: String,
     model_sha256: String,
+    model_size: u64,
+    model_variant: Option<String>,
+    multilingual: Option<bool>,
+    official_source: Option<String>,
+    imported_from_approved_channel: Option<bool>,
+    source_and_destination_hashes_match: Option<bool>,
+    integrity_validated: Option<bool>,
     model_source: String,
     architecture: String,
     language_support: Vec<String>,
@@ -242,8 +249,8 @@ fn inspect_local_whisper(app: &tauri::AppHandle) -> Result<LocalWhisperStatus, S
         .then(|| sha256_file(&paths.model_path))
         .transpose()?
         .unwrap_or_default();
-    let manifest_has_checksums = is_real_checksum(&manifest.runtime_sha256)
-        && is_real_checksum(&manifest.model_sha256);
+    let manifest_has_checksums =
+        is_real_checksum(&manifest.runtime_sha256) && is_real_checksum(&manifest.model_sha256);
     let integrity_ok = runtime_exists
         && model_exists
         && manifest_has_checksums
@@ -262,7 +269,11 @@ fn inspect_local_whisper(app: &tauri::AppHandle) -> Result<LocalWhisperStatus, S
         "Provider local pronto e validado por SHA-256.".to_string()
     };
     let model_size = if model_exists {
-        paths.model_path.metadata().map(|item| item.len()).unwrap_or(0)
+        paths
+            .model_path
+            .metadata()
+            .map(|item| item.len())
+            .unwrap_or(0)
     } else {
         0
     };
@@ -328,14 +339,52 @@ fn read_manifest(path: &Path) -> Result<LocalWhisperManifest, String> {
     if manifest.provider != "cronos-local-whisper" {
         return Err("Manifest local de voz possui provider inesperado.".to_string());
     }
+    if !is_real_checksum(&manifest.runtime_sha256) || !is_real_checksum(&manifest.model_sha256) {
+        return Err(
+            "Manifest local de voz deve possuir SHA-256 reais de 64 caracteres.".to_string(),
+        );
+    }
     if manifest.model_name != "ggml-base.bin" || manifest.model_file != "models/ggml-base.bin" {
-        return Err("Manifest local de voz deve apontar para ggml-base.bin multilingue.".to_string());
+        return Err(
+            "Manifest local de voz deve apontar para ggml-base.bin multilingue.".to_string(),
+        );
+    }
+    if path_is_absolute_or_personal(&manifest.model_file)
+        || path_is_absolute_or_personal(&manifest.runtime_file)
+    {
+        return Err(
+            "Manifest local de voz nao pode usar caminhos absolutos ou pessoais.".to_string(),
+        );
     }
     if manifest.model_name.contains(".en.") || manifest.model_file.contains(".en.") {
         return Err("Modelo English-only nao e permitido para o provider pt-BR.".to_string());
     }
     if manifest.runtime_file != "bin/whisper-cli.exe" {
         return Err("Manifest local de voz possui runtime inesperado.".to_string());
+    }
+    if manifest.model_size == 0 {
+        return Err("Manifest local de voz deve registrar tamanho real do modelo.".to_string());
+    }
+    if manifest.model_variant.as_deref() != Some("base") || manifest.multilingual != Some(true) {
+        return Err("Manifest local de voz deve declarar modelo base multilingue.".to_string());
+    }
+    if manifest.imported_from_approved_channel != Some(true)
+        || manifest.source_and_destination_hashes_match != Some(true)
+        || manifest.integrity_validated != Some(true)
+    {
+        return Err(
+            "Manifest local de voz deve registrar importacao e integridade validadas.".to_string(),
+        );
+    }
+    let official_source = manifest.official_source.as_deref().unwrap_or("");
+    if path_is_absolute_or_personal(&manifest.runtime_source)
+        || path_is_absolute_or_personal(&manifest.model_source)
+        || path_is_absolute_or_personal(official_source)
+    {
+        return Err(
+            "Manifest local de voz nao pode registrar caminho pessoal como origem oficial."
+                .to_string(),
+        );
     }
     Ok(manifest)
 }
@@ -478,10 +527,19 @@ fn is_real_checksum(value: &str) -> bool {
     value.len() == 64 && value.chars().all(|item| item.is_ascii_hexdigit())
 }
 
+fn path_is_absolute_or_personal(value: &str) -> bool {
+    if value.is_empty() {
+        return false;
+    }
+    let lower = value.to_ascii_lowercase();
+    Path::new(value).is_absolute()
+        || lower.starts_with("\\\\")
+        || lower.contains(":\\")
+        || lower.contains("\\users\\")
+}
+
 fn ensure_inside(base: &Path, child: &Path) -> Result<(), String> {
-    let base = base
-        .canonicalize()
-        .unwrap_or_else(|_| base.to_path_buf());
+    let base = base.canonicalize().unwrap_or_else(|_| base.to_path_buf());
     let parent = child
         .parent()
         .ok_or("Caminho local de voz invalido.")?
@@ -561,28 +619,59 @@ mod tests {
 
     #[test]
     fn rejects_english_only_model_manifest() {
-        let manifest = r#"{
-            "provider":"cronos-local-whisper",
-            "runtimeVersion":"whisper.cpp v1.8.5",
-            "runtimeFile":"bin/whisper-cli.exe",
-            "runtimeSha256":"3716AC2A3203DEF41CB49FC0CB49A03A4E4B75D7C5A1889F77164553D75FE060",
-            "runtimeSource":"https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
-            "modelName":"ggml-base.en.bin",
-            "modelVersion":"openai-whisper-base-en-ggml",
-            "modelFile":"models/ggml-base.en.bin",
-            "modelSha256":"137c40403d78fd54d454da0f9bd998f78703390c000000000000000000000000",
-            "modelSource":"https://huggingface.co/ggerganov/whisper.cpp",
-            "architecture":"windows-x86_64-cpu",
-            "languageSupport":["en"],
-            "audioFormat":"mono PCM WAV 16 kHz 16-bit",
-            "license":"MIT",
-            "createdAt":"2026-07-21T00:00:00Z"
-        }"#;
-        let path = std::env::temp_dir().join("cronos-english-only-manifest.json");
-        fs::write(&path, manifest).unwrap();
+        let manifest = valid_manifest()
+            .replace(
+                r#""modelName":"ggml-base.bin""#,
+                r#""modelName":"ggml-base.en.bin""#,
+            )
+            .replace(
+                r#""modelFile":"models/ggml-base.bin""#,
+                r#""modelFile":"models/ggml-base.en.bin""#,
+            );
+        assert_manifest_rejected("english-only", &manifest);
+    }
+
+    #[test]
+    fn rejects_manifest_without_real_sha256() {
+        let sha1_manifest = valid_manifest().replace(
+            r#""modelSha256":"60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe""#,
+            r#""modelSha256":"465707469ff3a37a2b9b8d8f89f2f99de7299dac""#,
+        );
+        assert_manifest_rejected("sha1", &sha1_manifest);
+
+        let placeholder_manifest = valid_manifest().replace(
+            r#""modelSha256":"60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe""#,
+            r#""modelSha256":"TO_BE_FILLED_BY_PREPARE_SCRIPT""#,
+        );
+        assert_manifest_rejected("placeholder", &placeholder_manifest);
+    }
+
+    #[test]
+    fn rejects_manifest_with_zero_size_or_personal_paths() {
+        let zero_size_manifest =
+            valid_manifest().replace(r#""modelSize":147951465"#, r#""modelSize":0"#);
+        assert_manifest_rejected("zero-size", &zero_size_manifest);
+
+        let absolute_model_manifest = valid_manifest().replace(
+            r#""modelFile":"models/ggml-base.bin""#,
+            r#""modelFile":"C:\\Users\\alexandre_santos\\Downloads\\ggml-base.bin""#,
+        );
+        assert_manifest_rejected("absolute-model", &absolute_model_manifest);
+
+        let personal_source_manifest = valid_manifest().replace(
+            r#""officialSource":"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin""#,
+            r#""officialSource":"G:\\Cronos-IA\\models\\ggml-base.bin""#,
+        );
+        assert_manifest_rejected("personal-source", &personal_source_manifest);
+    }
+
+    #[test]
+    fn accepts_valid_local_whisper_manifest() {
+        let path = std::env::temp_dir().join("cronos-valid-local-whisper-manifest.json");
+        fs::write(&path, valid_manifest()).unwrap();
         let result = read_manifest(&path);
         let _ = fs::remove_file(path);
-        assert!(result.is_err());
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -600,11 +689,47 @@ mod tests {
         bytes[20..22].copy_from_slice(&1_u16.to_le_bytes());
         bytes[22..24].copy_from_slice(&channels.to_le_bytes());
         bytes[24..28].copy_from_slice(&sample_rate.to_le_bytes());
-        bytes[28..32].copy_from_slice(&(sample_rate * channels as u32 * (bits as u32 / 8)).to_le_bytes());
+        bytes[28..32]
+            .copy_from_slice(&(sample_rate * channels as u32 * (bits as u32 / 8)).to_le_bytes());
         bytes[32..34].copy_from_slice(&(channels * (bits / 8)).to_le_bytes());
         bytes[34..36].copy_from_slice(&bits.to_le_bytes());
         bytes[36..40].copy_from_slice(b"data");
         bytes[40..44].copy_from_slice(&data_size.to_le_bytes());
         bytes
+    }
+
+    fn assert_manifest_rejected(name: &str, manifest: &str) {
+        let path = std::env::temp_dir().join(format!("cronos-{name}-manifest.json"));
+        fs::write(&path, manifest).unwrap();
+        let result = read_manifest(&path);
+        let _ = fs::remove_file(path);
+        assert!(result.is_err(), "manifest {name} should be rejected");
+    }
+
+    fn valid_manifest() -> String {
+        r#"{
+            "provider":"cronos-local-whisper",
+            "runtimeVersion":"whisper.cpp v1.8.5",
+            "runtimeFile":"bin/whisper-cli.exe",
+            "runtimeSha256":"3716AC2A3203DEF41CB49FC0CB49A03A4E4B75D7C5A1889F77164553D75FE060",
+            "runtimeSource":"https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
+            "modelName":"ggml-base.bin",
+            "modelVersion":"openai-whisper-base-ggml",
+            "modelFile":"models/ggml-base.bin",
+            "modelSha256":"60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+            "modelSize":147951465,
+            "modelVariant":"base",
+            "multilingual":true,
+            "officialSource":"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+            "importedFromApprovedChannel":true,
+            "sourceAndDestinationHashesMatch":true,
+            "integrityValidated":true,
+            "modelSource":"https://huggingface.co/ggerganov/whisper.cpp",
+            "architecture":"windows-x86_64-cpu",
+            "languageSupport":["pt-BR","pt","multilingual"],
+            "audioFormat":"mono PCM WAV 16 kHz 16-bit",
+            "license":"MIT",
+            "createdAt":"2026-07-21T00:00:00Z"
+        }"#.to_string()
     }
 }
