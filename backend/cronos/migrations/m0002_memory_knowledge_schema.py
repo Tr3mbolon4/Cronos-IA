@@ -20,7 +20,7 @@ MIGRATION = {
             source_reference TEXT,
             confidence REAL NOT NULL DEFAULT 0.7,
             importance INTEGER NOT NULL DEFAULT 3,
-            status TEXT NOT NULL DEFAULT 'ativa',
+            status TEXT NOT NULL DEFAULT 'active',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             last_accessed_at TEXT,
@@ -37,27 +37,42 @@ MIGRATION = {
         CREATE TABLE IF NOT EXISTS memory_revisions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             memory_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            normalized_content TEXT NOT NULL,
-            status TEXT NOT NULL,
-            changed_by TEXT NOT NULL,
+            revision_number INTEGER NOT NULL,
+            previous_title TEXT NOT NULL,
+            previous_content TEXT NOT NULL,
+            previous_category_id INTEGER,
+            previous_confidence REAL NOT NULL,
+            previous_importance INTEGER NOT NULL,
+            previous_status TEXT NOT NULL,
+            changed_fields TEXT NOT NULL,
             change_reason TEXT,
             created_at TEXT NOT NULL,
-            FOREIGN KEY(memory_id) REFERENCES memories(id)
+            FOREIGN KEY(memory_id) REFERENCES memories(id),
+            UNIQUE(memory_id, revision_number)
         );
 
         CREATE TABLE IF NOT EXISTS memory_relations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner_id INTEGER NOT NULL DEFAULT 1,
             source_memory_id INTEGER NOT NULL,
             target_memory_id INTEGER NOT NULL,
             relation_type TEXT NOT NULL,
-            confidence REAL NOT NULL DEFAULT 0.7,
+            strength REAL NOT NULL DEFAULT 0.7,
+            description TEXT,
             created_at TEXT NOT NULL,
+            deleted_at TEXT,
+            FOREIGN KEY(owner_id) REFERENCES owner(id),
             FOREIGN KEY(source_memory_id) REFERENCES memories(id),
             FOREIGN KEY(target_memory_id) REFERENCES memories(id),
-            UNIQUE(source_memory_id, target_memory_id, relation_type)
+            UNIQUE(owner_id, source_memory_id, target_memory_id, relation_type, deleted_at)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_memory_relations_owner ON memory_relations(owner_id);
+        CREATE INDEX IF NOT EXISTS idx_memory_relations_source ON memory_relations(source_memory_id);
+        CREATE INDEX IF NOT EXISTS idx_memory_relations_target ON memory_relations(target_memory_id);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_relations_active_unique
+            ON memory_relations(owner_id, source_memory_id, target_memory_id, relation_type)
+            WHERE deleted_at IS NULL;
 
         CREATE TABLE IF NOT EXISTS document_sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
