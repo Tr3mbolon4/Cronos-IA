@@ -52,6 +52,8 @@ async function run() {
         await page.locator(check.selector).waitFor({ state: 'visible', timeout: 10000 });
         await page.waitForTimeout(250);
         const chatValidation = check.route === '/chat' ? await validateChatWorkspace(page, viewport.name) : null;
+        const memoryValidation = check.route === '/memory' ? await validateMemoryWorkspace(page, viewport.name) : null;
+        const libraryValidation = check.route === '/library' ? await validateLibraryWorkspace(page, viewport.name) : null;
         const screenshotPath = path.join(outputDir, `cronos-v030-${slug(check.label)}-${viewport.name}.png`);
         await page.screenshot({ path: screenshotPath, fullPage: false });
         routeResults.push({
@@ -59,6 +61,8 @@ async function run() {
           label: check.label,
           screenshotPath,
           chatValidation,
+          memoryValidation,
+          libraryValidation,
           metrics: await collectMetrics(page),
         });
       }
@@ -73,7 +77,7 @@ async function run() {
     await browser.close();
   }
 
-  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-3-chat-visual-test.json');
+  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-4-memory-library-visual-test.json');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify({ createdAt: new Date().toISOString(), results }, null, 2));
   console.log(JSON.stringify({ ok: true, reportPath }, null, 2));
@@ -145,6 +149,55 @@ async function validateChatWorkspace(page, viewportName) {
     horizontalOverflow,
     messageCount: await page.locator('.message-bubble-v3').count(),
   };
+}
+
+async function validateMemoryWorkspace(page, viewportName) {
+  console.log(`visual: memory workspace ${viewportName}`);
+  await page.locator('[data-visual="memory-overview"]').waitFor({ state: 'visible', timeout: 10000 });
+  const cardCount = await page.locator('.memory-card').count();
+  if (cardCount > 0) {
+    await page.locator('.memory-card .card-main').first().click();
+    await page.locator('[data-visual="memory-details"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('[data-visual="memory-revisions"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('[data-visual="memory-relations"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('[data-visual="memory-graph"]').waitFor({ state: 'visible', timeout: 10000 });
+  }
+  await page.getByTitle('Grade').click();
+  const gridMode = await page.locator('.memory-list-surface.grid').count();
+  await page.getByTitle('Tabela').click();
+  const tableMode = await page.locator('.memory-list-surface.table').count();
+  await page.getByTitle('Lista').click();
+  const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  return {
+    ok: Boolean(gridMode && tableMode && !horizontalOverflow),
+    cardCount,
+    gridMode: Boolean(gridMode),
+    tableMode: Boolean(tableMode),
+    horizontalOverflow,
+  };
+}
+
+async function validateLibraryWorkspace(page, viewportName) {
+  console.log(`visual: library workspace ${viewportName}`);
+  await page.locator('[data-visual="library-overview"]').waitFor({ state: 'visible', timeout: 10000 });
+  await page.locator('[data-visual="index-status"]').waitFor({ state: 'visible', timeout: 10000 });
+  const documentCount = await page.locator('.document-card').count();
+  if (documentCount > 0) {
+    await page.locator('.document-card .card-main').first().click();
+    await page.locator('[data-visual="document-details"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByRole('button', { name: /Embeddings/ }).click();
+    await page.locator('[data-visual="library-embeddings"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByRole('button', { name: /Pesquisa/ }).click();
+    await page.locator('[data-visual="retrieval-search"]').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByRole('button', { name: /Paginas/ }).click();
+    const pagesVisible = await page.locator('.page-row').count();
+    await page.getByRole('button', { name: /Chunks/ }).click();
+    const chunksVisible = await page.locator('.chunk-row').count();
+    const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    return { ok: !horizontalOverflow, documentCount, pagesVisible, chunksVisible, horizontalOverflow };
+  }
+  const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  return { ok: !horizontalOverflow, documentCount, pagesVisible: 0, chunksVisible: 0, horizontalOverflow };
 }
 
 async function menuMetrics(page, selector) {
