@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-07-20T13:27:43.954Z",
+  "createdAt": "2026-07-21T14:58:49.295Z",
   "results": [
     {
       "viewport": {
@@ -41,14 +41,24 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 45% RAM 49% 230 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 17% RAM 48% 226.16 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": {
         "menuNavigation": true,
         "coreListeningState": true,
         "coreProcessingState": true,
         "lockSession": true,
-        "loginAgain": true
+        "loginAgain": true,
+        "memoryPage": true,
+        "libraryPage": true,
+        "retrievalCitations": true,
+        "extraScreenshots": [
+          "G:\\Cronos-IA\\data\\project-backups\\cronos-memory-page-1920.png",
+          "G:\\Cronos-IA\\data\\project-backups\\cronos-memory-details-1920.png",
+          "G:\\Cronos-IA\\data\\project-backups\\cronos-memory-form-1920.png",
+          "G:\\Cronos-IA\\data\\project-backups\\cronos-library-page-1920.png",
+          "G:\\Cronos-IA\\data\\project-backups\\cronos-retrieval-citations-1920.png"
+        ]
       }
     },
     {
@@ -91,7 +101,7 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 11% RAM 49% 230 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 8% RAM 49% 226.16 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": null
     },
@@ -135,7 +145,7 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 16% RAM 49% 230 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 5% RAM 49% 226.16 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": null
     }

@@ -8,8 +8,8 @@ if (-not $env:CRONOS_VISUAL_TEST_PASSWORD -or -not $env:CRONOS_VISUAL_TEST_PIN) 
 
 $root = (Get-Location).Path
 $visualData = Join-Path $root "data\visual-test"
-$backendPort = "8123"
-$frontendPort = "5174"
+$backendPort = "8133"
+$frontendPort = "5184"
 $frontendUrl = "http://127.0.0.1:$frontendPort"
 $backendUrl = "http://127.0.0.1:$backendPort"
 $nodeModules = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules"
@@ -17,6 +17,15 @@ $codexPython = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-r
 $pythonExe = "python"
 if (Test-Path $codexPython) {
     $pythonExe = $codexPython
+}
+
+foreach ($port in @($backendPort, $frontendPort)) {
+    Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty OwningProcess -Unique |
+        Where-Object { $_ -gt 0 } |
+        ForEach-Object {
+            Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+        }
 }
 
 if (Test-Path $visualData) {
@@ -84,6 +93,7 @@ try {
         }
     }
     $env:CRONOS_VISUAL_FRONTEND_URL = $frontendUrl
+    $env:CRONOS_VISUAL_BACKEND_URL = $backendUrl
     node .\scripts\visual-login-capture.cjs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
