@@ -1,0 +1,84 @@
+export type SetupStatus = {
+  configured: boolean
+  owner: { id: number; name: string } | null
+}
+
+export type Message = {
+  id?: number
+  role: 'user' | 'assistant'
+  content: string
+  created_at?: string
+}
+
+export type DocumentItem = {
+  id: number
+  filename: string
+  created_at: string
+}
+
+export type Hardware = {
+  system: string
+  release: string
+  processor: string
+  cpu_count: number
+  cpu_percent: number
+  ram_gb: number
+  ram_percent: number
+  disk_total_gb: number
+  disk_free_gb: number
+  disk_percent: number
+  recommended_profile: string
+  gpu: string
+  gpu_percent: number | null
+  vram_gb: number | null
+  gpu_temperature_c: number | null
+}
+
+export type CoreState =
+  | 'idle'
+  | 'listening'
+  | 'thinking'
+  | 'speaking'
+  | 'processing'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'locked'
+  | 'offline'
+
+export type AppRoute =
+  | '/dashboard'
+  | '/chat'
+  | '/memory'
+  | '/library'
+  | '/projects'
+  | '/learning'
+  | '/tools'
+  | '/system'
+  | '/settings'
+  | '/security'
+  | '/not-found'
+
+export type StartupPhase =
+  | 'initializing'
+  | 'backend_starting'
+  | 'backend_ready'
+  | 'loading_identity'
+  | 'owner_exists'
+  | 'owner_not_registered'
+  | 'authentication_required'
+  | 'error'
+  | 'retrying'
+
+export type StartupError = {
+  code: string
+  message: string
+  detail?: string
+  phase: StartupPhase
+}
+
+export type RetrievalSummary = {
+  mode: string
+  provider: string
+  loaded: boolean
+}
