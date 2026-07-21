@@ -1,0 +1,50 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-1",
+  "scope": "local-stt-provider-gating-and-runtime-diagnostics",
+  "providerDecision": {
+    "officialProvider": "cronos-local-whisper",
+    "experimentalProvider": "webview-speech-recognition",
+    "defaultProvider": "cronos-local-whisper",
+    "silentFallbackToWebView": false
+  },
+  "runtimeExpectation": {
+    "engine": "whisper.cpp",
+    "binary": "voice/whisper/whisper-cli.exe",
+    "model": "voice/whisper/models/ggml-base.bin",
+    "language": "pt-BR",
+    "audioFormat": "mono PCM WAV 16 kHz",
+    "automaticDownload": false,
+    "publicPort": false,
+    "windowsService": false,
+    "scheduledTask": false,
+    "firewallRule": false
+  },
+  "currentValidation": {
+    "tauriStatusCommand": "implemented",
+    "frontendProviderSelection": "implemented",
+    "webviewProviderMarkedExperimental": true,
+    "localProviderDefault": true,
+    "textFallbackAvailable": true,
+    "audioStoredByDefault": false,
+    "runtimeBinaryPresentInRepository": false,
+    "modelPresentInRepository": false,
+    "offlineTranscriptionValidated": false,
+    "realMicrophoneValidated": false,
+    "packagedDesktopValidated": false,
+    "ttsPackagedValidated": false
+  },
+  "blockedItems": [
+    "Package whisper-cli.exe as a controlled release resource.",
+    "Package ggml-base.bin with checksum and license metadata.",
+    "Enable and validate the local PCM WAV bridge.",
+    "Run manual offline microphone validation on installed desktop build.",
+    "Run packaged TTS validation outside the development environment."
+  ],
+  "privacy": {
+    "audioPersisted": false,
+    "networkRequired": false,
+    "externalApiConfigured": false,
+    "webviewSttRequiresExplicitSelection": true
+  }
+}

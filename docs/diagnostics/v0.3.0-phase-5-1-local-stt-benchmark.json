@@ -1,0 +1,38 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-1",
+  "provider": "cronos-local-whisper",
+  "engine": "whisper.cpp",
+  "model": "ggml-base.bin",
+  "status": "blocked-runtime-and-model-not-packaged",
+  "hardware": {
+    "windowsVersion": "manual-test-required",
+    "architecture": "x64",
+    "microphone": "manual-test-required"
+  },
+  "measurements": {
+    "providerInitMs": "not-run",
+    "modelLoadMs": "not-run",
+    "coldTranscriptionMs": "not-run",
+    "warmTranscriptionMs": "not-run",
+    "audioDurationMs": "not-run",
+    "realTimeFactor": "not-run",
+    "cpuAveragePercent": "not-run",
+    "cpuPeakPercent": "not-run",
+    "ramMb": "not-run",
+    "runtimeSizeMb": "pending-release-artifact",
+    "modelSizeMb": 142,
+    "shutdownMs": "not-run"
+  },
+  "requiredManualPhrases": [
+    "Cronos, abra uma nova conversa.",
+    "Mostre o estado atual do sistema.",
+    "Pesquise na biblioteca por seguranca da informacao.",
+    "Esta e uma validacao de reconhecimento de voz em portugues do Brasil."
+  ],
+  "notes": [
+    "No audio sample was stored or committed.",
+    "No benchmark number is reported until a packaged local runtime is available.",
+    "WebView SpeechRecognition measurements are intentionally excluded because it is experimental and not guaranteed local."
+  ]
+}
