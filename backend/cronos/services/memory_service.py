@@ -86,7 +86,7 @@ def update_memory(owner_id: int, memory_id: int, payload: dict) -> dict:
         updates, changed_fields = _memory_updates(db, current, payload)
         if not updates:
             return current
-        memory_repository.create_revision(db, current, changed_fields, reason)
+        _create_revision(db, current, changed_fields, reason)
         updates["updated_at"] = utcnow().isoformat()
         updated = memory_repository.update_memory(db, owner_id, memory_id, updates)
         memory_repository.record_audit(db, "memory.updated", f"id={memory_id} fields={','.join(changed_fields)}")
@@ -106,7 +106,7 @@ def restore_memory(owner_id: int, memory_id: int) -> dict:
         current = memory_repository.get_memory(db, owner_id, memory_id, include_deleted=True)
         if not current:
             raise memory_error("MEMORY_NOT_FOUND", "Memoria nao encontrada.", 404)
-        memory_repository.create_revision(db, current, ["status", "deleted_at"], "restore")
+        _create_revision(db, current, ["status", "deleted_at"], "restore")
         updated = memory_repository.update_memory(
             db,
             owner_id,
@@ -122,7 +122,7 @@ def delete_memory(owner_id: int, memory_id: int) -> dict:
         current = memory_repository.get_memory(db, owner_id, memory_id, include_deleted=True)
         if not current:
             raise memory_error("MEMORY_NOT_FOUND", "Memoria nao encontrada.", 404)
-        memory_repository.create_revision(db, current, ["status", "deleted_at"], "delete")
+        _create_revision(db, current, ["status", "deleted_at"], "delete")
         now = utcnow().isoformat()
         updated = memory_repository.update_memory(
             db,
@@ -146,7 +146,7 @@ def _change_status(owner_id: int, memory_id: int, status: str, audit_action: str
         current = memory_repository.get_memory(db, owner_id, memory_id, include_deleted=True)
         if not current:
             raise memory_error("MEMORY_NOT_FOUND", "Memoria nao encontrada.", 404)
-        memory_repository.create_revision(db, current, ["status"], status)
+        _create_revision(db, current, ["status"], status)
         updated = memory_repository.update_memory(
             db,
             owner_id,
@@ -193,6 +193,13 @@ def _memory_updates(db, current: dict, payload: dict) -> tuple[dict, list[str]]:
             updates["status"] = status
             changed.append("status")
     return updates, changed
+
+
+def _create_revision(db, memory: dict, changed_fields: list[str], reason: str | None) -> None:
+    try:
+        memory_repository.create_revision(db, memory, changed_fields, reason)
+    except Exception as error:
+        raise memory_error("MEMORY_REVISION_ERROR", "Nao foi possivel registrar revisao.", 500) from error
 
 
 def _required_int(value: Any, field: str) -> int:

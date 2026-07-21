@@ -42,7 +42,16 @@ class MemoryTestCase(unittest.TestCase):
         memory = self.create_memory()
         self.assertEqual(memory["status"], "active")
 
-        listed = memory_service.list_memories(self.owner_id, {"search": "azul neon", "minimum_confidence": "0.8", "minimum_importance": "3"})
+        listed = memory_service.list_memories(
+            self.owner_id,
+            {
+                "search": "azul neon",
+                "category_id": str(self.category_id),
+                "status": "active",
+                "minimum_confidence": "0.8",
+                "minimum_importance": "3",
+            },
+        )
         self.assertEqual(listed["total"], 1)
         self.assertEqual(listed["items"][0]["id"], memory["id"])
 
@@ -174,6 +183,24 @@ class MemoryTestCase(unittest.TestCase):
         unchanged = memory_service.get_memory(self.owner_id, memory["id"])
         self.assertEqual(unchanged["title"], memory["title"])
         self.assertEqual(memory_service.list_revisions(self.owner_id, memory["id"]), [])
+
+    def test_revision_failure_uses_structured_error_and_rolls_back(self) -> None:
+        memory = self.create_memory()
+        original_create_revision = memory_repository.create_revision
+
+        def fail_revision(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("revision failure")
+
+        memory_repository.create_revision = fail_revision
+        try:
+            with self.assertRaises(CronosError) as raised:
+                memory_service.update_memory(self.owner_id, memory["id"], {"title": "Nao deve persistir"})
+        finally:
+            memory_repository.create_revision = original_create_revision
+
+        self.assertEqual(raised.exception.code, "MEMORY_REVISION_ERROR")
+        unchanged = memory_service.get_memory(self.owner_id, memory["id"])
+        self.assertEqual(unchanged["title"], memory["title"])
 
     def test_memory_routes_expose_required_api_contract(self) -> None:
         categories = memory_routes.handle_get("/memory/categories", "", self.session)
