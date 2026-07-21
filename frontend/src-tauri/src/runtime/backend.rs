@@ -141,7 +141,7 @@ impl BackendRuntime {
                                     let version = value
                                         .get("version")
                                         .and_then(Value::as_str)
-                                        .unwrap_or("0.1.2")
+                                        .unwrap_or("0.2.0")
                                         .to_string();
                                     let backend_pid = value
                                         .get("pid")
@@ -407,7 +407,7 @@ fn write_session_file(
         "pid": backend_pid,
         "executable_path": "binaries/cronos-backend",
         "started_at": started_at,
-        "app_version": "0.1.2",
+        "app_version": "0.2.0",
         "port": port
     });
     fs::write(

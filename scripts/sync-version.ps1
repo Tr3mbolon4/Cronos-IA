@@ -29,6 +29,14 @@ $frontendPackage = Read-TextFile -Path $frontendPackagePath
 $frontendPackage = $frontendPackage -replace '"version":\s*"[^"]+"', "`"version`": `"$Version`""
 Write-TextFile -Path $frontendPackagePath -Value $frontendPackage
 
+$frontendLockPath = Join-Path $root "frontend\package-lock.json"
+if (Test-Path -LiteralPath $frontendLockPath) {
+    $frontendLock = Read-TextFile -Path $frontendLockPath
+    $frontendLock = $frontendLock -replace '("name":\s*"cronos",\s*\r?\n\s*"version":\s*)"[^"]+"', "`${1}`"$Version`""
+    $frontendLock = $frontendLock -replace '("packages":\s*\{\s*\r?\n\s*"":\s*\{\s*\r?\n\s*"name":\s*"cronos",\s*\r?\n\s*"version":\s*)"[^"]+"', "`${1}`"$Version`""
+    Write-TextFile -Path $frontendLockPath -Value $frontendLock
+}
+
 $tauriConfigPath = Join-Path $root "frontend\src-tauri\tauri.conf.json"
 $tauriConfig = Read-TextFile -Path $tauriConfigPath
 $tauriConfig = $tauriConfig -replace '"version":\s*"[^"]+"', "`"version`": `"$Version`""
@@ -41,7 +49,9 @@ Write-TextFile -Path $cargoTomlPath -Value $cargoToml
 
 $pyprojectPath = Join-Path $root "backend\pyproject.toml"
 $pyproject = Read-TextFile -Path $pyprojectPath
-$pyproject = $pyproject -replace '(?m)^version = ".+"$', "version = `"$Version`""
+$pyproject = (($pyproject -split "\r?\n") | ForEach-Object {
+    if ($_ -match '^version\s*=') { "version = `"$Version`"" } else { $_ }
+}) -join "`n"
 Write-TextFile -Path $pyprojectPath -Value $pyproject
 
 $backendInitPath = Join-Path $root "backend\cronos\__init__.py"
@@ -66,6 +76,11 @@ $runtimeBackend = $runtimeBackend -replace '\.unwrap_or\(".*"\)', ".unwrap_or(`"
 $runtimeBackend = $runtimeBackend -replace '"app_version": ".*"', "`"app_version`": `"$Version`""
 Write-TextFile -Path $runtimeBackendPath -Value $runtimeBackend
 
+$runtimeConnectionPath = Join-Path $root "frontend\src\services\runtimeConnection.ts"
+$runtimeConnection = Read-TextFile -Path $runtimeConnectionPath
+$runtimeConnection = $runtimeConnection -replace "version: '[^']+'", "version: '$Version'"
+Write-TextFile -Path $runtimeConnectionPath -Value $runtimeConnection
+
 $appPath = Join-Path $root "frontend\src\App.tsx"
 $app = Read-TextFile -Path $appPath
 $app = $app -replace "const CRONOS_VERSION = 'v[^']+'", "const CRONOS_VERSION = 'v$Version'"
@@ -83,6 +98,7 @@ Write-TextFile -Path $appPath -Value $app
         "backend\cronos\core\config.py",
         "backend\cronos\main.py",
         "frontend\src-tauri\src\runtime\backend.rs",
+        "frontend\src\services\runtimeConnection.ts",
         "frontend\src\App.tsx"
     )
 } | ConvertTo-Json -Compress

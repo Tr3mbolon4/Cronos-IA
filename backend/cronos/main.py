@@ -6,7 +6,7 @@ from cronos.api.schemas import ChatRequest, DocumentQuestion, LoginRequest, Owne
 from cronos.core.db import init_db
 from cronos.services import auth, backup, chat, diagnostics, documents
 
-app = FastAPI(title="CRONOS Local API", version="0.1.2")
+app = FastAPI(title="CRONOS Local API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +24,7 @@ def startup() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "name": "CRONOS", "version": "0.1.2"}
+    return {"ok": True, "name": "CRONOS", "version": "0.2.0"}
 
 
 @app.get("/setup/status")

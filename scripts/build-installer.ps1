@@ -1,5 +1,6 @@
 param(
     [string]$Version = "0.1.0",
+    [string]$Candidate,
     [switch]$SkipValidation
 )
 
@@ -8,7 +9,8 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $frontend = Join-Path $root "frontend"
 $bundleRoot = Join-Path $root "frontend\src-tauri\target\release\bundle"
-$releaseRoot = Join-Path $root "release\CRONOS-$Version"
+$releaseLabel = if ($Candidate) { "$Version-$Candidate" } else { $Version }
+$releaseRoot = Join-Path $root "release\CRONOS-$releaseLabel"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 Set-Location $root
@@ -36,7 +38,7 @@ if (-not $installer) {
 
 New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
 
-$setupOut = Join-Path $releaseRoot "CronosSetup-$Version.exe"
+$setupOut = Join-Path $releaseRoot "CronosSetup-$releaseLabel.exe"
 Copy-Item -LiteralPath $installer.FullName -Destination $setupOut -Force
 
 $msi = Get-ChildItem -LiteralPath $bundleRoot -Recurse -File -Filter "*.msi" -ErrorAction SilentlyContinue |
@@ -44,7 +46,7 @@ $msi = Get-ChildItem -LiteralPath $bundleRoot -Recurse -File -Filter "*.msi" -Er
     Select-Object -First 1
 $msiOut = $null
 if ($msi) {
-    $msiOut = Join-Path $releaseRoot "Cronos-$Version-x64.msi"
+    $msiOut = Join-Path $releaseRoot "Cronos-$releaseLabel-x64.msi"
     Copy-Item -LiteralPath $msi.FullName -Destination $msiOut -Force
 }
 
@@ -74,8 +76,10 @@ $manifest = [pscustomobject]@{
     identifier = "com.kalion.cronos"
     manufacturer = "Kalion Tecnologia"
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
-    installer = "CronosSetup-$Version.exe"
-    msi = if ($msiOut) { "Cronos-$Version-x64.msi" } else { $null }
+    releaseLabel = $releaseLabel
+    candidate = if ($Candidate) { $Candidate } else { $null }
+    installer = "CronosSetup-$releaseLabel.exe"
+    msi = if ($msiOut) { "Cronos-$releaseLabel-x64.msi" } else { $null }
     installMode = "perMachine"
     defaultInstallDir = "C:\Program Files\CRONOS"
     dataDirPolicy = "%LOCALAPPDATA%\CRONOS"
@@ -92,6 +96,7 @@ Copy-Item -LiteralPath (Join-Path $root "docs\WINDOWS_INSTALLER.md") -Destinatio
 [pscustomobject]@{
     ok = $true
     version = $Version
+    releaseLabel = $releaseLabel
     releaseDir = $releaseRoot
     installer = $setupOut
     msi = $msiOut
