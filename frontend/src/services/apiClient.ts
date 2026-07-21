@@ -62,6 +62,10 @@ export class ApiClient {
     return this.request<T>(path, { ...options, method: 'GET' })
   }
 
+  baseUrlForDisplay() {
+    return this.baseUrl
+  }
+
   post<T>(path: string, body?: unknown, options: RequestOptions = {}) {
     const headers = new Headers(options.headers)
     headers.set('Content-Type', 'application/json')

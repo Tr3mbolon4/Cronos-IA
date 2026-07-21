@@ -5,9 +5,12 @@ export type SetupStatus = {
 
 export type Message = {
   id?: number
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system' | 'tool' | 'error' | 'warning'
   content: string
   created_at?: string
+  status?: 'sending' | 'sent' | 'failed' | 'received' | 'edited' | 'cancelled'
+  reply_to_id?: number | string
+  edited_at?: string
 }
 
 export type DocumentItem = {

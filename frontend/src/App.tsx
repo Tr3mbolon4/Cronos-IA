@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
-import type { AppRoute, CoreState, DocumentItem, Hardware, MemorySummary, Message, RetrievalSummary, SetupStatus, StartupError, StartupPhase } from './app/types'
+import type { CoreState, DocumentItem, Hardware, MemorySummary, Message, RetrievalSummary, SetupStatus, StartupError, StartupPhase } from './app/types'
 import { useAppRouter } from './app/useAppRouter'
 import { coreStateMeta } from './app/coreState'
 import { ApiClient } from './services/apiClient'
@@ -9,14 +9,8 @@ import { authHeaders, loadSetupStatus, loginFailureMessage, startupMessage } fro
 import { LockedScreen, StartupErrorScreen } from './app/AppScreens'
 import { openRuntimeLogs, resolveRuntimeConnection, restartRuntimeConnection, shutdownCronos } from './services/runtimeConnection'
 import { AppShell } from './layouts/AppShell'
-import { DashboardPage } from './features/dashboard/DashboardPage'
-import { ChatPage } from './pages/ChatPage'
-import { LibraryPage } from './pages/LibraryPage'
-import { MemoryPage } from './pages/MemoryPage'
-import { SecurityPage } from './pages/SecurityPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { ProjectsPage, LearningPage, NotFoundPage, ToolsPage } from './pages/StaticModulePages'
-import { SystemPage } from './pages/SystemPage'
+import { useChatWorkspace } from './features/chat/useChatWorkspace'
+import { RouteRenderer } from './app/RouteRenderer'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
 const CRONOS_VERSION = 'v0.2.0'
@@ -53,6 +47,15 @@ function App() {
   const owner = setup?.owner?.name || ownerName || 'Alexandre'
   const apiClient = useMemo(() => new ApiClient({ baseUrl: apiBaseUrl, runtimeToken, authToken: token }), [apiBaseUrl, runtimeToken, token])
   const api = useCallback(<T,>(path: string, options: RequestInit = {}) => apiClient.request<T>(path, options), [apiClient])
+  const chat = useChatWorkspace({
+    client: apiClient,
+    token,
+    initialMessages: messages,
+    retrieval,
+    documents,
+    onCoreState: setCoreState,
+    onHistoryChange: setMessages,
+  })
 
   const refreshProtectedData = useCallback(async (activeToken = token) => {
     if (!activeToken) return
@@ -219,27 +222,6 @@ function App() {
     setNotice('CRONOS bloqueado.')
   }
 
-  async function handleChat(event: FormEvent) {
-    event.preventDefault()
-    const clean = message.trim()
-    if (!clean) return
-    setCoreState('processing')
-    setMessages((current) => [...current, { role: 'user', content: clean }])
-    setMessage('')
-    try {
-      const response = await api<Message>('/chat', {
-        method: 'POST',
-        headers: authHeaders(token),
-        body: JSON.stringify({ message: clean }),
-      })
-      setMessages((current) => [...current, response])
-      setCoreState('ready')
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Nao foi possivel enviar a mensagem.')
-      setCoreState('error')
-    }
-  }
-
   async function handleDashboardCommand(event: FormEvent) {
     event.preventDefault()
     if (commandSubmitting) return
@@ -248,8 +230,18 @@ function App() {
     setCommandSubmitting(true)
     setCoreState('thinking')
     try {
-      await handleChat(event)
+      await api<Message>('/chat', {
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({ message: clean }),
+      })
+      setMessage('')
+      await refreshProtectedData()
       navigate('/chat')
+      setCoreState('ready')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Nao foi possivel enviar a mensagem.')
+      setCoreState('error')
     } finally {
       setCommandSubmitting(false)
     }
@@ -269,44 +261,6 @@ function App() {
     const result = await api<{ filename: string }>('/backup', { method: 'POST', headers: authHeaders(token) })
     setNotice(`Backup criado: ${result.filename}`)
     setCoreState('success')
-  }
-
-  function renderRoute(activeRoute: AppRoute) {
-    if (activeRoute === '/dashboard') {
-      return (
-        <DashboardPage
-          owner={owner}
-          notice={notice}
-          coreState={coreState}
-          hardware={hardware}
-          messages={messages}
-          memories={memories}
-          documents={documents}
-          retrieval={retrieval}
-          command={message}
-          backendReady={runtimeReady}
-          online={internetOnline}
-          version={CRONOS_VERSION}
-          submitting={commandSubmitting}
-          onCommandChange={setMessage}
-          onSubmitCommand={handleDashboardCommand}
-          onClearCommand={clearCommand}
-          onNavigate={navigate}
-          onLock={handleLock}
-          onUnavailable={handleUnavailable}
-        />
-      )
-    }
-    if (activeRoute === '/chat') return <ChatPage messages={messages} draft={message} onDraftChange={setMessage} onSubmit={handleChat} />
-    if (activeRoute === '/memory') return <MemoryPage client={apiClient} onNotice={setNotice} />
-    if (activeRoute === '/library') return <LibraryPage client={apiClient} onNotice={setNotice} />
-    if (activeRoute === '/projects') return <ProjectsPage />
-    if (activeRoute === '/learning') return <LearningPage />
-    if (activeRoute === '/tools') return <ToolsPage />
-    if (activeRoute === '/system') return <SystemPage hardware={hardware} retrieval={retrieval} apiBaseUrl={apiBaseUrl} />
-    if (activeRoute === '/settings') return <SettingsPage reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion} />
-    if (activeRoute === '/security') return <SecurityPage owner={owner} onBackup={handleBackup} onLock={handleLock} />
-    return <NotFoundPage />
   }
 
   if (startupError) {
@@ -354,7 +308,22 @@ function App() {
       onLock={handleLock}
       version={CRONOS_VERSION}
     >
-      {renderRoute(route)}
+      <RouteRenderer
+        route={route}
+        owner={owner}
+        notice={notice}
+        coreState={coreState}
+        hardware={hardware}
+        messages={messages}
+        memories={memories}
+        documents={documents}
+        retrieval={retrieval}
+        command={message} backendReady={runtimeReady} online={internetOnline} version={CRONOS_VERSION}
+        commandSubmitting={commandSubmitting} chat={chat} apiClient={apiClient} reducedMotion={reducedMotion}
+        onCommandChange={setMessage} onSubmitCommand={handleDashboardCommand} onClearCommand={clearCommand}
+        onNavigate={navigate} onLock={handleLock} onUnavailable={handleUnavailable} onBackup={handleBackup}
+        onNotice={setNotice} onReducedMotionChange={setReducedMotion}
+      />
     </AppShell>
   )
 }
