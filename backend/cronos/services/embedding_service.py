@@ -14,7 +14,11 @@ _provider: EmbeddingProvider | None = None
 def get_provider() -> EmbeddingProvider:
     global _provider
     if _provider is None:
-        _provider = SentenceTransformerEmbeddingProvider(retrieval_config.model_name, retrieval_config.expected_dimension)
+        _provider = SentenceTransformerEmbeddingProvider(
+            retrieval_config.model_name,
+            retrieval_config.expected_dimension,
+            retrieval_config.packaged_model_dir,
+        )
         _provider.initialize()
     return _provider
 

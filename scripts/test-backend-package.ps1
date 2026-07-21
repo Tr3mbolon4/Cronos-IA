@@ -12,7 +12,7 @@ if (!(Test-Path $BackendExe)) {
     throw "Backend empacotado nao encontrado: $BackendExe"
 }
 
-$temp = Join-Path $env:TEMP "Cronos Backend Package Test"
+$temp = Join-Path $env:TEMP ("Cronos Backend Package Test " + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $temp | Out-Null
 $data = Join-Path $temp "Local AppData Com Espacos"
 $logs = Join-Path $data "logs"
@@ -71,6 +71,18 @@ try {
     $status = Invoke-RestMethod -Uri "$baseUrl/runtime/status" -Headers @{ "X-Cronos-Runtime-Token" = $runtimeToken } -TimeoutSec 5
     if ($status.session_id -ne $sessionId) {
         throw "Session id inesperado no runtime/status."
+    }
+
+    $owner = Invoke-RestMethod -Method Post -Uri "$baseUrl/setup/owner" -ContentType "application/json" -Body (@{
+        name = "Validacao pacote semantico"
+        password = "senha-semantica-segura"
+        pin = "1234"
+    } | ConvertTo-Json -Compress) -TimeoutSec 5
+    $authHeaders = @{ "Authorization" = "Bearer $($owner.token)" }
+    $providers = Invoke-RestMethod -Uri "$baseUrl/library/index/providers" -Headers $authHeaders -TimeoutSec 5
+    $semantic = $providers | Where-Object { $_.provider -eq "cronos-local-semantic" } | Select-Object -First 1
+    if (!$semantic -or !$semantic.available -or $semantic.dimension -ne 384) {
+        throw "Provider semantico empacotado indisponivel: $($providers | ConvertTo-Json -Compress)"
     }
 
     $shutdown = Invoke-RestMethod -Method Post -Uri "$baseUrl/runtime/shutdown" -Headers @{ "X-Cronos-Runtime-Token" = $runtimeToken } -TimeoutSec 5

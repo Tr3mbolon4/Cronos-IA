@@ -6,12 +6,15 @@ project_root = Path(SPECPATH).parents[1]
 backend_root = project_root / "backend"
 entrypoint = backend_root / "cronos" / "server.py"
 runtime_hook = backend_root / "packaging" / "runtime-hook.py"
+semantic_model = backend_root / "cronos" / "models" / "sentence-transformers" / "paraphrase-multilingual-MiniLM-L12-v2"
 
 a = Analysis(
     [str(entrypoint)],
     pathex=[str(backend_root)],
     binaries=[],
-    datas=[],
+    datas=[
+        (str(semantic_model), "cronos/models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
+    ],
     hiddenimports=[
         "pypdf",
         "pypdf._crypt_providers._base",

@@ -3,8 +3,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class RetrievalConfig:
-    provider_name: str = "sentence-transformers"
+    provider_name: str = "cronos-local-semantic"
     model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    packaged_model_dir: str = "models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     fallback_provider_name: str = "lexical-only"
     expected_dimension: int = 384
     top_k: int = 8

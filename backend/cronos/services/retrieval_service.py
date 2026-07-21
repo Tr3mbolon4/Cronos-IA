@@ -40,14 +40,32 @@ def retrieve(owner_id: int, payload: dict) -> dict:
         }
         items.append(item)
     ranked = [item for item in reranking_service.rerank(items) if item["score_final"] >= retrieval_config.minimum_score]
-    return {"items": [_format_item(item) for item in ranked[:top_k]], "total": len(ranked), "top_k": top_k, "provider": embedding_service.provider_status()}
+    provider = embedding_service.provider_status()
+    return {
+        "items": [_format_item(item) for item in ranked[:top_k]],
+        "total": len(ranked),
+        "top_k": top_k,
+        "provider": provider,
+        "mode": "hybrid" if provider.get("available") and any(item.get("score_semantic", 0) > 0 for item in ranked) else "lexical",
+    }
 
 
 def index_status(owner_id: int) -> dict:
     with connect() as db:
         status = retrieval_repository.index_status(db, owner_id)
     provider = embedding_service.provider_status()
-    return {**status, "provider": provider, "semantic_available": bool(provider.get("available"))}
+    mode = "hybrid" if provider.get("available") else "lexical"
+    return {
+        **status,
+        "provider": provider,
+        "configured_provider": provider.get("configured_provider") or provider.get("provider"),
+        "provider_loaded": bool(provider.get("loaded", provider.get("available"))),
+        "model": provider.get("model"),
+        "dimension": provider.get("dimension"),
+        "mode": mode,
+        "semantic_available": bool(provider.get("available")),
+        "last_error": provider.get("error"),
+    }
 
 
 def providers() -> list[dict]:

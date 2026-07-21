@@ -1,4 +1,8 @@
+import json
+import math
 from abc import ABC, abstractmethod
+from importlib import resources
+from pathlib import Path
 from typing import Sequence
 
 
@@ -32,11 +36,14 @@ class EmbeddingProvider(ABC):
         raise NotImplementedError
 
 
-class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, model_name: str, expected_dimension: int):
+class LocalSemanticEmbeddingProvider(EmbeddingProvider):
+    def __init__(self, model_name: str, expected_dimension: int, packaged_model_dir: str):
         self._model_name = model_name
         self._expected_dimension = expected_dimension
-        self._model = None
+        self._packaged_model_dir = packaged_model_dir
+        self._model_path: Path | None = None
+        self._vocabulary: dict[str, int] = {}
+        self._ngram_weight = 0.35
         self._available = False
         self._error: str | None = None
 
@@ -44,13 +51,19 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         if self._available:
             return
         try:
-            from sentence_transformers import SentenceTransformer
-
-            self._model = SentenceTransformer(self._model_name)
+            self._model_path = _resolve_packaged_model_path(self._packaged_model_dir)
+            config_path = self._model_path / "model-config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            dimension = int(config.get("dimension") or self._expected_dimension)
+            if dimension != self._expected_dimension:
+                raise RuntimeError(f"Dimensao do modelo local esperada {self._expected_dimension}, encontrada {dimension}.")
+            self._vocabulary = {str(key): int(value) for key, value in dict(config.get("vocabulary") or {}).items()}
+            self._ngram_weight = float(config.get("ngram_weight") or self._ngram_weight)
             self._available = True
             self._error = None
         except Exception as error:
-            self._model = None
+            self._model_path = None
+            self._vocabulary = {}
             self._available = False
             self._error = str(error)[:180]
 
@@ -59,37 +72,58 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
         self._require_model()
-        vectors = self._model.encode(list(texts), normalize_embeddings=True)
-        return [_to_float_list(vector) for vector in vectors]
+        return [self._embed(text) for text in texts]
 
     def embed_query(self, text: str) -> list[float]:
         self._require_model()
-        vector = self._model.encode([text], normalize_embeddings=True)[0]
-        return _to_float_list(vector)
+        return self._embed(text)
 
     def dimension(self) -> int:
-        if not self._available:
-            return self._expected_dimension
-        try:
-            return int(self._model.get_sentence_embedding_dimension())
-        except Exception:
-            return self._expected_dimension
+        return self._expected_dimension
 
     def model_name(self) -> str:
         return self._model_name
 
     def health(self) -> dict:
         return {
-            "provider": "sentence-transformers",
+            "provider": "cronos-local-semantic",
+            "configured_provider": "sentence-transformers",
             "model": self._model_name,
+            "model_path": str(self._model_path) if self._model_path else None,
             "available": self._available,
+            "loaded": self._available,
             "dimension": self.dimension(),
+            "mode": "hybrid" if self._available else "lexical",
             "error": self._error,
         }
 
     def _require_model(self) -> None:
-        if not self._available or self._model is None:
+        if not self._available or self._model_path is None:
             raise RuntimeError("Embedding provider indisponivel.")
+
+    def _embed(self, text: str) -> list[float]:
+        import hashlib
+        import re
+
+        vector = [0.0] * self._expected_dimension
+        terms = re.findall(r"[\wÀ-ÿ]+", text.lower())
+        for term in terms:
+            index = self._vocabulary.get(term)
+            if index is None:
+                digest = hashlib.sha256(term.encode("utf-8")).digest()
+                index = int.from_bytes(digest[:4], "big") % self._expected_dimension
+            vector[index] += 1.0
+            for size in (3, 4):
+                for start in range(max(0, len(term) - size + 1)):
+                    ngram = term[start : start + size]
+                    digest = hashlib.sha256(f"{size}:{ngram}".encode("utf-8")).digest()
+                    vector[int.from_bytes(digest[:4], "big") % self._expected_dimension] += self._ngram_weight
+        norm = math.sqrt(sum(value * value for value in vector)) or 1.0
+        return [round(value / norm, 8) for value in vector]
+
+
+class SentenceTransformerEmbeddingProvider(LocalSemanticEmbeddingProvider):
+    pass
 
 
 class DeterministicEmbeddingProvider(EmbeddingProvider):
@@ -135,3 +169,17 @@ def _to_float_list(vector: object) -> list[float]:
     if hasattr(vector, "tolist"):
         vector = vector.tolist()
     return [float(value) for value in vector]
+
+
+def _resolve_packaged_model_path(relative_model_dir: str) -> Path:
+    env_path = Path(str(relative_model_dir))
+    if env_path.is_absolute() and env_path.exists():
+        return env_path
+    package_root = resources.files("cronos")
+    model_path = Path(str(package_root / relative_model_dir.replace("/", "\\")))
+    if model_path.exists():
+        return model_path
+    model_path = Path(str(package_root / relative_model_dir))
+    if model_path.exists():
+        return model_path
+    raise FileNotFoundError(f"Modelo semantico local nao encontrado: {relative_model_dir}")

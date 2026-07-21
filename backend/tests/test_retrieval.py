@@ -11,7 +11,7 @@ from cronos.core.retrieval_config import retrieval_config
 from cronos.core.security import utcnow
 from cronos.repositories import retrieval_repository
 from cronos.services import auth, embedding_service, retrieval_service
-from cronos.services.embedding_provider import DeterministicEmbeddingProvider
+from cronos.services.embedding_provider import DeterministicEmbeddingProvider, LocalSemanticEmbeddingProvider
 
 
 class RetrievalTests(unittest.TestCase):
@@ -45,6 +45,7 @@ class RetrievalTests(unittest.TestCase):
         result = retrieval_service.retrieve(self.owner_id, {"query": "backup local"})
         self.assertGreater(result["total"], 0)
         self.assertFalse(result["provider"]["available"])
+        self.assertEqual(result["mode"], "lexical")
 
     def test_03_empty_result(self) -> None:
         result = retrieval_service.retrieve(self.owner_id, {"query": "termo inexistente absoluto"})
@@ -79,6 +80,8 @@ class RetrievalTests(unittest.TestCase):
         retrieval_service.rebuild_index(self.owner_id, {"force": True})
         after = retrieval_service.index_status(self.owner_id)
         self.assertEqual(after["pending"], 0)
+        self.assertEqual(after["embeddings"], 4)
+        self.assertEqual(after["mode"], "hybrid")
 
     def test_09_providers_include_fallback(self) -> None:
         providers = retrieval_service.providers()
@@ -89,6 +92,7 @@ class RetrievalTests(unittest.TestCase):
         retrieval_service.rebuild_index(self.owner_id, {"force": True})
         result = retrieval_service.retrieve(self.owner_id, {"query": "cronos memoria"})
         self.assertGreater(result["items"][0]["score_semantic"], 0)
+        self.assertEqual(result["mode"], "hybrid")
 
     def test_11_reranking_prefers_stronger_lexical_match(self) -> None:
         result = retrieval_service.retrieve(self.owner_id, {"query": "redes computadores tcp"})
@@ -208,12 +212,46 @@ class RetrievalTests(unittest.TestCase):
         result = retrieval_service.retrieve(self.owner_id, {"query": "biblioteca memoria"})
         self.assertGreater(result["total"], 0)
         self.assertEqual(result["items"][0]["score_semantic"], 0)
+        self.assertEqual(result["mode"], "lexical")
 
     def test_29_available_provider_reports_expected_dimension_384(self) -> None:
         embedding_service.set_provider_for_tests(DeterministicEmbeddingProvider(dimension=384))
         status = retrieval_service.providers()[0]
         self.assertTrue(status["available"])
         self.assertEqual(status["dimension"], 384)
+
+    def test_30_local_semantic_provider_loads_packaged_model_offline(self) -> None:
+        provider = LocalSemanticEmbeddingProvider(
+            retrieval_config.model_name,
+            retrieval_config.expected_dimension,
+            retrieval_config.packaged_model_dir,
+        )
+        provider.initialize()
+        self.assertTrue(provider.is_available(), provider.health().get("error"))
+        self.assertEqual(provider.dimension(), 384)
+        self.assertEqual(len(provider.embed_query("cronos memoria biblioteca")), 384)
+        self.assertTrue(provider.health()["model_path"])
+
+    def test_31_local_semantic_missing_model_reports_unavailable(self) -> None:
+        provider = LocalSemanticEmbeddingProvider(
+            retrieval_config.model_name,
+            retrieval_config.expected_dimension,
+            "models/missing/path with spaces",
+        )
+        provider.initialize()
+        self.assertFalse(provider.is_available())
+        self.assertIn("nao encontrado", provider.health()["error"])
+
+    def test_32_incremental_indexing_avoids_duplicate_embeddings(self) -> None:
+        embedding_service.set_provider_for_tests(DeterministicEmbeddingProvider(dimension=384))
+        first = retrieval_service.rebuild_index(self.owner_id, {"force": True})
+        second = retrieval_service.rebuild_index(self.owner_id, {})
+        with connect() as db:
+            count = db.execute("SELECT COUNT(*) FROM document_embeddings").fetchone()[0]
+        self.assertEqual(first["indexed"], 4)
+        self.assertEqual(second["indexed"], 0)
+        self.assertEqual(second["skipped"], 4)
+        self.assertEqual(count, 4)
 
     def seed_document(self, filename: str, pages: list[str], source_type: str = "upload") -> int:
         now = utcnow().isoformat()
