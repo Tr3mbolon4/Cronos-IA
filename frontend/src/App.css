@@ -100,6 +100,71 @@ label {
   color: var(--cyan);
 }
 
+.startup-error {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(239, 68, 68, .12), transparent 28%),
+    linear-gradient(180deg, #02050a, #010307 70%, #000);
+  padding: 24px;
+}
+
+.startup-error-panel {
+  width: min(520px, calc(100vw - 48px));
+  border: 1px solid rgba(239, 68, 68, .35);
+  background: rgba(5, 10, 18, .96);
+  border-radius: 4px;
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 0 34px rgba(239, 68, 68, .12);
+}
+
+.startup-error-panel > span {
+  color: #ffb4b4;
+  font-size: 12px;
+  letter-spacing: .08em;
+}
+
+.startup-error-panel h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.startup-error-panel p {
+  margin: 0;
+  color: #c8d5e2;
+  font-size: 13px;
+}
+
+.startup-error-panel details {
+  border: 1px solid rgba(74, 130, 190, .18);
+  background: rgba(2, 6, 11, .7);
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.startup-error-panel code {
+  display: block;
+  margin-top: 8px;
+  color: #dceeff;
+  white-space: pre-wrap;
+}
+
+.startup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alert-core {
+  border-color: var(--red);
+  box-shadow: 0 0 16px rgba(239, 68, 68, .85), inset 0 0 10px rgba(239, 68, 68, .45);
+}
+
 .desktop-frame {
   min-height: 100vh;
   display: grid;

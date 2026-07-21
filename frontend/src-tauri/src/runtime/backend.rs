@@ -7,10 +7,11 @@ use serde_json::Value;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::path::Path;
 use std::process::Command as SystemCommand;
 use std::sync::mpsc;
-use std::sync::Mutex;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::sync::{Condvar, Mutex};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, State};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -21,6 +22,7 @@ pub struct RuntimeConnection {
     pub state: String,
     pub version: String,
     pub session_id: String,
+    pub backend_pid: Option<u32>,
     pub runtime_token: String,
 }
 
@@ -37,10 +39,12 @@ struct BackendState {
     child: Option<CommandChild>,
     logs_dir: String,
     runtime_dir: String,
+    startup_error: Option<String>,
 }
 
 pub struct BackendRuntime {
     state: Mutex<BackendState>,
+    ready: Condvar,
 }
 
 impl BackendRuntime {
@@ -51,23 +55,47 @@ impl BackendRuntime {
                 child: None,
                 logs_dir: String::new(),
                 runtime_dir: String::new(),
+                startup_error: None,
             }),
+            ready: Condvar::new(),
         }
     }
 
     pub fn start(&self, app: AppHandle) -> Result<(), String> {
         self.shutdown();
         let directories = RuntimeDirectories::prepare()?;
+        let desktop_log = directories.logs.join("desktop.log");
+        append_desktop_log(
+            &desktop_log,
+            "INFO",
+            "desktop",
+            "STARTUP-001",
+            "Starting Cronos Desktop runtime",
+        );
         let token = runtime_token()?;
         let session = session_id()?;
         let port = reserve_local_port()?;
         let base_url = format!("http://127.0.0.1:{port}");
+        append_desktop_log(
+            &desktop_log,
+            "INFO",
+            "sidecar",
+            "STARTUP-010",
+            &format!(
+                "Starting backend sidecar base_url={} data_dir={} logs_dir={}",
+                base_url,
+                directories.root.to_string_lossy(),
+                directories.logs.to_string_lossy()
+            ),
+        );
         let (ready_tx, ready_rx) = mpsc::channel::<RuntimeConnection>();
 
-        let mut command = app
-            .shell()
-            .sidecar("cronos-backend")
-            .map_err(|error| error.to_string())?;
+        let mut command = app.shell().sidecar("cronos-backend").map_err(|error| {
+            let message = error.to_string();
+            append_desktop_log(&desktop_log, "ERROR", "sidecar", "STARTUP-011", &message);
+            self.set_startup_error(message.clone());
+            message
+        })?;
         command = command
             .arg("--host")
             .arg("127.0.0.1")
@@ -86,7 +114,12 @@ impl BackendRuntime {
             .arg("--environment")
             .arg("desktop");
 
-        let (mut rx, child) = command.spawn().map_err(|error| error.to_string())?;
+        let (mut rx, child) = command.spawn().map_err(|error| {
+            let message = error.to_string();
+            append_desktop_log(&desktop_log, "ERROR", "sidecar", "STARTUP-012", &message);
+            self.set_startup_error(message.clone());
+            message
+        })?;
         let logs_dir = directories.logs.to_string_lossy().to_string();
         let backend_log = directories.logs.join("cronos-backend.log");
         let runtime_dir = directories.runtime.clone();
@@ -108,13 +141,18 @@ impl BackendRuntime {
                                     let version = value
                                         .get("version")
                                         .and_then(Value::as_str)
-                                        .unwrap_or("0.1.0")
+                                        .unwrap_or("0.1.2")
                                         .to_string();
+                                    let backend_pid = value
+                                        .get("pid")
+                                        .and_then(Value::as_u64)
+                                        .and_then(|pid| u32::try_from(pid).ok());
                                     let _ = ready_tx.send(RuntimeConnection {
                                         base_url: ready_base.clone(),
                                         state: "ready".to_string(),
                                         version,
                                         session_id: ready_session.clone(),
+                                        backend_pid,
                                         runtime_token: ready_token.clone(),
                                     });
                                 }
@@ -138,16 +176,55 @@ impl BackendRuntime {
             state.child = Some(child);
             state.logs_dir = logs_dir;
             state.runtime_dir = runtime_dir.to_string_lossy().to_string();
+            state.startup_error = None;
         }
 
         let connection = ready_rx
             .recv_timeout(Duration::from_secs(30))
-            .map_err(|_| "Backend nao emitiu evento ready em 30 segundos.".to_string())?;
-        wait_for_health(port, Duration::from_secs(10))?;
-        write_session_file(&directories, &connection.session_id, port)?;
+            .map_err(|_| {
+                let message = "Backend nao emitiu evento ready em 30 segundos.".to_string();
+                append_desktop_log(&desktop_log, "ERROR", "sidecar", "STARTUP-013", &message);
+                self.set_startup_error(message.clone());
+                message
+            })?;
+        append_desktop_log(
+            &desktop_log,
+            "INFO",
+            "sidecar",
+            "STARTUP-014",
+            &format!(
+                "Backend emitted ready event port={} session_id={} pid={}",
+                port,
+                session,
+                connection
+                    .backend_pid
+                    .map(|pid| pid.to_string())
+                    .unwrap_or_else(|| "unknown".to_string())
+            ),
+        );
+        wait_for_health(port, Duration::from_secs(10)).map_err(|error| {
+            append_desktop_log(&desktop_log, "ERROR", "health", "STARTUP-021", &error);
+            self.set_startup_error(error.clone());
+            error
+        })?;
+        append_desktop_log(
+            &desktop_log,
+            "INFO",
+            "health",
+            "STARTUP-020",
+            "Backend health check succeeded",
+        );
+        write_session_file(
+            &directories,
+            &connection.session_id,
+            connection.backend_pid,
+            port,
+        )?;
 
         let mut state = self.state.lock().map_err(|_| "runtime lock poisoned")?;
         state.connection = Some(connection);
+        state.startup_error = None;
+        self.ready.notify_all();
         Ok(())
     }
 
@@ -157,6 +234,7 @@ impl BackendRuntime {
                 Ok(state) => state,
                 Err(_) => return,
             };
+            state.startup_error = None;
             (state.connection.take(), state.child.take())
         };
         if let Some(connection) = connection {
@@ -171,11 +249,7 @@ impl BackendRuntime {
 
 #[tauri::command]
 pub fn get_runtime_connection(runtime: State<BackendRuntime>) -> Result<RuntimeConnection, String> {
-    let state = runtime.state.lock().map_err(|_| "runtime lock poisoned")?;
-    state
-        .connection
-        .clone()
-        .ok_or_else(|| "Backend ainda nao esta pronto.".to_string())
+    runtime.wait_for_connection(Duration::from_secs(30))
 }
 
 #[tauri::command]
@@ -200,7 +274,10 @@ pub fn get_runtime_status(runtime: State<BackendRuntime>) -> Result<RuntimeStatu
 }
 
 #[tauri::command]
-pub fn restart_backend(app: AppHandle, runtime: State<BackendRuntime>) -> Result<RuntimeConnection, String> {
+pub fn restart_backend(
+    app: AppHandle,
+    runtime: State<BackendRuntime>,
+) -> Result<RuntimeConnection, String> {
     runtime.start(app)?;
     get_runtime_connection(runtime)
 }
@@ -257,9 +334,68 @@ fn append_log(path: &std::path::Path, text: &str) {
     let _ = file.write_all(text.as_bytes());
 }
 
+impl BackendRuntime {
+    fn wait_for_connection(&self, timeout: Duration) -> Result<RuntimeConnection, String> {
+        let deadline = Instant::now() + timeout;
+        let mut state = self.state.lock().map_err(|_| "runtime lock poisoned")?;
+        loop {
+            if let Some(connection) = state.connection.clone() {
+                return Ok(connection);
+            }
+            if let Some(error) = state.startup_error.clone() {
+                return Err(error);
+            }
+            let now = Instant::now();
+            if now >= deadline {
+                return Err("Backend ainda nao esta pronto apos 30 segundos.".to_string());
+            }
+            let wait_for = deadline.saturating_duration_since(now);
+            let result = self
+                .ready
+                .wait_timeout(state, wait_for)
+                .map_err(|_| "runtime lock poisoned")?;
+            state = result.0;
+            if result.1.timed_out() {
+                return Err("Backend ainda nao esta pronto apos 30 segundos.".to_string());
+            }
+        }
+    }
+
+    fn set_startup_error(&self, message: String) {
+        if let Ok(mut state) = self.state.lock() {
+            state.startup_error = Some(message);
+            self.ready.notify_all();
+        }
+    }
+}
+
+fn append_desktop_log(path: &Path, level: &str, component: &str, code: &str, message: &str) {
+    rotate_log(path);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    append_log(
+        path,
+        &format!("{now} {level} {component} {code} {message}\n"),
+    );
+}
+
+fn rotate_log(path: &Path) {
+    let Ok(metadata) = fs::metadata(path) else {
+        return;
+    };
+    if metadata.len() <= 1_048_576 {
+        return;
+    }
+    let rotated = path.with_extension("log.1");
+    let _ = fs::rename(path, rotated);
+}
+
 fn write_session_file(
     directories: &RuntimeDirectories,
     session_id: &str,
+    backend_pid: Option<u32>,
     port: u16,
 ) -> Result<(), String> {
     let started_at = SystemTime::now()
@@ -268,10 +404,10 @@ fn write_session_file(
         .as_secs();
     let payload = serde_json::json!({
         "session_id": session_id,
-        "pid": null,
+        "pid": backend_pid,
         "executable_path": "binaries/cronos-backend",
         "started_at": started_at,
-        "app_version": "0.1.0",
+        "app_version": "0.1.2",
         "port": port
     });
     fs::write(

@@ -21,6 +21,14 @@ STARTED_AT = time.monotonic()
 RUNTIME_TOKEN = ""
 SHUTTING_DOWN = False
 
+DEFAULT_ALLOWED_ORIGINS = {
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "tauri://localhost",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+}
+
 
 def _runtime_event(event: str, **payload: object) -> None:
     print(json.dumps({"event": event, **payload}, ensure_ascii=False), flush=True)
@@ -39,10 +47,13 @@ class CronosHandler(BaseHTTPRequestHandler):
                 self._send(
                     {
                         "status": "ok" if not SHUTTING_DOWN else "stopping",
+                        "service": "cronos-backend",
                         "version": settings.version,
                         "environment": settings.env,
                         "uptime": round(time.monotonic() - STARTED_AT, 3),
                         "readiness": "ready" if not SHUTTING_DOWN else "stopping",
+                        "database": "ready" if settings.db_path.exists() else "missing",
+                        "runtime": "ready" if settings.session_id else "missing",
                     }
                 )
             elif path == "/runtime/status":
@@ -192,13 +203,32 @@ class CronosHandler(BaseHTTPRequestHandler):
 
     def _cors(self) -> None:
         origin = self.headers.get("Origin", "http://127.0.0.1:5173")
-        allowed = os.environ.get("CRONOS_ALLOWED_ORIGINS", "http://127.0.0.1:5173").split(",")
-        self.send_header("Access-Control-Allow-Origin", origin if origin in allowed else allowed[0])
+        self.send_header("Access-Control-Allow-Origin", allowed_cors_origin(origin))
+        self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Cronos-Runtime-Token")
 
     def log_message(self, format: str, *args: object) -> None:
         print(f"{self.address_string()} - {format % args}")
+
+
+def allowed_cors_origin(origin: str) -> str:
+    configured = {
+        value.strip()
+        for value in os.environ.get("CRONOS_ALLOWED_ORIGINS", "").split(",")
+        if value.strip()
+    }
+    allowed = DEFAULT_ALLOWED_ORIGINS | configured
+    if origin in allowed:
+        return origin
+
+    parsed = urlparse(origin)
+    if parsed.scheme in {"http", "https"} and parsed.hostname in {"127.0.0.1", "localhost", "tauri.localhost"}:
+        return origin
+    if parsed.scheme == "tauri" and parsed.hostname in {"localhost", "tauri.localhost"}:
+        return origin
+
+    return "http://127.0.0.1:5173"
 
 
 def main() -> None:
