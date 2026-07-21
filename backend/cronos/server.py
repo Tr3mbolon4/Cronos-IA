@@ -143,6 +143,9 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif document_routes.is_document_path(path):
                 session = self._session()
                 self._send(document_routes.handle_post(path, session, payload=self._json_body()))
+            elif library_routes.is_library_path(path):
+                session = self._session()
+                self._send(library_routes.handle_post(path, self._json_body(), session))
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
