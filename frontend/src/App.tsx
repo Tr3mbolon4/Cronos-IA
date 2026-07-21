@@ -42,7 +42,7 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
-import { ApiClient, mergeHeaders } from './services/apiClient'
+import { ApiClient, ApiError, mergeHeaders } from './services/apiClient'
 import {
   openRuntimeLogs,
   resolveRuntimeConnection,
@@ -53,7 +53,10 @@ import { MemoryPage } from './pages/MemoryPage'
 import { LibraryPage } from './pages/LibraryPage'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
-const CRONOS_VERSION = 'v0.1.2'
+const CRONOS_VERSION = 'v0.2.0'
+const LOGIN_INVALID_MESSAGE = 'Senha ou PIN inválido. Verifique os dados e tente novamente.'
+const LOGIN_BACKEND_UNAVAILABLE_MESSAGE = 'Não foi possível acessar o núcleo do CRONOS. Tente novamente.'
+const LOGIN_UNKNOWN_MESSAGE = 'Não foi possível concluir o login.'
 
 type SetupStatus = {
   configured: boolean
@@ -130,6 +133,16 @@ const menuItems = [
   ['Configuracoes', Settings],
 ] as const
 
+function loginFailureMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return LOGIN_INVALID_MESSAGE
+    if (error.status === 408 || error.code === 'CRONOS_TIMEOUT') return LOGIN_BACKEND_UNAVAILABLE_MESSAGE
+    return LOGIN_UNKNOWN_MESSAGE
+  }
+  if (error instanceof TypeError) return LOGIN_BACKEND_UNAVAILABLE_MESSAGE
+  return LOGIN_UNKNOWN_MESSAGE
+}
+
 function App() {
   const [setup, setSetup] = useState<SetupStatus | null>(null)
   const [runtimeReady, setRuntimeReady] = useState(false)
@@ -149,6 +162,8 @@ function App() {
   const [documentAnswer, setDocumentAnswer] = useState<{ answer: string; citations: string[] } | null>(null)
   const [hardware, setHardware] = useState<Hardware | null>(null)
   const [notice, setNotice] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [loginSubmitting, setLoginSubmitting] = useState(false)
   const [coreState, setCoreState] = useState<CoreState>('offline')
   const [lastResponseMs, setLastResponseMs] = useState<number | null>(null)
   const [internetOnline, setInternetOnline] = useState(() => navigator.onLine)
@@ -263,17 +278,27 @@ function App() {
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault()
+    if (loginSubmitting) return
+    setLoginError('')
     setCoreState('authorization')
-    const result = await api<{ token: string; owner: { name: string } }>('/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, pin }),
-    })
-    localStorage.setItem('cronos.token', result.token)
-    setToken(result.token)
-    setNotice(`Sessao autenticada para ${result.owner.name}.`)
-    setCoreState('available')
-    await refreshProtectedData(result.token)
+    setLoginSubmitting(true)
+    try {
+      const result = await api<{ token: string; owner: { name: string } }>('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, pin }),
+      })
+      localStorage.setItem('cronos.token', result.token)
+      setToken(result.token)
+      setNotice(`Sessao autenticada para ${result.owner.name}.`)
+      setCoreState('available')
+      await refreshProtectedData(result.token)
+    } catch (error) {
+      setCoreState('authorization')
+      setLoginError(loginFailureMessage(error))
+    } finally {
+      setLoginSubmitting(false)
+    }
   }
 
   async function handleLock() {
@@ -430,7 +455,10 @@ function App() {
                 PIN
                 <input inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} required />
               </label>
-              <button type="submit"><LogIn size={14} /> {setup.configured ? 'Entrar' : 'Criar proprietario'}</button>
+              {setup.configured && loginError && <p className="auth-error" role="alert">{loginError}</p>}
+              <button type="submit" disabled={setup.configured && loginSubmitting}>
+                <LogIn size={14} /> {setup.configured ? (loginSubmitting ? 'Entrando...' : 'Entrar') : 'Criar proprietario'}
+              </button>
             </form>
           </section>
         ) : (

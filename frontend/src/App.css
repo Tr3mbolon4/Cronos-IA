@@ -674,6 +674,16 @@ meter::-webkit-meter-optimum-value {
   font-weight: 500;
 }
 
+.auth-error {
+  margin: 0;
+  border: 1px solid rgba(255, 76, 96, .45);
+  background: rgba(255, 76, 96, .1);
+  color: #ffb8c0;
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .module-grid {
   display: grid;
   grid-template-columns: 1.1fr .9fr;
