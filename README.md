@@ -17,8 +17,17 @@ Esta base contem o MVP local inicial:
 - diagnostico de hardware;
 - backup local em `.zip`.
 - identidade visual oficial escura/neon inspirada no nucleo CRONOS.
+- memoria permanente, biblioteca, paginas, chunks, citacoes e retrieval lexical/hibrido na linha v0.2.0.
 
 O instalador `CronosSetup.exe` ainda depende da etapa final de empacotamento/assinatura. A base desktop ja possui shell Tauri 2 com backend Python real integrado como sidecar, usando porta local dinamica, token runtime em memoria e diretorios em `%LOCALAPPDATA%\CRONOS`.
+
+## Provider semantico oficial
+
+A v0.2.0 adota uma arquitetura baseada em providers para retrieval. A interface abstrata publica e o `SemanticProvider`, representado no backend atual por `EmbeddingProvider`.
+
+O provider oficial da v0.2.0 e `cronos-local-semantic`: local, offline, empacotado com o backend, sem downloads automaticos, sem dependencia obrigatoria de Hugging Face e sem requisito obrigatorio de `sentence_transformers`. Ele mantem embeddings de 384 dimensoes e preserva fallback lexical quando o provider semantico nao estiver disponivel.
+
+Providers adicionais poderao ser adicionados futuramente sem alterar a API publica: Sentence Transformers, ONNX, GGUF, TensorRT, CUDA e outros providers locais.
 
 ## Layout oficial
 
