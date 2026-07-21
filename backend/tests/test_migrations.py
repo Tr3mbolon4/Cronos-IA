@@ -47,6 +47,12 @@ class MigrationTests(unittest.TestCase):
         with closing(sqlite3.connect(db_path)) as connection:
             owner = connection.execute("SELECT name FROM owner WHERE id = 1").fetchone()[0]
             document_count = connection.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+            session_count = connection.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+            message_count = connection.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            audit_count = connection.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+            source_count = connection.execute("SELECT COUNT(*) FROM document_sources").fetchone()[0]
+            page_count = connection.execute("SELECT COUNT(*) FROM document_pages").fetchone()[0]
+            chunk_count = connection.execute("SELECT COUNT(*) FROM document_chunks").fetchone()[0]
             migrations = {
                 row[0] for row in connection.execute("SELECT version FROM schema_migrations").fetchall()
             }
@@ -57,6 +63,12 @@ class MigrationTests(unittest.TestCase):
 
         self.assertEqual(owner, "Alexandre")
         self.assertEqual(document_count, 1)
+        self.assertEqual(session_count, 1)
+        self.assertEqual(message_count, 1)
+        self.assertEqual(audit_count, 1)
+        self.assertEqual(source_count, 1)
+        self.assertEqual(page_count, 1)
+        self.assertEqual(chunk_count, 1)
         self.assertIn("0001_base_schema", migrations)
         self.assertIn("0002_memory_knowledge_schema", migrations)
         self.assertIn("0003_document_library_schema", migrations)
@@ -158,6 +170,21 @@ class MigrationTests(unittest.TestCase):
                 VALUES (?, ?, ?, ?)
                 """,
                 ("manual.pdf", "documents/manual.pdf", "[pagina 1]\nConteudo legado", utcnow().isoformat()),
+            )
+            connection.execute(
+                """
+                INSERT INTO sessions (token, owner_id, created_at, expires_at, locked_at)
+                VALUES (?, 1, ?, ?, NULL)
+                """,
+                ("token-legado", utcnow().isoformat(), utcnow().isoformat()),
+            )
+            connection.execute(
+                "INSERT INTO messages (role, content, created_at) VALUES (?, ?, ?)",
+                ("user", "mensagem preservada", utcnow().isoformat()),
+            )
+            connection.execute(
+                "INSERT INTO audit_log (action, detail, created_at) VALUES (?, ?, ?)",
+                ("legacy.event", "detalhe preservado", utcnow().isoformat()),
             )
             connection.commit()
 

@@ -194,6 +194,27 @@ class RetrievalTests(unittest.TestCase):
         self.assertGreater(result["total"], 0)
         self.assertGreater(result["items"][0]["score_semantic"], 0)
 
+    def test_28_runtime_provider_failure_falls_back_to_lexical(self) -> None:
+        class FailingProvider(DeterministicEmbeddingProvider):
+            def embed_documents(self, texts):
+                raise RuntimeError("falha controlada do provider")
+
+            def embed_query(self, text: str) -> list[float]:
+                raise RuntimeError("falha controlada do provider")
+
+        embedding_service.set_provider_for_tests(FailingProvider(dimension=384))
+        rebuilt = retrieval_service.rebuild_index(self.owner_id, {"force": True})
+        self.assertFalse(rebuilt["provider_available"])
+        result = retrieval_service.retrieve(self.owner_id, {"query": "biblioteca memoria"})
+        self.assertGreater(result["total"], 0)
+        self.assertEqual(result["items"][0]["score_semantic"], 0)
+
+    def test_29_available_provider_reports_expected_dimension_384(self) -> None:
+        embedding_service.set_provider_for_tests(DeterministicEmbeddingProvider(dimension=384))
+        status = retrieval_service.providers()[0]
+        self.assertTrue(status["available"])
+        self.assertEqual(status["dimension"], 384)
+
     def seed_document(self, filename: str, pages: list[str], source_type: str = "upload") -> int:
         now = utcnow().isoformat()
         with connect() as db:

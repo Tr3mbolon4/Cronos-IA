@@ -59,7 +59,17 @@ def index_chunks(owner_id: int, *, filters: dict | None = None, force: bool = Fa
         skipped = len(chunks) - len(pending)
         for batch_start in range(0, len(pending), retrieval_config.semantic_batch_size):
             batch = pending[batch_start : batch_start + retrieval_config.semantic_batch_size]
-            vectors = provider.embed_documents([chunk["text_content"] for chunk in batch])
+            try:
+                vectors = provider.embed_documents([chunk["text_content"] for chunk in batch])
+            except Exception as error:
+                status = retrieval_repository.index_status(db, owner_id)
+                return {
+                    "provider_available": False,
+                    "indexed": indexed,
+                    "skipped": skipped,
+                    "error": str(error)[:180],
+                    **status,
+                }
             now = utcnow().isoformat()
             for chunk, vector in zip(batch, vectors):
                 payload = _embedding_payload(chunk, vector, provider, now)
@@ -73,7 +83,10 @@ def embed_query(text: str) -> list[float] | None:
     provider = get_provider()
     if not provider.is_available():
         return None
-    return provider.embed_query(text)
+    try:
+        return provider.embed_query(text)
+    except Exception:
+        return None
 
 
 def _embedding_payload(chunk: dict, vector: Sequence[float], provider: EmbeddingProvider, now: str) -> dict:

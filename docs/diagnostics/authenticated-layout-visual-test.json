@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-07-21T14:58:49.295Z",
+  "createdAt": "2026-07-21T15:35:37.835Z",
   "results": [
     {
       "viewport": {
@@ -41,7 +41,7 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 17% RAM 48% 226.16 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 32% RAM 48% 226.13 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": {
         "menuNavigation": true,
@@ -101,7 +101,7 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 8% RAM 49% 226.16 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 27% RAM 48% 226.13 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": null
     },
@@ -145,7 +145,7 @@
         },
         "dashboardVisible": true,
         "ownerVisible": true,
-        "status": "Disponivel SQLite CPU 5% RAM 49% 226.16 GB Vetorial pendente Mic manualResposta --"
+        "status": "Disponivel SQLite CPU 43% RAM 48% 226.13 GB Vetorial pendente Mic manualResposta --"
       },
       "functional": null
     }

@@ -118,6 +118,63 @@ MIGRATION = {
         DROP TABLE document_chunks;
         ALTER TABLE document_chunks_v3 RENAME TO document_chunks;
 
+        INSERT INTO document_sources (
+            owner_id, document_id, source_type, original_filename, stored_filename,
+            original_path, stored_path, mime_type, file_size, file_hash, page_count,
+            language, extraction_status, indexing_status, error_code, error_message,
+            created_at, updated_at, indexed_at, deleted_at
+        )
+        SELECT
+            d.owner_id, d.id, 'legacy_import', d.filename, d.filename,
+            d.stored_path, d.stored_path, 'application/pdf', length(COALESCE(d.text, '')),
+            NULL,
+            CASE WHEN length(trim(COALESCE(d.text, ''))) > 0 THEN 1 ELSE 0 END,
+            NULL,
+            CASE WHEN length(trim(COALESCE(d.text, ''))) > 0 THEN 'completed' ELSE 'failed' END,
+            CASE WHEN length(trim(COALESCE(d.text, ''))) > 0 THEN 'completed' ELSE 'failed' END,
+            CASE WHEN length(trim(COALESCE(d.text, ''))) > 0 THEN NULL ELSE 'DOCUMENT_LEGACY_NO_TEXT' END,
+            NULL,
+            d.created_at, d.updated_at, d.updated_at, d.deleted_at
+        FROM documents d
+        WHERE NOT EXISTS (
+            SELECT 1 FROM document_sources s WHERE s.document_id = d.id AND s.deleted_at IS NULL
+        );
+
+        INSERT INTO document_pages (
+            owner_id, document_id, source_id, page_number, text_content,
+            normalized_text, character_count, extraction_status, error_message,
+            created_at, updated_at, deleted_at
+        )
+        SELECT
+            d.owner_id, d.id, s.id, 1, d.text,
+            lower(d.text), length(COALESCE(d.text, '')),
+            CASE WHEN length(trim(COALESCE(d.text, ''))) > 0 THEN 'completed' ELSE 'failed' END,
+            NULL,
+            d.created_at, d.updated_at, d.deleted_at
+        FROM documents d
+        JOIN document_sources s ON s.document_id = d.id
+        WHERE s.source_type = 'legacy_import'
+          AND length(trim(COALESCE(d.text, ''))) > 0
+          AND NOT EXISTS (
+              SELECT 1 FROM document_pages p WHERE p.source_id = s.id AND p.page_number = 1 AND p.deleted_at IS NULL
+          );
+
+        INSERT INTO document_chunks (
+            owner_id, document_id, source_id, page_id, chunk_index,
+            text_content, normalized_text, character_start, character_end,
+            token_estimate, content_hash, created_at, updated_at, deleted_at
+        )
+        SELECT
+            p.owner_id, p.document_id, p.source_id, p.id, 0,
+            p.text_content, p.normalized_text, 0, p.character_count,
+            MAX(1, p.character_count / 4), NULL, p.created_at, p.updated_at, p.deleted_at
+        FROM document_pages p
+        WHERE p.deleted_at IS NULL
+          AND length(trim(COALESCE(p.text_content, ''))) > 0
+          AND NOT EXISTS (
+              SELECT 1 FROM document_chunks c WHERE c.page_id = p.id AND c.chunk_index = 0 AND c.deleted_at IS NULL
+          );
+
         CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents(owner_id);
         CREATE INDEX IF NOT EXISTS idx_documents_deleted ON documents(deleted_at);
         CREATE INDEX IF NOT EXISTS idx_document_sources_owner ON document_sources(owner_id);
