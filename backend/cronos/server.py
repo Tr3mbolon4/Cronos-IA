@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 from cronos.core.config import settings
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
+from cronos.api import memory_routes
 from cronos.services import auth, backup, chat, diagnostics, documents
 
 
@@ -42,7 +43,8 @@ class CronosHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         try:
-            path = urlparse(self.path).path
+            parsed = urlparse(self.path)
+            path = parsed.path
             if path == "/health":
                 self._send(
                     {
@@ -86,6 +88,8 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif path == "/diagnostics/hardware":
                 self._session()
                 self._send(diagnostics.hardware_report())
+            elif memory_routes.is_memory_path(path):
+                self._send(memory_routes.handle_get(path, parsed.query, self._session()))
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
@@ -126,6 +130,34 @@ class CronosHandler(BaseHTTPRequestHandler):
                 self._send(backup.restore_backup(filename, content))
             elif path == "/runtime/shutdown":
                 self._shutdown()
+            elif memory_routes.is_memory_path(path):
+                session = self._session()
+                self._send(memory_routes.handle_post(path, self._json_body(), session))
+            else:
+                raise CronosError(404, "Rota nao encontrada.")
+        except CronosError as error:
+            self._error(error)
+        except Exception as error:
+            self._error(CronosError(500, str(error)))
+
+    def do_PATCH(self) -> None:
+        try:
+            path = urlparse(self.path).path
+            if memory_routes.is_memory_path(path):
+                session = self._session()
+                self._send(memory_routes.handle_patch(path, self._json_body(), session))
+            else:
+                raise CronosError(404, "Rota nao encontrada.")
+        except CronosError as error:
+            self._error(error)
+        except Exception as error:
+            self._error(CronosError(500, str(error)))
+
+    def do_DELETE(self) -> None:
+        try:
+            path = urlparse(self.path).path
+            if memory_routes.is_memory_path(path):
+                self._send(memory_routes.handle_delete(path, self._session()))
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
@@ -199,13 +231,22 @@ class CronosHandler(BaseHTTPRequestHandler):
             self.wfile.write(raw)
 
     def _error(self, error: CronosError) -> None:
-        self._send({"detail": error.detail}, status=error.status_code)
+        self._send(
+            {
+                "detail": error.detail,
+                "code": error.code,
+                "message": error.detail,
+                "details": error.details,
+                "request_id": error.request_id,
+            },
+            status=error.status_code,
+        )
 
     def _cors(self) -> None:
         origin = self.headers.get("Origin", "http://127.0.0.1:5173")
         self.send_header("Access-Control-Allow-Origin", allowed_cors_origin(origin))
         self.send_header("Vary", "Origin")
-        self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Cronos-Runtime-Token")
 
     def log_message(self, format: str, *args: object) -> None:
