@@ -335,6 +335,8 @@ body {
   place-items: center;
   justify-self: center;
   filter: drop-shadow(0 0 24px color-mix(in srgb, var(--core-state) 55%, transparent));
+  color: var(--core-state);
+  margin: 0;
 }
 
 .cronos-core-v3.compact {
@@ -342,10 +344,12 @@ body {
   height: 116px;
 }
 
-.cronos-core-v3.idle { --core-state: var(--cronos-blue); }
+.cronos-core-v3.idle { --core-state: #287cff; }
+.cronos-core-v3.ready { --core-state: var(--cronos-cyan); }
 .cronos-core-v3.listening { --core-state: var(--cronos-green); }
 .cronos-core-v3.thinking,
 .cronos-core-v3.processing { --core-state: var(--cronos-warning); }
+.cronos-core-v3.searching { --core-state: #6ce4ff; }
 .cronos-core-v3.speaking,
 .cronos-core-v3.success { --core-state: var(--cronos-cyan); }
 .cronos-core-v3.warning,
@@ -353,39 +357,86 @@ body {
 .cronos-core-v3.error { --core-state: var(--cronos-red); }
 .cronos-core-v3.offline { --core-state: #7d8896; }
 
-.core-orbit,
-.core-eye,
+.core-glyph,
 .core-wave {
   position: absolute;
 }
 
-.core-orbit {
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--core-state) 76%, transparent);
-  box-shadow: inset 0 0 24px color-mix(in srgb, var(--core-state) 34%, transparent), 0 0 24px color-mix(in srgb, var(--core-state) 42%, transparent);
+.core-glyph {
+  inset: 0;
+  overflow: visible;
 }
 
-.orbit-a {
-  inset: 12px;
-  animation: coreSpin 9s linear infinite;
+.core-halo {
+  fill: currentColor;
+  opacity: .1;
+  filter: blur(4px);
 }
 
-.orbit-b {
-  inset: 44px;
-  animation: corePulseV3 2.7s var(--ease-standard) infinite;
+.core-temporal-mark,
+.core-iris,
+.core-ring-svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
 }
 
-.orbit-c {
-  inset: 84px;
-  border-width: 8px;
+.core-temporal-mark {
+  stroke-width: 2.2;
+  opacity: .78;
+  stroke-dasharray: 88 24;
+  animation: coreOrbitSweep 9s linear infinite;
 }
 
-.core-eye {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--core-state);
-  box-shadow: 0 0 24px var(--core-state);
+.core-iris {
+  stroke-width: 1.4;
+  opacity: .58;
+  transform-origin: 120px 120px;
+}
+
+.iris-a {
+  animation: coreSpin 16s linear infinite;
+}
+
+.iris-b {
+  animation: coreSpin 18s linear infinite reverse;
+}
+
+.core-ring-svg {
+  stroke-width: 2;
+  opacity: .82;
+  transform-origin: 120px 120px;
+}
+
+.ring-outer {
+  stroke-dasharray: 34 12;
+  animation: coreSpin 12s linear infinite;
+}
+
+.ring-middle {
+  stroke-width: 4;
+  stroke-dasharray: 16 9;
+  animation: coreSpin 7s linear infinite reverse;
+}
+
+.ring-inner {
+  stroke-width: 8;
+  opacity: .96;
+  animation: corePulseV3 2.6s var(--ease-standard) infinite;
+}
+
+.core-pupil,
+.core-particles {
+  fill: currentColor;
+}
+
+.core-pupil {
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+.core-particles {
+  opacity: .76;
+  animation: coreParticleBreath 3.2s var(--ease-standard) infinite;
 }
 
 .core-wave {
@@ -401,6 +452,52 @@ body {
 
 .core-wave.left { right: 62%; }
 .core-wave.right { left: 62%; }
+
+.cronos-core-v3.listening .core-wave,
+.cronos-core-v3.speaking .core-wave {
+  opacity: .92;
+  animation: coreWave 1.1s ease-in-out infinite;
+}
+
+.cronos-core-v3.thinking .ring-middle,
+.cronos-core-v3.processing .ring-middle,
+.cronos-core-v3.searching .ring-outer {
+  animation-duration: 3.6s;
+}
+
+.cronos-core-v3.locked .core-iris {
+  transform: scaleX(.72);
+}
+
+.cronos-core-v3.offline {
+  filter: grayscale(.5) drop-shadow(0 0 10px rgba(125, 136, 150, .28));
+}
+
+.cronos-core-v3.error .core-temporal-mark {
+  stroke-dasharray: 12 14;
+}
+
+.core-caption {
+  position: absolute;
+  bottom: -54px;
+  left: 50%;
+  width: min(280px, 82vw);
+  transform: translateX(-50%);
+  text-align: center;
+  display: grid;
+  gap: 3px;
+}
+
+.core-caption strong {
+  color: var(--cronos-text);
+  font-size: 13px;
+}
+
+.core-caption span {
+  color: var(--cronos-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
 
 .dashboard-route {
   display: grid;
@@ -665,6 +762,20 @@ body {
 
 @keyframes coreSpin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes coreOrbitSweep {
+  to { stroke-dashoffset: -224; }
+}
+
+@keyframes coreParticleBreath {
+  0%, 100% { opacity: .48; transform: scale(.96); transform-origin: 120px 120px; }
+  50% { opacity: .9; transform: scale(1.03); transform-origin: 120px 120px; }
+}
+
+@keyframes coreWave {
+  0%, 100% { transform: translateY(-50%) scaleX(.92); opacity: .62; }
+  50% { transform: translateY(-50%) scaleX(1.05); opacity: .95; }
 }
 
 @media (max-width: 1500px) {

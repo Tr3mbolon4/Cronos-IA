@@ -36,10 +36,12 @@ export type Hardware = {
 
 export type CoreState =
   | 'idle'
+  | 'ready'
   | 'listening'
   | 'thinking'
   | 'speaking'
   | 'processing'
+  | 'searching'
   | 'success'
   | 'warning'
   | 'error'
@@ -81,4 +83,19 @@ export type RetrievalSummary = {
   mode: string
   provider: string
   loaded: boolean
+}
+
+export type MemorySummary = {
+  id: number
+  title: string
+  status: string
+  category_id?: number
+  updated_at?: string
+}
+
+export type DashboardActivity = {
+  id: string
+  title: string
+  detail: string
+  tone: 'info' | 'success' | 'warning' | 'error'
 }
