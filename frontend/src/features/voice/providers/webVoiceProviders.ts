@@ -49,14 +49,32 @@ export const WEBVIEW_STT_PROVIDER_ID = 'webview-speech-recognition'
 
 type LocalWhisperStatus = {
   available: boolean
+  integrityOk: boolean
   diagnostic: string
   runtimePath: string
   modelPath: string
   modelName: string
   version: string
   checksum: string
+  modelSha256: string
+  runtimeSha256: string
   sizeMb: number
+  manifestPath: string
+  source: string
+  license: string
+  audioFormat: string
   lastStartedAt: string
+}
+
+type LocalWhisperTranscript = {
+  text: string
+  language: string
+  durationMs: number
+  processingMs: number
+  provider: string
+  model: string
+  status: string
+  warning: string
 }
 
 const localWhisperUnavailable: VoiceProviderStatus = {
@@ -107,7 +125,7 @@ export async function localWhisperStatus(): Promise<VoiceProviderStatus> {
       runtimePath: status.runtimePath,
       modelPath: status.modelPath,
       modelName: status.modelName,
-      checksum: status.checksum,
+      checksum: status.modelSha256 || status.checksum,
       sizeMb: status.sizeMb,
       lastStartedAt: status.lastStartedAt,
     }
@@ -203,12 +221,33 @@ function runWebSpeechRecognition(settings: VoiceSettings): Promise<VoiceTranscri
   })
 }
 
-export async function runSpeechRecognition(settings: VoiceSettings, provider: VoiceProviderStatus): Promise<VoiceTranscript> {
+export async function runSpeechRecognition(settings: VoiceSettings, provider: VoiceProviderStatus, audioBytes?: Uint8Array, requestId?: string): Promise<VoiceTranscript> {
   if (settings.selectedSttProvider === WEBVIEW_STT_PROVIDER_ID) {
     return runWebSpeechRecognition(settings)
   }
   if (!provider.available) {
     throw new Error('Provider CRONOS Local Whisper indisponivel: runtime/modelo local nao encontrados no pacote.')
   }
-  throw new Error('Provider CRONOS Local Whisper detectado, mas a transcricao PCM WAV empacotada ainda exige validacao real antes de ser habilitada.')
+  if (!audioBytes || !requestId) {
+    throw new Error('Audio PCM WAV local nao foi capturado para transcricao.')
+  }
+  const result = await invoke<LocalWhisperTranscript>('transcribe_local_audio', {
+    request: {
+      requestId,
+      audioBytes: Array.from(audioBytes),
+      language: settings.language,
+    },
+  })
+  return {
+    text: result.text,
+    confidence: null,
+    providerId: result.provider,
+    language: result.language,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+export async function cancelLocalSpeechRecognition(requestId: string) {
+  if (!requestId) return
+  await invoke('cancel_local_transcription', { requestId }).catch(() => undefined)
 }

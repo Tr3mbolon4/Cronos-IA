@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreState } from '../../app/types'
-import { getSttProviderStatuses, listAudioDevices, runSpeechRecognition, speechSynthesisStatus, wakeWordStatus } from './providers/webVoiceProviders'
+import { startLocalAudioCapture } from './providers/localAudioCapture'
+import { cancelLocalSpeechRecognition, getSttProviderStatuses, listAudioDevices, LOCAL_STT_PROVIDER_ID, runSpeechRecognition, speechSynthesisStatus, wakeWordStatus } from './providers/webVoiceProviders'
 import type { VoiceController, VoiceDevice, VoiceProviderStatus, VoiceSettings, VoiceState, VoiceTranscript } from './types'
 import { loadVoiceSettings, saveVoiceSettings } from './voiceStorage'
 
@@ -18,6 +19,8 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   const timerRef = useRef<number | null>(null)
   const startedAtRef = useRef(0)
   const operationRef = useRef(0)
+  const requestIdRef = useRef('')
+  const captureRef = useRef<{ stop: () => Uint8Array; cancel: () => void } | null>(null)
 
   const [sttProviders, setSttProviders] = useState<VoiceProviderStatus[]>([])
   const ttsProvider = useMemo(() => speechSynthesisStatus(), [])
@@ -68,6 +71,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }
 
   function stopStream() {
+    captureRef.current = null
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     if (timerRef.current) window.clearInterval(timerRef.current)
@@ -100,6 +104,10 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
       streamRef.current = await navigator.mediaDevices.getUserMedia(constraints)
       startedAtRef.current = Date.now()
       operationRef.current += 1
+      requestIdRef.current = createVoiceRequestId()
+      if (settings.selectedSttProvider === LOCAL_STT_PROVIDER_ID) {
+        captureRef.current = await startLocalAudioCapture(streamRef.current, setInputLevel)
+      }
       setState('recording')
       timerRef.current = window.setInterval(() => {
         setElapsedMs(Date.now() - startedAtRef.current)
@@ -115,11 +123,16 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
 
   function stopPushToTalk() {
     if (state !== 'recording') return
+    let audioBytes: Uint8Array | undefined
+    if (settings.selectedSttProvider === LOCAL_STT_PROVIDER_ID) {
+      audioBytes = captureRef.current?.stop()
+    }
     stopStream()
     const operationId = operationRef.current
+    const requestId = requestIdRef.current
     setState('transcribing')
     onCoreState('processing')
-    runSpeechRecognition(settings, sttProvider)
+    runSpeechRecognition(settings, sttProvider, audioBytes, requestId)
       .then((result) => {
         if (operationId !== operationRef.current) return
         setTranscript(result)
@@ -137,8 +150,11 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
 
   function cancelVoice() {
     operationRef.current += 1
+    const requestId = requestIdRef.current
+    captureRef.current?.cancel()
     stopStream()
     window.speechSynthesis?.cancel()
+    void cancelLocalSpeechRecognition(requestId)
     setState('cancelled')
     onCoreState('ready')
   }
@@ -223,4 +239,11 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     stopMicrophoneTest: cancelVoice,
     testVoice: speak,
   }
+}
+
+function createVoiceRequestId() {
+  const raw = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return raw.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 80)
 }
