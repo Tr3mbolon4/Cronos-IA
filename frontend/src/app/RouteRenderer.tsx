@@ -10,6 +10,7 @@ import { SecurityPage } from '../pages/SecurityPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { ProjectsPage, LearningPage, NotFoundPage, ToolsPage } from '../pages/StaticModulePages'
 import { SystemPage } from '../pages/SystemPage'
+import type { VoiceController } from '../features/voice/types'
 
 type ChatWorkspace = ReturnType<typeof useChatWorkspace>
 
@@ -31,6 +32,7 @@ export function RouteRenderer({
   chat,
   apiClient,
   reducedMotion,
+  voice,
   onCommandChange,
   onSubmitCommand,
   onClearCommand,
@@ -58,6 +60,7 @@ export function RouteRenderer({
   chat: ChatWorkspace
   apiClient: ApiClient
   reducedMotion: boolean
+  voice: VoiceController
   onCommandChange: (value: string) => void
   onSubmitCommand: (event: FormEvent) => void
   onClearCommand: () => void
@@ -87,6 +90,7 @@ export function RouteRenderer({
         onCommandChange={onCommandChange}
         onSubmitCommand={onSubmitCommand}
         onClearCommand={onClearCommand}
+        voice={voice}
         onNavigate={onNavigate}
         onLock={onLock}
         onUnavailable={onUnavailable}
@@ -102,6 +106,7 @@ export function RouteRenderer({
         backendReady={backendReady}
         retrieval={retrieval}
         documents={documents}
+        voice={voice}
         onOpenLibrary={() => onNavigate('/library')}
         onLock={onLock}
       />
@@ -113,7 +118,7 @@ export function RouteRenderer({
   if (route === '/learning') return <LearningPage />
   if (route === '/tools') return <ToolsPage />
   if (route === '/system') return <SystemPage hardware={hardware} retrieval={retrieval} apiBaseUrl={apiClient.baseUrlForDisplay()} />
-  if (route === '/settings') return <SettingsPage reducedMotion={reducedMotion} onReducedMotionChange={onReducedMotionChange} />
+  if (route === '/settings') return <SettingsPage reducedMotion={reducedMotion} onReducedMotionChange={onReducedMotionChange} voice={voice} />
   if (route === '/security') return <SecurityPage owner={owner} onBackup={onBackup} onLock={onLock} />
   return <NotFoundPage />
 }

@@ -1,5 +1,8 @@
 import type { FormEvent } from 'react'
-import { Keyboard, Mic, Paperclip, Send, X } from 'lucide-react'
+import { Keyboard, Paperclip, Send, X } from 'lucide-react'
+import { VoiceButton } from '../voice/components/VoiceButton'
+import { TranscriptionReview } from '../voice/components/TranscriptionReview'
+import type { VoiceController } from '../voice/types'
 
 export function CommandComposer({
   value,
@@ -9,6 +12,7 @@ export function CommandComposer({
   onSubmit,
   onClear,
   onUnavailable,
+  voice,
 }: {
   value: string
   backendReady: boolean
@@ -17,6 +21,7 @@ export function CommandComposer({
   onSubmit: (event: FormEvent) => void
   onClear: () => void
   onUnavailable: (message: string) => void
+  voice: VoiceController
 }) {
   return (
     <form className="dashboard-command" onSubmit={onSubmit}>
@@ -31,9 +36,7 @@ export function CommandComposer({
           rows={3}
         />
         <div className="command-side-actions">
-          <button type="button" title="Entrada de voz sera ativada na Fase 5" onClick={() => onUnavailable('Entrada de voz sera implementada na Fase 5.')}>
-            <Mic size={15} />
-          </button>
+          <VoiceButton voice={voice} label="Falar" />
           <button type="button" title="Anexos pelo Dashboard serao refinados em fase futura" onClick={() => onUnavailable('Para importar documentos agora, use Biblioteca.')}>
             <Paperclip size={15} />
           </button>
@@ -41,11 +44,12 @@ export function CommandComposer({
         </div>
       </div>
       <footer>
-        <span><Keyboard size={13} /> Enter envia pela tecla do botao. Voz ainda nao esta funcional.</span>
+        <span><Keyboard size={13} /> Voz opcional. Revise a transcricao antes de enviar.</span>
         <button type="submit" className="primary" disabled={!backendReady || submitting || !value.trim()}>
           <Send size={15} /> {submitting ? 'Enviando...' : 'Enviar e abrir chat'}
         </button>
       </footer>
+      <TranscriptionReview voice={voice} onUseText={onChange} onSend={(text) => { onChange(text); setTimeout(() => document.querySelector<HTMLButtonElement>('.dashboard-command button[type="submit"]')?.click(), 0) }} />
     </form>
   )
 }

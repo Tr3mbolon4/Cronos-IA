@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import type { AppRoute, CoreState, DocumentItem, Hardware, MemorySummary, Message, RetrievalSummary } from '../../app/types'
+import type { VoiceController } from '../voice/types'
 import { DashboardHero } from './DashboardHero'
 import { QuickActions } from './QuickActions'
 import { AlertPanel, ActivityFeed, FutureTasksPanel, RecentConversations, RecentDocuments, RecentMemories } from './RecentPanels'
@@ -19,6 +20,7 @@ export function DashboardPage({
   online,
   version,
   submitting,
+  voice,
   onCommandChange,
   onSubmitCommand,
   onClearCommand,
@@ -39,6 +41,7 @@ export function DashboardPage({
   online: boolean
   version: string
   submitting: boolean
+  voice: VoiceController
   onCommandChange: (value: string) => void
   onSubmitCommand: (event: FormEvent) => void
   onClearCommand: () => void
@@ -55,6 +58,7 @@ export function DashboardPage({
         command={command}
         backendReady={backendReady}
         submitting={submitting}
+        voice={voice}
         onCommandChange={onCommandChange}
         onSubmitCommand={onSubmitCommand}
         onClearCommand={onClearCommand}

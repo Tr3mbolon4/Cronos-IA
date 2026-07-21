@@ -3323,6 +3323,150 @@ blockquote {
   margin: 0 0 var(--space-3);
 }
 
+.voice-button-wrap {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.voice-button {
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+.voice-button.recording {
+  border-color: rgba(255, 82, 108, .42);
+  color: #ffd4db;
+}
+
+.voice-cancel {
+  min-height: 28px;
+  padding: 0 8px;
+}
+
+.voice-state-label {
+  color: var(--cronos-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.audio-level-meter {
+  position: relative;
+  min-height: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(116, 168, 211, .18);
+  background: rgba(2, 7, 12, .72);
+}
+
+.audio-level-meter div {
+  height: 100%;
+  min-height: 30px;
+  background: linear-gradient(90deg, rgba(51, 210, 255, .16), rgba(53, 208, 127, .34));
+  transition: width 140ms var(--ease-standard);
+}
+
+.audio-level-meter span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #eaf8ff;
+  font-size: 12px;
+}
+
+.transcription-review,
+.voice-settings-panel,
+.embedding-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.transcription-review {
+  border: 1px solid rgba(51, 210, 255, .22);
+  background: rgba(4, 12, 22, .86);
+  padding: var(--space-3);
+}
+
+.transcription-review header,
+.transcription-review footer,
+.voice-settings-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.transcription-review textarea {
+  min-height: 86px;
+}
+
+.voice-error {
+  color: #ffb9c3;
+  margin: 0;
+}
+
+.speech-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: var(--space-2);
+}
+
+.speech-controls button {
+  min-height: 28px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.voice-settings-panel {
+  border: 1px solid rgba(116, 168, 211, .2);
+  background: rgba(4, 10, 18, .82);
+  padding: var(--space-4);
+}
+
+.voice-settings-panel h2,
+.voice-test-grid h3 {
+  margin: 0;
+}
+
+.voice-settings-panel header span {
+  color: var(--cronos-cyan);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.voice-settings-grid,
+.voice-diagnostics,
+.voice-test-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.voice-diagnostics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.voice-diagnostics article,
+.voice-test-grid section {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid rgba(116, 168, 211, .14);
+  background: rgba(2, 7, 12, .58);
+  padding: var(--space-3);
+}
+
+.voice-diagnostics small,
+.privacy-note {
+  color: var(--cronos-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.privacy-note {
+  margin: 0;
+}
+
 .action-upload {
   min-height: 31px;
 }

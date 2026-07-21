@@ -1,6 +1,9 @@
-import { Archive, BookOpen, ChevronDown, Copy, Edit3, FileText, Info, MessageSquarePlus, Mic, MoreVertical, PanelRightClose, PanelRightOpen, Paperclip, Pin, RefreshCw, RotateCcw, Search, Send, Square, Star, Trash2, X } from 'lucide-react'
+import { Archive, BookOpen, ChevronDown, Copy, Edit3, FileText, Info, MessageSquarePlus, MoreVertical, PanelRightClose, PanelRightOpen, Paperclip, Pin, RefreshCw, RotateCcw, Search, Send, Square, Star, Trash2, X } from 'lucide-react'
 import type { Message } from '../../app/types'
 import { CronosCore } from '../../components/core/CronosCore'
+import { SpeechControls } from '../voice/components/SpeechControls'
+import { TranscriptionReview } from '../voice/components/TranscriptionReview'
+import { VoiceButton } from '../voice/components/VoiceButton'
 import { filterConversations, formatChatTime, messageKey, renderSafeMarkdown, trimMessage } from './chatUtils'
 import type { ChatAction, ChatPageProps, ConversationFilter, ConversationSummary } from './types'
 
@@ -167,6 +170,7 @@ function MessageBubble(props: ChatPageProps & { message: Message; index: number 
         <span>{message.status || (isOwner ? 'sent' : 'received')}</span>
         {!isOwner && <button type="button" className="message-citation-chip" onClick={() => props.onMessageAction('citations', message)}><BookOpen size={12} /> Citações</button>}
       </footer>
+      {!isOwner && <SpeechControls text={message.content} voice={props.voice} />}
       {menuOpen && <MessageActions isOwner={isOwner} message={message} onAction={props.onMessageAction} />}
     </article>
   )
@@ -232,11 +236,12 @@ function MessageComposer(props: ChatPageProps) {
           disabled={!props.backendReady || props.offline}
           placeholder="Digite uma mensagem para o CRONOS..."
         />
-        <button type="button" title="Voz futura" aria-label="Voz futura desabilitada" disabled><Mic size={17} /></button>
+        <VoiceButton voice={props.voice} label="Falar" />
         {props.submitting
           ? <button type="button" className="warn" onClick={props.onStopResponse}><Square size={16} /> Parar</button>
           : <button type="submit" className="primary" disabled={!props.draft.trim() || props.offline}><Send size={16} /> Enviar</button>}
       </div>
+      <TranscriptionReview voice={props.voice} onUseText={props.onDraftChange} onSend={(text) => { props.onDraftChange(text); setTimeout(() => document.querySelector<HTMLButtonElement>('.message-composer button[type="submit"]')?.click(), 0) }} />
     </form>
   )
 }

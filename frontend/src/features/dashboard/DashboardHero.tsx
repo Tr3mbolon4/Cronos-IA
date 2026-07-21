@@ -4,6 +4,7 @@ import { coreStateMeta, stateIcon } from '../../app/coreState'
 import { CronosCore } from '../../components/core/CronosCore'
 import { greetingFor } from './dashboardUtils'
 import { CommandComposer } from './CommandComposer'
+import type { VoiceController } from '../voice/types'
 
 export function DashboardHero({
   owner,
@@ -11,6 +12,7 @@ export function DashboardHero({
   command,
   backendReady,
   submitting,
+  voice,
   onCommandChange,
   onSubmitCommand,
   onClearCommand,
@@ -21,6 +23,7 @@ export function DashboardHero({
   command: string
   backendReady: boolean
   submitting: boolean
+  voice: VoiceController
   onCommandChange: (value: string) => void
   onSubmitCommand: (event: FormEvent) => void
   onClearCommand: () => void
@@ -43,6 +46,7 @@ export function DashboardHero({
           value={command}
           backendReady={backendReady}
           submitting={submitting}
+          voice={voice}
           onChange={onCommandChange}
           onSubmit={onSubmitCommand}
           onClear={onClearCommand}

@@ -1,7 +1,9 @@
-import { Mic, Monitor, Moon, Settings, SlidersHorizontal, Volume2 } from 'lucide-react'
+import { Monitor, Moon, Settings, SlidersHorizontal, Volume2 } from 'lucide-react'
 import { BaseModulePage, PlaceholderPanel } from './BaseModulePage'
+import { VoiceSettingsPanel } from '../features/voice/components/VoiceSettingsPanel'
+import type { VoiceController } from '../features/voice/types'
 
-export function SettingsPage({ reducedMotion, onReducedMotionChange }: { reducedMotion: boolean; onReducedMotionChange: (value: boolean) => void }) {
+export function SettingsPage({ reducedMotion, onReducedMotionChange, voice }: { reducedMotion: boolean; onReducedMotionChange: (value: boolean) => void; voice: VoiceController }) {
   return (
     <BaseModulePage title="Configuracoes" description="Preferencias de aparencia, comportamento, audio e privacidade." icon={<Settings size={24} />}>
       <PlaceholderPanel title="Aparencia">
@@ -13,9 +15,7 @@ export function SettingsPage({ reducedMotion, onReducedMotionChange }: { reduced
           Reduzir animacoes
         </label>
       </PlaceholderPanel>
-      <PlaceholderPanel title="Voz">
-        <Mic size={14} /> Voz preparada para providers locais, desligada por padrao.
-      </PlaceholderPanel>
+      <VoiceSettingsPanel voice={voice} />
       <div className="action-row">
         <button type="button"><Monitor size={15} /> Tema</button>
         <button type="button"><Volume2 size={15} /> Audio</button>

@@ -11,6 +11,7 @@ import { openRuntimeLogs, resolveRuntimeConnection, restartRuntimeConnection, sh
 import { AppShell } from './layouts/AppShell'
 import { useChatWorkspace } from './features/chat/useChatWorkspace'
 import { RouteRenderer } from './app/RouteRenderer'
+import { useVoiceController } from './features/voice/useVoiceController'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
 const CRONOS_VERSION = 'v0.2.0'
@@ -42,6 +43,7 @@ function App() {
   const [internetOnline, setInternetOnline] = useState(() => navigator.onLine)
   const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('cronos.sidebar.compact') === 'true')
   const [reducedMotion, setReducedMotion] = useState(() => localStorage.getItem('cronos.motion.reduced') === 'true')
+  const voice = useVoiceController(setCoreState)
 
   const authenticated = Boolean(token)
   const owner = setup?.owner?.name || ownerName || 'Alexandre'
@@ -298,28 +300,15 @@ function App() {
       route={route}
       owner={owner}
       sidebarCompact={sidebarCompact}
-      backendReady={runtimeReady}
-      online={internetOnline}
-      retrieval={retrieval}
-      hardware={hardware}
-      coreState={coreState}
-      onNavigate={navigate}
+      backendReady={runtimeReady} online={internetOnline} retrieval={retrieval} hardware={hardware} coreState={coreState}
+      onNavigate={navigate} onLock={handleLock} version={CRONOS_VERSION}
       onToggleSidebar={() => setSidebarCompact((value) => !value)}
-      onLock={handleLock}
-      version={CRONOS_VERSION}
     >
       <RouteRenderer
-        route={route}
-        owner={owner}
-        notice={notice}
-        coreState={coreState}
-        hardware={hardware}
-        messages={messages}
-        memories={memories}
-        documents={documents}
-        retrieval={retrieval}
+        route={route} owner={owner} notice={notice} coreState={coreState}
+        hardware={hardware} messages={messages} memories={memories} documents={documents} retrieval={retrieval}
         command={message} backendReady={runtimeReady} online={internetOnline} version={CRONOS_VERSION}
-        commandSubmitting={commandSubmitting} chat={chat} apiClient={apiClient} reducedMotion={reducedMotion}
+        commandSubmitting={commandSubmitting} chat={chat} apiClient={apiClient} reducedMotion={reducedMotion} voice={voice}
         onCommandChange={setMessage} onSubmitCommand={handleDashboardCommand} onClearCommand={clearCommand}
         onNavigate={navigate} onLock={handleLock} onUnavailable={handleUnavailable} onBackup={handleBackup}
         onNotice={setNotice} onReducedMotionChange={setReducedMotion}

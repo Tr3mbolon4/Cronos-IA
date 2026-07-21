@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import type { CoreState, DocumentItem, Message, RetrievalSummary } from '../../app/types'
+import type { VoiceController } from '../voice/types'
 
 export type ConversationFilter = 'active' | 'pinned' | 'archived'
 
@@ -94,6 +95,7 @@ export type ChatPageProps = ChatWorkspaceState & ChatWorkspaceActions & {
   backendReady: boolean
   retrieval: RetrievalSummary
   documents: DocumentItem[]
+  voice: VoiceController
   onOpenLibrary: () => void
   onLock: () => void
 }
