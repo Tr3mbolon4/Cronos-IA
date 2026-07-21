@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 from cronos.core.config import settings
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
-from cronos.api import memory_routes
+from cronos.api import document_routes, library_routes, memory_routes
 from cronos.services import auth, backup, chat, diagnostics, documents
 
 
@@ -83,8 +83,11 @@ class CronosHandler(BaseHTTPRequestHandler):
                 self._session()
                 self._send(chat.history())
             elif path == "/documents":
-                self._session()
-                self._send(documents.list_documents())
+                self._send(document_routes.handle_get(path, parsed.query, self._session()))
+            elif document_routes.is_document_path(path):
+                self._send(document_routes.handle_get(path, parsed.query, self._session()))
+            elif library_routes.is_library_path(path):
+                self._send(library_routes.handle_get(path, parsed.query, self._session()))
             elif path == "/diagnostics/hardware":
                 self._session()
                 self._send(diagnostics.hardware_report())
@@ -114,13 +117,17 @@ class CronosHandler(BaseHTTPRequestHandler):
                 payload = self._json_body()
                 self._send(chat.send_message(payload.get("message", "")))
             elif path == "/documents/upload":
-                self._session()
+                session = self._session()
                 filename, content = self._multipart_file()
-                self._send(documents.save_pdf(filename, content))
+                self._send(documents.save_pdf(filename, content, int(session["owner"]["id"])))
+            elif path == "/documents/import":
+                session = self._session()
+                filename, content = self._multipart_file()
+                self._send(document_routes.handle_post(path, session, file_payload=(filename, content)))
             elif match := re.fullmatch(r"/documents/(\d+)/ask", path):
-                self._session()
+                session = self._session()
                 payload = self._json_body()
-                self._send(documents.ask_document(int(match.group(1)), payload.get("question", "")))
+                self._send(documents.ask_document(int(match.group(1)), payload.get("question", ""), int(session["owner"]["id"])))
             elif path == "/backup":
                 self._session()
                 self._send(backup.create_backup())
@@ -133,6 +140,9 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif memory_routes.is_memory_path(path):
                 session = self._session()
                 self._send(memory_routes.handle_post(path, self._json_body(), session))
+            elif document_routes.is_document_path(path):
+                session = self._session()
+                self._send(document_routes.handle_post(path, session, payload=self._json_body()))
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
@@ -158,6 +168,8 @@ class CronosHandler(BaseHTTPRequestHandler):
             path = urlparse(self.path).path
             if memory_routes.is_memory_path(path):
                 self._send(memory_routes.handle_delete(path, self._session()))
+            elif document_routes.is_document_path(path):
+                self._send(document_routes.handle_delete(path, self._session()))
             else:
                 raise CronosError(404, "Rota nao encontrada.")
         except CronosError as error:
