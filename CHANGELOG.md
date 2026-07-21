@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Adiciona interfaces funcionais de Memoria, Biblioteca e busca de conhecimento para a v0.2.0.
+- Centraliza consumo das APIs do frontend em cliente com runtime token, timeout e erros estruturados.
+- Adiciona navegacao lateral sem reload para Dashboard, Memoria e Biblioteca.
+- Corrige warning de dependencias do refresh autenticado em `frontend/src/App.tsx`.
+- Amplia validacao visual autenticada para Memoria, Biblioteca e citacoes em 1920, 1600 e 1366 px.
+
 ## 0.1.2 - 2026-07-20
 
 - Corrige o carregamento infinito/falha de identidade no CRONOS Desktop instalado.
