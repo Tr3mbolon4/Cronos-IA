@@ -1,0 +1,9 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "not-run-model-missing",
+  "provider": "cronos-local-whisper",
+  "microphone": "not-tested",
+  "phrases": [],
+  "reason": "ggml-base.bin is absent, so provider cannot become available"
+}

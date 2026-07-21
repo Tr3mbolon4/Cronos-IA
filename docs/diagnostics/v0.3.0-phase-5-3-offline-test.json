@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "not-run-model-missing",
+  "network": {
+    "runtimeDownload": "not-needed-after-compile",
+    "modelDownload": "blocked-by-firewall",
+    "sttRuntimeRequiresNetwork": false,
+    "offlineTranscriptionValidated": false
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "runtime-prepared-model-blocked",
+  "safety": {
+    "branch": "feature/v0.3.0-futuristic-ui-voice",
+    "startHead": "f2f3980ac6ba414c2086655caec64a4f6fe6b218",
+    "localSafetyRef": "local-phase-5.3-start-f2f3980",
+    "gitCleanAtStart": true
+  },
+  "runtime": {
+    "source": "https://github.com/ggml-org/whisper.cpp",
+    "release": "v1.8.5",
+    "commit": "f24588a272ae8e23280d9c220536437164e6ed28",
+    "method": "compiled-from-official-source",
+    "generator": "Visual Studio 17 2022",
+    "compiler": "MSVC 19.44.35228.0",
+    "windowsSdk": "10.0.26100.0",
+    "architecture": "x64",
+    "flags": [
+      "GGML_NATIVE=OFF",
+      "WHISPER_BUILD_TESTS=OFF",
+      "WHISPER_BUILD_SERVER=OFF",
+      "WHISPER_BUILD_EXAMPLES=ON"
+    ],
+    "file": "whisper-cli.exe",
+    "size": 488960,
+    "sha256": "3716AC2A3203DEF41CB49FC0CB49A03A4E4B75D7C5A1889F77164553D75FE060",
+    "helpExitCode": 0
+  },
+  "dlls": [
+    {
+      "file": "ggml-base.dll",
+      "size": 636928,
+      "sha256": "90F847186B7744A80292D130143BFE540EE301CDD6A3FD7FCE0C20F745856202"
+    },
+    {
+      "file": "ggml-cpu.dll",
+      "size": 782848,
+      "sha256": "094DD55A49119682040C39B5695C308222D6ECE712721C2D3AAECEF17E766C02"
+    },
+    {
+      "file": "ggml.dll",
+      "size": 67072,
+      "sha256": "38B364B30E9B32767ADC8409878F18AF6A85AED0D94A0CCE61EA56837EDBBAAC"
+    },
+    {
+      "file": "whisper.dll",
+      "size": 484864,
+      "sha256": "94253510458259621729E591957B4B653E6CAEE78B7A69B150F0D533742D8041"
+    }
+  ],
+  "model": {
+    "name": "ggml-base.bin",
+    "source": "https://huggingface.co/ggerganov/whisper.cpp",
+    "publishedSha": "465707469ff3a37a2b9b8d8f89f2f99de7299dac",
+    "present": false,
+    "blockedReason": "Endian Firewall cache access denied for huggingface.co; Git LFS clone timed out"
+  },
+  "tests": {
+    "npmRunLint": "passed",
+    "npmRunBuild": "passed",
+    "cargoCheck": "passed",
+    "cargoTest": "passed-4-tests",
+    "backendTests": "passed-57-tests",
+    "loginErrorTest": "passed",
+    "visualTest": "blocked-missing-local-secret-env"
+  }
+}

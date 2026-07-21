@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "implemented-not-real-process-tested",
+  "cleanup": {
+    "staleTempCleanupAdded": true,
+    "directory": "%LOCALAPPDATA%/CRONOS/runtime/voice-temp",
+    "scope": "files starting with cronos-voice- and extensions wav/txt",
+    "orphanWhisperProcess": "not-tested-with-real-transcription"
+  }
+}

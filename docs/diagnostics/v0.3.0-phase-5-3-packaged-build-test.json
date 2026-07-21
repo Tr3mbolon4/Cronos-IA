@@ -1,0 +1,13 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "not-run-model-missing",
+  "buildDesktopValidation": false,
+  "reason": "packaged provider would remain unavailable without ggml-base.bin",
+  "visualTest": {
+    "credentialsProvided": false,
+    "source": "environment",
+    "secretLogged": false,
+    "blockedReason": "CRONOS_VISUAL_TEST_PASSWORD and CRONOS_VISUAL_TEST_PIN are not defined in this process"
+  }
+}

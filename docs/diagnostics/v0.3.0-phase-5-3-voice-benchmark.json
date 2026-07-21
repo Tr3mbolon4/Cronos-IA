@@ -1,0 +1,12 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-3",
+  "status": "not-run-model-missing",
+  "runtimePrepared": true,
+  "modelPrepared": false,
+  "coldStarts": [],
+  "warmStarts": [],
+  "cpu": "not-measured",
+  "ram": "not-measured",
+  "rtf": "not-measured"
+}
