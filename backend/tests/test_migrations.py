@@ -33,7 +33,15 @@ class MigrationTests(unittest.TestCase):
 
         result = apply_migrations(db_path)
 
-        self.assertEqual(result.applied, ["0001_base_schema", "0002_memory_knowledge_schema", "0003_document_library_schema"])
+        self.assertEqual(
+            result.applied,
+            [
+                "0001_base_schema",
+                "0002_memory_knowledge_schema",
+                "0003_document_library_schema",
+                "0004_retrieval_embeddings_schema",
+            ],
+        )
         self.assertIsNotNone(result.backup_path)
         self.assertTrue(result.backup_path.exists())
         with closing(sqlite3.connect(db_path)) as connection:
@@ -52,6 +60,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("0001_base_schema", migrations)
         self.assertIn("0002_memory_knowledge_schema", migrations)
         self.assertIn("0003_document_library_schema", migrations)
+        self.assertIn("0004_retrieval_embeddings_schema", migrations)
         self.assertEqual(categories, 10)
         self.assertEqual(memory_tables, 1)
 
@@ -64,7 +73,7 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(first_backups, second_backups)
         with closing(sqlite3.connect(config.settings.db_path)) as connection:
             count = connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        self.assertEqual(count, 3)
+        self.assertEqual(count, 4)
 
     def test_failed_migration_creates_backup_and_keeps_legacy_data(self):
         db_path = config.settings.db_path
