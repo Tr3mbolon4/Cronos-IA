@@ -51,12 +51,14 @@ async function run() {
         await page.getByRole('button', { name: check.label, exact: true }).click();
         await page.locator(check.selector).waitFor({ state: 'visible', timeout: 10000 });
         await page.waitForTimeout(250);
+        const chatValidation = check.route === '/chat' ? await validateChatWorkspace(page, viewport.name) : null;
         const screenshotPath = path.join(outputDir, `cronos-v030-${slug(check.label)}-${viewport.name}.png`);
         await page.screenshot({ path: screenshotPath, fullPage: false });
         routeResults.push({
           route: check.route,
           label: check.label,
           screenshotPath,
+          chatValidation,
           metrics: await collectMetrics(page),
         });
       }
@@ -71,7 +73,7 @@ async function run() {
     await browser.close();
   }
 
-  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-2-dashboard-visual-test.json');
+  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-3-chat-visual-test.json');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify({ createdAt: new Date().toISOString(), results }, null, 2));
   console.log(JSON.stringify({ ok: true, reportPath }, null, 2));
@@ -110,6 +112,53 @@ async function validateLock(page) {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.locator('.app-shell').waitFor({ state: 'visible', timeout: 10000 });
   return { ok: true, screenshotPath };
+}
+
+async function validateChatWorkspace(page, viewportName) {
+  console.log(`visual: chat workspace ${viewportName}`);
+  await page.locator('[data-visual="chat"]').waitFor({ state: 'visible', timeout: 10000 });
+  const textarea = page.locator('.message-composer textarea');
+  const before = await page.locator('.message-bubble-v3').count();
+  await textarea.fill(`validacao visual chat fase 3 ${viewportName}`);
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await page.waitForFunction((count) => document.querySelectorAll('.message-bubble-v3').length > count, before, { timeout: 10000 });
+  await page.locator('.message-bubble-v3.owner .message-menu-trigger').last().click();
+  const ownerMenu = await menuMetrics(page, '.message-bubble-v3.owner .message-action-menu');
+  await page.keyboard.press('Escape');
+  await page.locator('.message-bubble-v3.cronos .message-menu-trigger').last().click();
+  const cronosMenu = await menuMetrics(page, '.message-bubble-v3.cronos .message-action-menu');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Criar nova conversa' }).click();
+  await textarea.fill(`rascunho fase 3 ${viewportName}`);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Contexto' }).click();
+  const contextVisibleAfterToggle = await page.locator('.chat-context-panel-v3').count();
+  if (contextVisibleAfterToggle) {
+    await page.getByRole('button', { name: 'Fechar painel contextual' }).click();
+  }
+  const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  return {
+    ok: !horizontalOverflow && ownerMenu.insideViewport && cronosMenu.insideViewport,
+    ownerMenu,
+    cronosMenu,
+    contextVisibleAfterToggle,
+    horizontalOverflow,
+    messageCount: await page.locator('.message-bubble-v3').count(),
+  };
+}
+
+async function menuMetrics(page, selector) {
+  return page.locator(selector).evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+      insideViewport: box.left >= 0 && box.right <= window.innerWidth && box.top >= 0 && box.bottom <= window.innerHeight,
+      placement: element.classList.contains('menu-left') ? 'left' : 'right',
+    };
+  });
 }
 
 async function captureCoreStates(page) {

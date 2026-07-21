@@ -9,6 +9,10 @@ const backendUrl = `http://127.0.0.1:${backendPort}`;
 
 const failures = [];
 let loginAttempts = 0;
+const chatMessages = [
+  { id: 1, role: 'user', content: 'Mensagem antiga de validacao', created_at: new Date().toISOString() },
+  { id: 2, role: 'assistant', content: 'Historico carregado com seguranca.', created_at: new Date().toISOString() },
+];
 
 function assert(condition, message) {
   if (!condition) failures.push(message);
@@ -76,7 +80,15 @@ function startBackend() {
       return;
     }
     if (request.url === '/chat/history') {
-      sendJson(response, 200, []);
+      sendJson(response, 200, chatMessages);
+      return;
+    }
+    if (request.url === '/chat' && request.method === 'POST') {
+      const body = JSON.parse(await readBody(request));
+      const userMessage = { id: chatMessages.length + 1, role: 'user', content: body.message, created_at: new Date().toISOString() };
+      const assistantMessage = { id: chatMessages.length + 2, role: 'assistant', content: `Recebi no teste: ${body.message}`, created_at: new Date().toISOString() };
+      chatMessages.push(userMessage, assistantMessage);
+      sendJson(response, 200, assistantMessage);
       return;
     }
     if (request.url === '/documents') {
@@ -183,6 +195,22 @@ async function run() {
     assert(await page.locator('.auth-panel-v3').count() === 0, 'painel de login permaneceu apos sucesso');
     assert((await page.evaluate(() => window.__cronosUnhandledRejections.length)) === 0, 'Promise rejeitada sem tratamento apos sucesso');
     assert(loginAttempts === 3, `quantidade inesperada de tentativas: ${loginAttempts}`);
+
+    await page.getByRole('button', { name: 'Conversas', exact: true }).click();
+    await page.locator('[data-visual="chat"]').waitFor({ state: 'visible', timeout: 10000 });
+    assert(await page.locator('.conversation-sidebar-v3').isVisible(), 'lista de conversas nao apareceu');
+    assert(await page.locator('.message-composer textarea').isVisible(), 'composer do chat nao apareceu');
+    await page.locator('.message-bubble-v3.owner .message-menu-trigger').last().click();
+    const ownerMenu = await page.locator('.message-bubble-v3.owner .message-action-menu').evaluate((element) => element.classList.contains('menu-left'));
+    assert(ownerMenu, 'menu do proprietario nao abriu para esquerda');
+    await page.keyboard.press('Escape');
+    await page.locator('.message-bubble-v3.cronos .message-menu-trigger').last().click();
+    const cronosMenu = await page.locator('.message-bubble-v3.cronos .message-action-menu').evaluate((element) => element.classList.contains('menu-right'));
+    assert(cronosMenu, 'menu do CRONOS nao abriu para direita');
+    await page.keyboard.press('Escape');
+    await page.locator('.message-composer textarea').fill('teste fase 3');
+    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+    await page.locator('.message-timeline-v3').getByText('Recebi no teste: teste fase 3').waitFor({ state: 'visible', timeout: 10000 });
 
     if (failures.length) {
       throw new Error(failures.join('\n'));
