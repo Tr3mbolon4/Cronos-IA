@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import './App.css'
 import type { AppRoute, CoreState, DocumentItem, Hardware, MemorySummary, Message, RetrievalSummary, SetupStatus, StartupError, StartupPhase } from './app/types'
 import { useAppRouter } from './app/useAppRouter'
+import { coreStateMeta } from './app/coreState'
 import { ApiClient } from './services/apiClient'
 import { authHeaders, loadSetupStatus, loginFailureMessage, startupMessage } from './app/startup'
 import { LockedScreen, StartupErrorScreen } from './app/AppScreens'
@@ -22,6 +23,7 @@ const CRONOS_VERSION = 'v0.2.0'
 
 function App() {
   const { route, navigate } = useAppRouter()
+  const [visualCoreState, setVisualCoreState] = useState<CoreState | null>(() => readVisualCoreState())
   const [setup, setSetup] = useState<SetupStatus | null>(null)
   const [runtimeReady, setRuntimeReady] = useState(false)
   const [startupPhase, setStartupPhase] = useState<StartupPhase>('initializing')
@@ -133,8 +135,19 @@ function App() {
   }, [sidebarCompact])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const updateVisualCoreState = () => setVisualCoreState(readVisualCoreState())
+    window.addEventListener('popstate', updateVisualCoreState)
+    return () => window.removeEventListener('popstate', updateVisualCoreState)
+  }, [])
+
+  useEffect(() => {
     if (!authenticated) {
       setCoreState(setup?.configured ? 'locked' : 'offline')
+      return
+    }
+    if (visualCoreState) {
+      setCoreState(visualCoreState)
       return
     }
     setCoreState('ready')
@@ -147,7 +160,11 @@ function App() {
       refreshProtectedData().catch(() => undefined)
     }, 8000)
     return () => window.clearInterval(timer)
-  }, [authenticated, setup?.configured, refreshProtectedData])
+  }, [authenticated, setup?.configured, refreshProtectedData, visualCoreState])
+
+  useEffect(() => {
+    if (visualCoreState && authenticated) setCoreState(visualCoreState)
+  }, [authenticated, visualCoreState])
 
   async function handleSetup(event: FormEvent) {
     event.preventDefault()
@@ -340,6 +357,12 @@ function App() {
       {renderRoute(route)}
     </AppShell>
   )
+}
+
+function readVisualCoreState(): CoreState | null {
+  if (!import.meta.env.DEV) return null
+  const forced = new URLSearchParams(window.location.search).get('visualCoreState') as CoreState | null
+  return forced && forced in coreStateMeta ? forced : null
 }
 
 export default App

@@ -1,0 +1,1731 @@
+{
+  "createdAt": "2026-07-21T18:39:42.759Z",
+  "results": [
+    {
+      "viewport": {
+        "name": "1920",
+        "width": 1920,
+        "height": 1080
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1262
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1262
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1166
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1232,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1107
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1107
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1011
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1077,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1107
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1107
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 1011
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1077,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1920.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1080
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1080
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1672,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1672,
+              "height": 984
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1050,
+              "width": 1672,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1920.png"
+      },
+      "lock": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-lock-1920.png"
+      },
+      "coreStates": [
+        {
+          "state": "ready",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-ready-1920.png",
+          "label": "Pronto",
+          "description": "Backend, banco e sessao estao prontos."
+        },
+        {
+          "state": "thinking",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-thinking-1920.png",
+          "label": "Pensando",
+          "description": "Preparando interpretacao do pedido."
+        },
+        {
+          "state": "speaking",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-speaking-1920.png",
+          "label": "Falando",
+          "description": "Estado visual reservado para resposta falada da Fase 5."
+        },
+        {
+          "state": "warning",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-warning-1920.png",
+          "label": "Atencao",
+          "description": "Existe uma condicao degradada ou experimental."
+        },
+        {
+          "state": "error",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-error-1920.png",
+          "label": "Erro",
+          "description": "O CRONOS encontrou uma falha que exige atencao."
+        },
+        {
+          "state": "locked",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-locked-1920.png",
+          "label": "Bloqueado",
+          "description": "Sessao protegida aguardando autorizacao do proprietario."
+        },
+        {
+          "state": "offline",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-core-offline-1920.png",
+          "label": "Offline",
+          "description": "Nucleo local indisponivel ou em inicializacao."
+        }
+      ],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 72,
+          "domContentLoadedMs": 1230,
+          "corePresent": true,
+          "dashboardTextLength": 1269,
+          "domNodes": 499,
+          "heapUsed": 28817076
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 499,
+          "heapUsed": 28817076
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1600",
+        "width": 1600,
+        "height": 900
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 1365
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 1365
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 1269
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 1335,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 927
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 927
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 831
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 897,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 927
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 927
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 831
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 897,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1600.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1600,
+              "height": 900
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 900
+            },
+            "topbar": {
+              "x": 248,
+              "y": 0,
+              "width": 1352,
+              "height": 66
+            },
+            "viewport": {
+              "x": 248,
+              "y": 66,
+              "width": 1352,
+              "height": 804
+            },
+            "statusbar": {
+              "x": 248,
+              "y": 870,
+              "width": 1352,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1600.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 46,
+          "domContentLoadedMs": 146,
+          "corePresent": true,
+          "dashboardTextLength": 1269,
+          "domNodes": 499,
+          "heapUsed": 24282789
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 499,
+          "heapUsed": 24282789
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1366",
+        "width": 1366,
+        "height": 768
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 1810
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 1810
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 1714
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 1780,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 795
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 795
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 699
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 765,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 795
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 795
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 699
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 765,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1366.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1366,
+              "height": 768
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 218,
+              "height": 768
+            },
+            "topbar": {
+              "x": 218,
+              "y": 0,
+              "width": 1148,
+              "height": 66
+            },
+            "viewport": {
+              "x": 218,
+              "y": 66,
+              "width": 1148,
+              "height": 672
+            },
+            "statusbar": {
+              "x": 218,
+              "y": 738,
+              "width": 1148,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1366.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 46,
+          "domContentLoadedMs": 128,
+          "corePresent": true,
+          "dashboardTextLength": 1269,
+          "domNodes": 499,
+          "heapUsed": 24302090
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 499,
+          "heapUsed": 24302090
+        }
+      }
+    },
+    {
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 720
+      },
+      "routes": [
+        {
+          "route": "/dashboard",
+          "label": "Dashboard",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-dashboard-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 1724
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 1724
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 1628
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 1694,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Dashboard"
+          }
+        },
+        {
+          "route": "/chat",
+          "label": "Conversas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Conversas"
+          }
+        },
+        {
+          "route": "/memory",
+          "label": "Memoria",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-memoria-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 747
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 747
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 651
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 717,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Memoria"
+          }
+        },
+        {
+          "route": "/library",
+          "label": "Biblioteca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-biblioteca-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 747
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 747
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 651
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 717,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Biblioteca"
+          }
+        },
+        {
+          "route": "/projects",
+          "label": "Projetos",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-projetos-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Projetos"
+          }
+        },
+        {
+          "route": "/learning",
+          "label": "Aprendizado",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-aprendizado-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Aprendizado"
+          }
+        },
+        {
+          "route": "/tools",
+          "label": "Ferramentas",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-ferramentas-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Ferramentas"
+          }
+        },
+        {
+          "route": "/system",
+          "label": "Sistema",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sistema-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Sistema"
+          }
+        },
+        {
+          "route": "/settings",
+          "label": "Configuracoes",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-configuracoes-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Configuracoes"
+          }
+        },
+        {
+          "route": "/security",
+          "label": "Seguranca",
+          "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-seguranca-1280.png",
+          "metrics": {
+            "shell": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "sidebar": {
+              "x": 0,
+              "y": 0,
+              "width": 196,
+              "height": 720
+            },
+            "topbar": {
+              "x": 196,
+              "y": 0,
+              "width": 1084,
+              "height": 66
+            },
+            "viewport": {
+              "x": 196,
+              "y": 66,
+              "width": 1084,
+              "height": 624
+            },
+            "statusbar": {
+              "x": 196,
+              "y": 690,
+              "width": 1084,
+              "height": 30
+            },
+            "horizontalOverflow": false,
+            "routeText": "Seguranca"
+          }
+        }
+      ],
+      "compact": {
+        "ok": true,
+        "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-sidebar-compact-1280.png"
+      },
+      "lock": null,
+      "coreStates": [],
+      "performanceSummary": {
+        "animated": {
+          "routeSwitchMs": 49,
+          "domContentLoadedMs": 140,
+          "corePresent": true,
+          "dashboardTextLength": 1268,
+          "domNodes": 499,
+          "heapUsed": 24293275
+        },
+        "reducedMotion": {
+          "corePresent": true,
+          "domNodes": 499,
+          "heapUsed": 24293275
+        }
+      }
+    }
+  ]
+}

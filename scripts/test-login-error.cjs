@@ -83,6 +83,22 @@ function startBackend() {
       sendJson(response, 200, []);
       return;
     }
+    if (request.url.startsWith('/memories?')) {
+      sendJson(response, 200, { items: [], total: 0 });
+      return;
+    }
+    if (request.url === '/library/index/status') {
+      sendJson(response, 200, {
+        chunks: 0,
+        embeddings: 0,
+        pending: 0,
+        mode: 'lexical',
+        provider_loaded: false,
+        semantic_available: false,
+        provider: { provider: 'lexical-only', available: false, loaded: false },
+      });
+      return;
+    }
     if (request.url === '/diagnostics/hardware') {
       sendJson(response, 200, {
         cpu_percent: 12,
@@ -145,26 +161,26 @@ async function run() {
     });
 
     await page.goto(frontendUrl, { waitUntil: 'domcontentloaded' });
-    await page.locator('.auth-panel').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('.auth-panel-v3').waitFor({ state: 'visible', timeout: 10000 });
     await page.getByLabel('Senha principal').fill('senha-de-teste');
     await page.getByLabel('PIN').fill('1234');
 
     await page.getByRole('button', { name: 'Entrar' }).click();
     await page.getByRole('alert').waitFor({ state: 'visible', timeout: 10000 });
-    assert(await page.getByRole('alert').innerText() === 'Senha ou PIN inválido. Verifique os dados e tente novamente.', 'mensagem de 401 nao foi exibida');
+    assert(await page.getByRole('alert').innerText() === 'Senha ou PIN invalido. Verifique os dados e tente novamente.', 'mensagem de 401 nao foi exibida');
     assert(await page.getByRole('button', { name: 'Entrar' }).isEnabled(), 'botao nao voltou a ser habilitado apos 401');
-    assert(await page.locator('.home-composition').count() === 0, 'houve navegacao apos 401');
+    assert(await page.locator('.app-shell').count() === 0, 'houve navegacao apos 401');
     assert((await page.evaluate(() => window.__cronosUnhandledRejections.length)) === 0, 'Promise rejeitada sem tratamento apos 401');
 
     await page.getByRole('button', { name: 'Entrar' }).click();
     await page.getByRole('button', { name: 'Entrando...' }).waitFor({ state: 'visible', timeout: 3000 });
     assert(await page.getByRole('button', { name: 'Entrando...' }).isDisabled(), 'botao nao ficou desabilitado durante nova tentativa');
     await page.getByRole('alert').waitFor({ state: 'visible', timeout: 10000 });
-    assert(await page.getByRole('alert').innerText() === 'Senha ou PIN inválido. Verifique os dados e tente novamente.', 'nova tentativa nao atualizou a mensagem de erro');
+    assert(await page.getByRole('alert').innerText() === 'Senha ou PIN invalido. Verifique os dados e tente novamente.', 'nova tentativa nao atualizou a mensagem de erro');
 
     await page.getByRole('button', { name: 'Entrar' }).click();
-    await page.locator('.home-composition').waitFor({ state: 'visible', timeout: 10000 });
-    assert(await page.locator('.auth-panel').count() === 0, 'painel de login permaneceu apos sucesso');
+    await page.locator('[data-visual="dashboard"]').waitFor({ state: 'visible', timeout: 10000 });
+    assert(await page.locator('.auth-panel-v3').count() === 0, 'painel de login permaneceu apos sucesso');
     assert((await page.evaluate(() => window.__cronosUnhandledRejections.length)) === 0, 'Promise rejeitada sem tratamento apos sucesso');
     assert(loginAttempts === 3, `quantidade inesperada de tentativas: ${loginAttempts}`);
 

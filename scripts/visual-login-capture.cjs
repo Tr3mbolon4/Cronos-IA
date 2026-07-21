@@ -17,7 +17,10 @@ const viewports = [
   { name: '1920', width: 1920, height: 1080 },
   { name: '1600', width: 1600, height: 900 },
   { name: '1366', width: 1366, height: 768 },
+  { name: '1280', width: 1280, height: 720 },
 ];
+
+const coreStates = ['ready', 'thinking', 'speaking', 'warning', 'error', 'locked', 'offline'];
 
 const routeChecks = [
   { route: '/dashboard', label: 'Dashboard', selector: '[data-visual="dashboard"]' },
@@ -38,11 +41,13 @@ async function run() {
   const results = [];
   try {
     for (const viewport of viewports) {
+      console.log(`visual: viewport ${viewport.name}`);
       const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
       await login(page);
       if (viewport.name === '1920') await seedKnowledge(page);
       const routeResults = [];
       for (const check of routeChecks) {
+        console.log(`visual: route ${check.label} ${viewport.name}`);
         await page.getByRole('button', { name: check.label, exact: true }).click();
         await page.locator(check.selector).waitFor({ state: 'visible', timeout: 10000 });
         await page.waitForTimeout(250);
@@ -57,20 +62,23 @@ async function run() {
       }
       const compact = await validateCompactSidebar(page, viewport.name);
       const lock = viewport.name === '1920' ? await validateLock(page) : null;
-      results.push({ viewport, routes: routeResults, compact, lock });
+      const coreStateResults = viewport.name === '1920' ? await captureCoreStates(page) : [];
+      const performanceSummary = await collectDashboardPerformance(page);
+      results.push({ viewport, routes: routeResults, compact, lock, coreStates: coreStateResults, performanceSummary });
       await page.close();
     }
   } finally {
     await browser.close();
   }
 
-  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-1-visual-test.json');
+  const reportPath = path.join(root, 'docs', 'diagnostics', 'v0.3.0-phase-2-dashboard-visual-test.json');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify({ createdAt: new Date().toISOString(), results }, null, 2));
   console.log(JSON.stringify({ ok: true, reportPath }, null, 2));
 }
 
 async function login(page) {
+  console.log('visual: login');
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.getByLabel('Senha principal').fill(password);
   await page.getByLabel('PIN').fill(pin);
@@ -80,6 +88,7 @@ async function login(page) {
 }
 
 async function validateCompactSidebar(page, viewportName) {
+  console.log(`visual: compact sidebar ${viewportName}`);
   await page.getByRole('button', { name: 'Compactar' }).click();
   await page.locator('.app-shell.compact').waitFor({ state: 'visible', timeout: 5000 });
   const screenshotPath = path.join(outputDir, `cronos-v030-sidebar-compact-${viewportName}.png`);
@@ -90,6 +99,7 @@ async function validateCompactSidebar(page, viewportName) {
 }
 
 async function validateLock(page) {
+  console.log('visual: lock');
   await page.getByRole('button', { name: 'Seguranca', exact: true }).click();
   await page.getByRole('button', { name: 'Bloquear agora' }).click();
   await page.locator('.auth-panel-v3').waitFor({ state: 'visible', timeout: 10000 });
@@ -100,6 +110,68 @@ async function validateLock(page) {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.locator('.app-shell').waitFor({ state: 'visible', timeout: 10000 });
   return { ok: true, screenshotPath };
+}
+
+async function captureCoreStates(page) {
+  const results = [];
+  for (const state of coreStates) {
+    console.log(`visual: core ${state}`);
+    await page.evaluate((nextState) => {
+      window.history.pushState({}, '', `/dashboard?visualCoreState=${nextState}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, state);
+    await page.locator('.app-shell').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator(`[data-core-state="${state}"]`).waitFor({ state: 'visible', timeout: 10000 });
+    await page.waitForTimeout(300);
+    const screenshotPath = path.join(outputDir, `cronos-v030-core-${state}-1920.png`);
+    await page.screenshot({ path: screenshotPath, fullPage: false });
+    results.push({
+      state,
+      screenshotPath,
+      label: await page.locator('.core-caption strong').first().textContent().catch(() => ''),
+      description: await page.locator('.core-caption span').first().textContent().catch(() => ''),
+    });
+  }
+  await page.evaluate(() => {
+    window.history.pushState({}, '', '/dashboard');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await page.locator('[data-visual="dashboard"]').waitFor({ state: 'visible', timeout: 10000 });
+  return results;
+}
+
+async function collectDashboardPerformance(page) {
+  console.log('visual: performance');
+  await page.locator('.sidebar-nav').getByRole('button', { name: 'Sistema', exact: true }).click();
+  await page.locator('.module-base-page').waitFor({ state: 'visible', timeout: 10000 });
+  const routeStart = Date.now();
+  await page.locator('.sidebar-nav').getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await page.locator('[data-visual="dashboard"]').waitFor({ state: 'visible', timeout: 10000 });
+  const routeSwitchMs = Date.now() - routeStart;
+  const animated = await page.evaluate(() => {
+    const core = document.querySelector('[data-visual="cronos-core"]');
+    const route = document.querySelector('[data-visual="dashboard"]');
+    const navigation = performance.getEntriesByType('navigation')[0];
+    return {
+      routeSwitchMs: null,
+      domContentLoadedMs: navigation ? Math.round(navigation.domContentLoadedEventEnd) : null,
+      corePresent: Boolean(core),
+      dashboardTextLength: route?.textContent?.length || 0,
+      domNodes: document.querySelectorAll('*').length,
+      heapUsed: performance.memory?.usedJSHeapSize || null,
+    };
+  });
+  animated.routeSwitchMs = routeSwitchMs;
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await page.locator('[data-visual="dashboard"]').waitFor({ state: 'visible', timeout: 10000 });
+  const reduced = await page.evaluate(() => ({
+    corePresent: Boolean(document.querySelector('[data-visual="cronos-core"]')),
+    domNodes: document.querySelectorAll('*').length,
+    heapUsed: performance.memory?.usedJSHeapSize || null,
+  }));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  return { animated, reducedMotion: reduced };
 }
 
 async function collectMetrics(page) {
