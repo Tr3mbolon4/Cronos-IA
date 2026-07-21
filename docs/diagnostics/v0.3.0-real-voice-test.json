@@ -1,0 +1,8 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "blocked-whisper-model-not-installed",
+  "sttProvider": "cronos-local-whisper",
+  "chatFlow": "must-use-same-real-chat-provider",
+  "tts": "pending-real-validation",
+  "manualMicrophoneTest": "pending"
+}

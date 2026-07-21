@@ -1,0 +1,8 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "pending-real-process-validation",
+  "backendSidecarCleanup": "existing-runtime-path",
+  "llmRuntimeCleanup": "implemented-stop-on-backend-shutdown",
+  "whisperCleanup": "existing-cancel-path",
+  "orphanProcessTest": "pending"
+}

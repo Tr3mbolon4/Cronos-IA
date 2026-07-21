@@ -1,0 +1,9 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "pending",
+  "installerRcGenerated": false,
+  "sourcePathRequired": "must-be-false-after-validation",
+  "nodeRequired": "must-be-false-after-validation",
+  "pythonGlobalRequired": "must-be-false-after-validation",
+  "internetRequired": "must-be-false-after-validation"
+}

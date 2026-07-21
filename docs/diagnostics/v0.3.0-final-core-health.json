@@ -1,0 +1,11 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "not-approved",
+  "chatRealModel": false,
+  "pdfRealRag": false,
+  "memoryRestart": false,
+  "voiceRealStt": false,
+  "ttsReal": false,
+  "isolatedBuild": false,
+  "reason": "local LLM runtime/model and Whisper model still require approved physical import and real owner validation"
+}

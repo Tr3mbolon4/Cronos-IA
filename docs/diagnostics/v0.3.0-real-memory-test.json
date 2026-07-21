@@ -1,0 +1,8 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "pending-real-ui-validation",
+  "historyPersistence": "existing-database-path",
+  "semanticMemory": "requires provider validation",
+  "controlledPhrase": "Saturno",
+  "restartValidation": "pending"
+}

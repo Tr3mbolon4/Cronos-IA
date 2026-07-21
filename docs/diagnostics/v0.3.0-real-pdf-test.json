@@ -1,0 +1,11 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "pending-real-ui-validation",
+  "controlledPdfCreated": false,
+  "upload": "pending",
+  "extraction": "existing-code-path",
+  "chunks": "existing-code-path",
+  "embeddings": "pending-provider-validation",
+  "citations": "existing-code-path",
+  "llmSynthesis": "blocked-model-not-installed"
+}

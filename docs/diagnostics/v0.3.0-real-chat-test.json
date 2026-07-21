@@ -1,0 +1,8 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "blocked-model-not-installed",
+  "fixedResponseRemoved": true,
+  "missingModelError": "Nenhum modelo de IA local está instalado ou configurado.",
+  "realModelResponseTest": "pending-llm-import",
+  "notes": "The chat path now calls LLMProvider. It must not present fallback text as an assistant answer."
+}

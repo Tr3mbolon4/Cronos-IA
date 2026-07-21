@@ -1,0 +1,14 @@
+{
+  "phase": "v0.3.0-functional-core-recovery",
+  "status": "prepared-model-not-installed",
+  "provider": "cronos-local-llama",
+  "runtime": "llama.cpp",
+  "runtimeFile": "frontend/src-tauri/resources/ai/llm/bin/llama-server.exe",
+  "manifest": "frontend/src-tauri/resources/ai/llm/manifest.json",
+  "bindAddress": "127.0.0.1",
+  "firewallRuleRequired": false,
+  "automaticDownload": false,
+  "projectPathRequiredAtRuntime": false,
+  "script": "scripts/prepare-local-llm.ps1",
+  "currentBlockingReason": "runtime and GGUF model have not been imported from an approved channel"
+}
