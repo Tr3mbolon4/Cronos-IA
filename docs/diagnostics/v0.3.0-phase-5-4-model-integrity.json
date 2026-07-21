@@ -1,0 +1,31 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-4",
+  "status": "not-run-model-absent",
+  "expected": {
+    "file": "ggml-base.bin",
+    "sha256": "465707469ff3a37a2b9b8d8f89f2f99de7299dac",
+    "destination": "frontend/src-tauri/resources/voice/whisper/models/ggml-base.bin"
+  },
+  "scriptSupport": {
+    "importModelPath": true,
+    "sourceHashCheck": true,
+    "destinationHashCheck": true,
+    "exactFileNameRequired": true
+  },
+  "git": {
+    "modelIgnored": true,
+    "gitLfsTracking": "none"
+  },
+  "tests": {
+    "scriptSyntax": "passed",
+    "scriptDryRunImportModelPath": "passed",
+    "cargoCheck": "passed",
+    "cargoTest": "passed-5-tests",
+    "npmRunLint": "passed",
+    "npmRunBuild": "passed",
+    "backendTests": "passed-57-tests",
+    "loginErrorTest": "passed",
+    "visualTest": "blocked-missing-local-secret-env"
+  }
+}

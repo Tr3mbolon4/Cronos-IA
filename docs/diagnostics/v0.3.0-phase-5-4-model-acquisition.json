@@ -1,0 +1,19 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-4",
+  "status": "pending-administrative-transfer",
+  "model": {
+    "name": "ggml-base.bin",
+    "variant": "multilingual",
+    "officialSource": "https://huggingface.co/ggerganov/whisper.cpp",
+    "publishedSha": "465707469ff3a37a2b9b8d8f89f2f99de7299dac",
+    "englishOnlyRejected": true,
+    "presentOnThisMachine": false
+  },
+  "allowedAcquisition": [
+    "authorized external network",
+    "temporary firewall allowlist for official source",
+    "administrative transfer from approved source"
+  ],
+  "blockedReason": "huggingface.co is blocked by the local Endian Firewall and no approved transferred file is present"
+}
