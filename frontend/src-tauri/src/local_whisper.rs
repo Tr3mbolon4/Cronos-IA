@@ -328,6 +328,15 @@ fn read_manifest(path: &Path) -> Result<LocalWhisperManifest, String> {
     if manifest.provider != "cronos-local-whisper" {
         return Err("Manifest local de voz possui provider inesperado.".to_string());
     }
+    if manifest.model_name != "ggml-base.bin" || manifest.model_file != "models/ggml-base.bin" {
+        return Err("Manifest local de voz deve apontar para ggml-base.bin multilingue.".to_string());
+    }
+    if manifest.model_name.contains(".en.") || manifest.model_file.contains(".en.") {
+        return Err("Modelo English-only nao e permitido para o provider pt-BR.".to_string());
+    }
+    if manifest.runtime_file != "bin/whisper-cli.exe" {
+        return Err("Manifest local de voz possui runtime inesperado.".to_string());
+    }
     Ok(manifest)
 }
 
@@ -548,6 +557,32 @@ mod tests {
         assert!(validate_request_id("abc-123").is_ok());
         assert!(validate_request_id("../abc").is_err());
         assert!(validate_request_id("").is_err());
+    }
+
+    #[test]
+    fn rejects_english_only_model_manifest() {
+        let manifest = r#"{
+            "provider":"cronos-local-whisper",
+            "runtimeVersion":"whisper.cpp v1.8.5",
+            "runtimeFile":"bin/whisper-cli.exe",
+            "runtimeSha256":"3716AC2A3203DEF41CB49FC0CB49A03A4E4B75D7C5A1889F77164553D75FE060",
+            "runtimeSource":"https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
+            "modelName":"ggml-base.en.bin",
+            "modelVersion":"openai-whisper-base-en-ggml",
+            "modelFile":"models/ggml-base.en.bin",
+            "modelSha256":"137c40403d78fd54d454da0f9bd998f78703390c000000000000000000000000",
+            "modelSource":"https://huggingface.co/ggerganov/whisper.cpp",
+            "architecture":"windows-x86_64-cpu",
+            "languageSupport":["en"],
+            "audioFormat":"mono PCM WAV 16 kHz 16-bit",
+            "license":"MIT",
+            "createdAt":"2026-07-21T00:00:00Z"
+        }"#;
+        let path = std::env::temp_dir().join("cronos-english-only-manifest.json");
+        fs::write(&path, manifest).unwrap();
+        let result = read_manifest(&path);
+        let _ = fs::remove_file(path);
+        assert!(result.is_err());
     }
 
     #[test]

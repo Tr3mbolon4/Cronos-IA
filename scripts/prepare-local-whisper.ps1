@@ -4,6 +4,7 @@ param(
   [string]$ModelSha256,
   [string]$RuntimeArchiveUrl,
   [string]$RuntimeBinDir,
+  [string]$ImportModelPath,
   [string]$ModelUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
   [switch]$UseExistingFiles,
   [switch]$DryRun
@@ -50,6 +51,7 @@ if ($DryRun) {
   Write-Host "Model target: $modelPath"
   Write-Host "Runtime source: $RuntimeArchiveUrl"
   Write-Host "Runtime bin dir: $RuntimeBinDir"
+  Write-Host "Import model path: $ImportModelPath"
   Write-Host "Model source: $ModelUrl"
   Write-Host "Runtime SHA provided: $([bool]$RuntimeSha256)"
   Write-Host "Model SHA provided: $([bool]$ModelSha256)"
@@ -78,7 +80,20 @@ if (-not $UseExistingFiles) {
     throw "Informe -RuntimeArchiveUrl oficial, -RuntimeBinDir de build oficial, ou use -UseExistingFiles."
   }
   if (-not (Test-Path -LiteralPath $modelPath)) {
-    Invoke-VerifiedDownload -Url $ModelUrl -OutFile $modelPath
+    if ($ImportModelPath) {
+      if (-not (Test-Path -LiteralPath $ImportModelPath)) {
+        throw "Modelo para importacao nao encontrado: $ImportModelPath"
+      }
+      $sourceName = Split-Path -Leaf $ImportModelPath
+      if ($sourceName -ne "ggml-base.bin") {
+        throw "Modelo recusado: esperado ggml-base.bin, recebido $sourceName"
+      }
+      $sourceHash = Assert-Sha256 -Path $ImportModelPath -Expected $ModelSha256 -Label "Modelo importado"
+      Copy-Item -LiteralPath $ImportModelPath -Destination $modelPath -Force
+      $destHash = Assert-Sha256 -Path $modelPath -Expected $sourceHash -Label "Modelo copiado"
+    } else {
+      Invoke-VerifiedDownload -Url $ModelUrl -OutFile $modelPath
+    }
   }
 }
 
