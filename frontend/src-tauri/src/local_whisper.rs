@@ -343,7 +343,27 @@ fn prepare_temp_dir() -> Result<PathBuf, String> {
         .join("runtime")
         .join("voice-temp");
     fs::create_dir_all(&temp_dir).map_err(|error| error.to_string())?;
+    cleanup_stale_temp_files(&temp_dir);
     Ok(temp_dir)
+}
+
+fn cleanup_stale_temp_files(temp_dir: &Path) {
+    let Ok(entries) = fs::read_dir(temp_dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Some(name) = path.file_name().and_then(|item| item.to_str()) else {
+            continue;
+        };
+        let allowed_extension = matches!(
+            path.extension().and_then(|item| item.to_str()),
+            Some("wav" | "txt")
+        );
+        if name.starts_with("cronos-voice-") && allowed_extension {
+            let _ = fs::remove_file(path);
+        }
+    }
 }
 
 fn wait_for_child(
