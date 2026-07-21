@@ -21,11 +21,21 @@ export type VoiceProviderStatus = {
   state: VoiceState
   diagnostic: string
   local: boolean
+  offline?: boolean
+  experimental?: boolean
+  recommended?: boolean
+  modelName?: string
+  modelPath?: string
+  runtimePath?: string
+  checksum?: string
+  sizeMb?: number
+  lastStartedAt?: string
 }
 
 export type VoiceSettings = {
   enabled: boolean
   language: string
+  selectedSttProvider: 'cronos-local-whisper' | 'webview-speech-recognition'
   selectedMicrophoneId: string
   selectedVoiceURI: string
   rate: number
@@ -63,10 +73,12 @@ export type VoiceController = {
   inputLevel: number
   elapsedMs: number
   sttProvider: VoiceProviderStatus
+  sttProviders: VoiceProviderStatus[]
   ttsProvider: VoiceProviderStatus
   wakeWordProvider: VoiceProviderStatus
   updateSettings: (patch: Partial<VoiceSettings>) => void
   refreshDevices: () => Promise<void>
+  refreshSttProviders: () => Promise<void>
   refreshVoices: () => void
   startPushToTalk: () => Promise<void>
   stopPushToTalk: () => void

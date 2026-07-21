@@ -5,6 +5,7 @@ const SETTINGS_KEY = 'cronos.voice.settings.v1'
 export const defaultVoiceSettings: VoiceSettings = {
   enabled: false,
   language: 'pt-BR',
+  selectedSttProvider: 'cronos-local-whisper',
   selectedMicrophoneId: '',
   selectedVoiceURI: '',
   rate: 1,

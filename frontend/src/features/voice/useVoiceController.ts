@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreState } from '../../app/types'
-import { listAudioDevices, runSpeechRecognition, speechRecognitionStatus, speechSynthesisStatus, wakeWordStatus } from './providers/webVoiceProviders'
-import type { VoiceController, VoiceDevice, VoiceSettings, VoiceState, VoiceTranscript } from './types'
+import { getSttProviderStatuses, listAudioDevices, runSpeechRecognition, speechSynthesisStatus, wakeWordStatus } from './providers/webVoiceProviders'
+import type { VoiceController, VoiceDevice, VoiceProviderStatus, VoiceSettings, VoiceState, VoiceTranscript } from './types'
 import { loadVoiceSettings, saveVoiceSettings } from './voiceStorage'
 
 export function useVoiceController(onCoreState: (state: CoreState) => void): VoiceController {
@@ -17,13 +17,33 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<number | null>(null)
   const startedAtRef = useRef(0)
+  const operationRef = useRef(0)
 
-  const sttProvider = useMemo(() => speechRecognitionStatus(), [])
+  const [sttProviders, setSttProviders] = useState<VoiceProviderStatus[]>([])
   const ttsProvider = useMemo(() => speechSynthesisStatus(), [])
   const wakeWordProvider = useMemo(() => wakeWordStatus(), [])
+  const sttProvider = useMemo(
+    () => sttProviders.find((provider) => provider.id === settings.selectedSttProvider) || sttProviders[0] || {
+      id: 'cronos-local-whisper',
+      name: 'CRONOS Local Whisper',
+      version: 'pending',
+      capability: 'stt',
+      available: false,
+      state: 'unavailable',
+      diagnostic: 'Provider local ainda nao consultado.',
+      local: true,
+      offline: true,
+      recommended: true,
+    } satisfies VoiceProviderStatus,
+    [settings.selectedSttProvider, sttProviders],
+  )
 
   const refreshDevices = useCallback(async () => {
     setDevices(await listAudioDevices())
+  }, [])
+
+  const refreshSttProviders = useCallback(async () => {
+    setSttProviders(await getSttProviderStatuses())
   }, [])
 
   const refreshVoices = useCallback(() => {
@@ -32,11 +52,12 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }, [])
 
   useEffect(() => {
+    refreshSttProviders().catch(() => undefined)
     refreshDevices().catch(() => undefined)
     refreshVoices()
     window.speechSynthesis?.addEventListener('voiceschanged', refreshVoices)
     return () => window.speechSynthesis?.removeEventListener('voiceschanged', refreshVoices)
-  }, [refreshDevices, refreshVoices])
+  }, [refreshDevices, refreshSttProviders, refreshVoices])
 
   function updateSettings(patch: Partial<VoiceSettings>) {
     setSettings((current) => {
@@ -65,6 +86,12 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
       setState('unavailable')
       return
     }
+    if (!sttProvider.available) {
+      setError(sttProvider.diagnostic)
+      setState('unavailable')
+      onCoreState('error')
+      return
+    }
     setError('')
     setState('requesting_permission')
     onCoreState('listening')
@@ -72,6 +99,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
       const constraints: MediaStreamConstraints = { audio: settings.selectedMicrophoneId ? { deviceId: { exact: settings.selectedMicrophoneId } } : true }
       streamRef.current = await navigator.mediaDevices.getUserMedia(constraints)
       startedAtRef.current = Date.now()
+      operationRef.current += 1
       setState('recording')
       timerRef.current = window.setInterval(() => {
         setElapsedMs(Date.now() - startedAtRef.current)
@@ -88,16 +116,19 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   function stopPushToTalk() {
     if (state !== 'recording') return
     stopStream()
+    const operationId = operationRef.current
     setState('transcribing')
     onCoreState('processing')
-    runSpeechRecognition(settings)
+    runSpeechRecognition(settings, sttProvider)
       .then((result) => {
+        if (operationId !== operationRef.current) return
         setTranscript(result)
         setDraft(result.text)
         setState('reviewing')
         onCoreState('success')
       })
       .catch((error) => {
+        if (operationId !== operationRef.current) return
         setError(error instanceof Error ? error.message : 'Nao foi possivel transcrever.')
         setState('error')
         onCoreState('error')
@@ -105,6 +136,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }
 
   function cancelVoice() {
+    operationRef.current += 1
     stopStream()
     window.speechSynthesis?.cancel()
     setState('cancelled')
@@ -167,10 +199,12 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     inputLevel,
     elapsedMs,
     sttProvider,
+    sttProviders,
     ttsProvider,
     wakeWordProvider,
     updateSettings,
     refreshDevices,
+    refreshSttProviders,
     refreshVoices,
     startPushToTalk,
     stopPushToTalk,

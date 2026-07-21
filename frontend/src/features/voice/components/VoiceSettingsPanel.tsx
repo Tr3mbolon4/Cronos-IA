@@ -1,4 +1,4 @@
-import { Mic, RefreshCw, Shield, Volume2 } from 'lucide-react'
+import { Cpu, Mic, RefreshCw, Shield, Volume2 } from 'lucide-react'
 import type { VoiceController } from '../types'
 import { AudioLevelMeter } from './AudioLevelMeter'
 
@@ -13,7 +13,7 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
           <span>Voz local e privada</span>
           <h2>Configuracoes de voz</h2>
         </div>
-        <button type="button" onClick={voice.refreshDevices}><RefreshCw size={14} /> Atualizar dispositivos</button>
+        <button type="button" onClick={() => { void voice.refreshDevices(); void voice.refreshSttProviders() }}><RefreshCw size={14} /> Atualizar</button>
       </header>
       <div className="voice-settings-grid">
         <label className="inline-toggle">
@@ -24,6 +24,15 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
           <select value={voice.settings.selectedMicrophoneId} onChange={(event) => voice.updateSettings({ selectedMicrophoneId: event.target.value })}>
             <option value="">Padrao do sistema</option>
             {microphones.map((device) => <option key={device.deviceId} value={device.deviceId}>{device.label}</option>)}
+          </select>
+        </label>
+        <label>Provider STT
+          <select value={voice.settings.selectedSttProvider} onChange={(event) => voice.updateSettings({ selectedSttProvider: event.target.value as typeof voice.settings.selectedSttProvider })}>
+            {voice.sttProviders.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name}{provider.experimental ? ' - experimental' : ''}
+              </option>
+            ))}
           </select>
         </label>
         <label>Idioma
@@ -56,6 +65,17 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
             <option value="ask">Perguntar antes</option>
           </select>
         </label>
+      </div>
+      <div className="voice-provider-details">
+        <article>
+          <Cpu size={14} />
+          <strong>{voice.sttProvider.name}</strong>
+          <span>{voice.sttProvider.available ? 'Disponivel' : 'Indisponivel'} | {voice.sttProvider.offline ? 'offline' : 'offline nao garantido'} | {voice.sttProvider.experimental ? 'experimental' : 'recomendado'}</span>
+          <small>{voice.sttProvider.diagnostic}</small>
+          <small>Modelo: {voice.sttProvider.modelName || 'runtime'} | Checksum: {voice.sttProvider.checksum || 'n/a'}</small>
+          {voice.sttProvider.modelPath && <small>Modelo local: {voice.sttProvider.modelPath}</small>}
+          {voice.sttProvider.runtimePath && <small>Runtime: {voice.sttProvider.runtimePath}</small>}
+        </article>
       </div>
       <div className="voice-diagnostics">
         <article><Mic size={14} /><strong>STT</strong><span>{voice.sttProvider.available ? voice.sttProvider.name : 'Indisponivel'}</span><small>{voice.sttProvider.diagnostic}</small></article>

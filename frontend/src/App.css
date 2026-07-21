@@ -3436,6 +3436,7 @@ blockquote {
 }
 
 .voice-settings-grid,
+.voice-provider-details,
 .voice-diagnostics,
 .voice-test-grid {
   display: grid;
@@ -3443,10 +3444,15 @@ blockquote {
   gap: var(--space-3);
 }
 
+.voice-provider-details {
+  grid-template-columns: 1fr;
+}
+
 .voice-diagnostics {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.voice-provider-details article,
 .voice-diagnostics article,
 .voice-test-grid section {
   display: grid;
@@ -3457,6 +3463,7 @@ blockquote {
 }
 
 .voice-diagnostics small,
+.voice-provider-details small,
 .privacy-note {
   color: var(--cronos-muted);
   font-size: 12px;

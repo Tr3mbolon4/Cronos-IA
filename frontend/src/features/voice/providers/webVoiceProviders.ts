@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import type { VoiceDevice, VoiceProviderStatus, VoiceSettings, VoiceTranscript } from '../types'
 
 type SpeechRecognitionConstructor = new () => SpeechRecognition
@@ -43,20 +44,84 @@ declare global {
   }
 }
 
-export function speechRecognitionStatus(): VoiceProviderStatus {
+export const LOCAL_STT_PROVIDER_ID = 'cronos-local-whisper'
+export const WEBVIEW_STT_PROVIDER_ID = 'webview-speech-recognition'
+
+type LocalWhisperStatus = {
+  available: boolean
+  diagnostic: string
+  runtimePath: string
+  modelPath: string
+  modelName: string
+  version: string
+  checksum: string
+  sizeMb: number
+  lastStartedAt: string
+}
+
+const localWhisperUnavailable: VoiceProviderStatus = {
+  id: LOCAL_STT_PROVIDER_ID,
+  name: 'CRONOS Local Whisper',
+  version: 'whisper.cpp planned',
+  capability: 'stt',
+  available: false,
+  state: 'unavailable',
+  diagnostic: 'Runtime/modelo local nao encontrados no pacote. O provider WebView nao sera usado automaticamente.',
+  local: true,
+  offline: true,
+  experimental: false,
+  recommended: true,
+  modelName: 'ggml-base.bin',
+  checksum: 'pending-release-artifact',
+  sizeMb: 142,
+}
+
+export function webSpeechRecognitionStatus(): VoiceProviderStatus {
   const available = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
   return {
-    id: 'web-speech-recognition',
+    id: WEBVIEW_STT_PROVIDER_ID,
     name: 'WebView Speech Recognition',
     version: 'runtime',
     capability: 'stt',
     available,
     state: available ? 'ready' : 'unavailable',
     diagnostic: available
-      ? 'Provider de STT exposto pelo runtime WebView. Uso depende das capacidades locais do Windows/WebView.'
-      : 'STT indisponivel neste runtime. Texto continua funcional.',
+      ? 'Provider experimental do WebView. Processamento local/offline nao e garantido; use somente por escolha explicita.'
+      : 'STT WebView indisponivel neste runtime. Texto continua funcional.',
     local: false,
+    offline: false,
+    experimental: true,
+    recommended: false,
   }
+}
+
+export async function localWhisperStatus(): Promise<VoiceProviderStatus> {
+  try {
+    const status = await invoke<LocalWhisperStatus>('get_local_whisper_status')
+    return {
+      ...localWhisperUnavailable,
+      version: status.version,
+      available: status.available,
+      state: status.available ? 'ready' : 'unavailable',
+      diagnostic: status.diagnostic,
+      runtimePath: status.runtimePath,
+      modelPath: status.modelPath,
+      modelName: status.modelName,
+      checksum: status.checksum,
+      sizeMb: status.sizeMb,
+      lastStartedAt: status.lastStartedAt,
+    }
+  } catch (error) {
+    return {
+      ...localWhisperUnavailable,
+      diagnostic: error instanceof Error ? error.message : localWhisperUnavailable.diagnostic,
+    }
+  }
+}
+
+export async function getSttProviderStatuses(): Promise<VoiceProviderStatus[]> {
+  const local = await localWhisperStatus()
+  return [local, webSpeechRecognitionStatus()]
 }
 
 export function speechSynthesisStatus(): VoiceProviderStatus {
@@ -83,6 +148,8 @@ export function wakeWordStatus(): VoiceProviderStatus {
     state: 'unavailable',
     diagnostic: 'Arquitetura preparada. Detecao real da palavra Cronos nao esta habilitada nesta fase.',
     local: true,
+    offline: true,
+    experimental: true,
   }
 }
 
@@ -99,7 +166,7 @@ export async function listAudioDevices(): Promise<VoiceDevice[]> {
     }))
 }
 
-export function runSpeechRecognition(settings: VoiceSettings): Promise<VoiceTranscript> {
+function runWebSpeechRecognition(settings: VoiceSettings): Promise<VoiceTranscript> {
   return new Promise((resolve, reject) => {
     const Constructor = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!Constructor) {
@@ -123,7 +190,7 @@ export function runSpeechRecognition(settings: VoiceSettings): Promise<VoiceTran
       resolve({
         text,
         confidence: Number.isFinite(item.confidence) ? item.confidence : null,
-        providerId: 'web-speech-recognition',
+        providerId: WEBVIEW_STT_PROVIDER_ID,
         language: settings.language,
         createdAt: new Date().toISOString(),
       })
@@ -134,4 +201,14 @@ export function runSpeechRecognition(settings: VoiceSettings): Promise<VoiceTran
     }
     recognition.start()
   })
+}
+
+export async function runSpeechRecognition(settings: VoiceSettings, provider: VoiceProviderStatus): Promise<VoiceTranscript> {
+  if (settings.selectedSttProvider === WEBVIEW_STT_PROVIDER_ID) {
+    return runWebSpeechRecognition(settings)
+  }
+  if (!provider.available) {
+    throw new Error('Provider CRONOS Local Whisper indisponivel: runtime/modelo local nao encontrados no pacote.')
+  }
+  throw new Error('Provider CRONOS Local Whisper detectado, mas a transcricao PCM WAV empacotada ainda exige validacao real antes de ser habilitada.')
 }
