@@ -23,3 +23,8 @@ data/*
 
 # Logs
 *.log
+
+# Local voice runtime artifacts
+frontend/src-tauri/resources/voice/whisper/bin/*.exe
+frontend/src-tauri/resources/voice/whisper/bin/*.dll
+frontend/src-tauri/resources/voice/whisper/models/*.bin

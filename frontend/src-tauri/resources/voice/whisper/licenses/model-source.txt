@@ -1,0 +1,10 @@
+CRONOS Local Whisper model source
+
+Provider: cronos-local-whisper
+Default model: ggml-base.bin
+Model family: OpenAI Whisper base multilingual converted to ggml format for whisper.cpp.
+Source: https://huggingface.co/ggerganov/whisper.cpp
+Original project: https://github.com/openai/whisper
+License: MIT
+
+The model binary is intentionally not committed to Git. It must be prepared during a controlled release process and verified with SHA-256 before packaging.

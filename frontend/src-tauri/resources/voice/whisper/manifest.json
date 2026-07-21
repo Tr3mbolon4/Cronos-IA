@@ -1,0 +1,17 @@
+{
+  "provider": "cronos-local-whisper",
+  "runtimeVersion": "whisper.cpp v1.8.5",
+  "runtimeFile": "bin/whisper-cli.exe",
+  "runtimeSha256": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "runtimeSource": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
+  "modelName": "ggml-base.bin",
+  "modelVersion": "openai-whisper-base-ggml",
+  "modelFile": "models/ggml-base.bin",
+  "modelSha256": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "modelSource": "https://huggingface.co/ggerganov/whisper.cpp",
+  "architecture": "windows-x86_64-cpu",
+  "languageSupport": ["pt-BR", "pt", "multilingual"],
+  "audioFormat": "mono PCM WAV 16 kHz 16-bit",
+  "license": "MIT",
+  "createdAt": "2026-07-21T00:00:00Z"
+}

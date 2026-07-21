@@ -1,0 +1,8 @@
+MIT License
+
+The whisper.cpp runtime is distributed under the MIT license by the ggml-org/whisper.cpp project.
+
+Official source:
+https://github.com/ggml-org/whisper.cpp
+
+The full license text must be copied from the selected release/source checkout during the controlled preparation process before a release build is approved.
