@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import {
   Archive,
@@ -42,13 +42,15 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
-import { mergeHeaders } from './services/apiClient'
+import { ApiClient, mergeHeaders } from './services/apiClient'
 import {
   openRuntimeLogs,
   resolveRuntimeConnection,
   restartRuntimeConnection,
   shutdownCronos,
 } from './services/runtimeConnection'
+import { MemoryPage } from './pages/MemoryPage'
+import { LibraryPage } from './pages/LibraryPage'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
 const CRONOS_VERSION = 'v0.1.2'
@@ -90,6 +92,7 @@ type Hardware = {
 }
 
 type CoreState = 'available' | 'listening' | 'authorization' | 'processing' | 'alert' | 'offline'
+type ActiveModule = 'dashboard' | 'memory' | 'library'
 type StartupPhase =
   | 'initializing'
   | 'backend_starting'
@@ -149,6 +152,7 @@ function App() {
   const [coreState, setCoreState] = useState<CoreState>('offline')
   const [lastResponseMs, setLastResponseMs] = useState<number | null>(null)
   const [internetOnline, setInternetOnline] = useState(() => navigator.onLine)
+  const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard')
 
   const authenticated = Boolean(token)
   const owner = setup?.owner?.name || ownerName || 'Alexandre'
@@ -161,30 +165,22 @@ function App() {
     [token],
   )
 
-  async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetchWithTimeout(`${apiBaseUrl}${path}`, {
-      ...options,
-      headers: mergeHeaders(options.headers, runtimeToken),
-    })
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({ detail: 'Erro inesperado.' }))
-      throw new Error(payload.detail || 'Erro inesperado.')
-    }
-    return response.json()
-  }
+  const apiClient = useMemo(() => new ApiClient({ baseUrl: apiBaseUrl, runtimeToken, authToken: token }), [apiBaseUrl, runtimeToken, token])
 
-  async function refreshProtectedData(activeToken = token) {
+  const api = useCallback(<T,>(path: string, options: RequestInit = {}) => apiClient.request<T>(path, options), [apiClient])
+
+  const refreshProtectedData = useCallback(async (activeToken = token) => {
     if (!activeToken) return
-    const authHeaders = { Authorization: `Bearer ${activeToken}` }
+    const protectedClient = new ApiClient({ baseUrl: apiBaseUrl, runtimeToken, authToken: activeToken })
     const [history, docs, diag] = await Promise.all([
-      api<Message[]>('/chat/history', { headers: authHeaders }),
-      api<DocumentItem[]>('/documents', { headers: authHeaders }),
-      api<Hardware>('/diagnostics/hardware', { headers: authHeaders }),
+      protectedClient.get<Message[]>('/chat/history'),
+      protectedClient.get<DocumentItem[]>('/documents'),
+      protectedClient.get<Hardware>('/diagnostics/hardware'),
     ])
     setMessages(history)
     setDocuments(docs)
     setHardware(diag)
-  }
+  }, [apiBaseUrl, runtimeToken, token])
 
   useEffect(() => {
     initializeStartup('initializing').catch(() => undefined)
@@ -247,7 +243,7 @@ function App() {
       refreshProtectedData().catch(() => undefined)
     }, 5000)
     return () => window.clearInterval(timer)
-  }, [authenticated, setup?.configured])
+  }, [authenticated, setup?.configured, refreshProtectedData])
 
   async function handleSetup(event: FormEvent) {
     event.preventDefault()
@@ -377,10 +373,15 @@ function App() {
         </div>
         <nav className="rail-nav">
           {menuItems.map(([label, Icon], index) => (
-            <a className={index === 0 ? 'active' : ''} href={hrefFor(label)} key={label}>
+            <button
+              type="button"
+              className={activeClass(label, activeModule, index)}
+              onClick={() => navigateMenu(label, setActiveModule)}
+              key={label}
+            >
               <Icon size={14} />
               <span>{label}</span>
-            </a>
+            </button>
           ))}
         </nav>
         <div className="owner-profile">
@@ -434,7 +435,9 @@ function App() {
           </section>
         ) : (
           <>
-            <section className="home-composition" id="inicio">
+            {activeModule === 'memory' && <MemoryPage client={apiClient} onNotice={setNotice} />}
+            {activeModule === 'library' && <LibraryPage client={apiClient} onNotice={setNotice} />}
+            {activeModule === 'dashboard' && <section className="home-composition" id="inicio">
               {notice && <div className="notice-line">{notice}</div>}
               <div className="main-status">
                 <span>CRONOS</span>
@@ -469,9 +472,9 @@ function App() {
                   <InfoLine icon={<Layers3 size={13} />} label="Versao" value={CRONOS_VERSION} />
                 </section>
               </div>
-            </section>
+            </section>}
 
-            <section className="module-grid" aria-label="Modulos funcionais">
+            {activeModule === 'dashboard' && <section className="module-grid" aria-label="Modulos funcionais">
               <section className="module-panel conversation-module" id="conversar">
                 <PanelHeader icon={<MessageSquare size={15} />} title="CONVERSAR" />
                 <div className="messages">
@@ -580,7 +583,7 @@ function App() {
                 <button type="button" onClick={handleBackup}><Archive size={14} /> Criar backup</button>
                 <button type="button" className="danger" onClick={handleLock}><Lock size={14} /> Bloquear</button>
               </section>
-            </section>
+            </section>}
           </>
         )}
 
@@ -599,16 +602,35 @@ function App() {
   )
 }
 
-function hrefFor(label: string) {
+function navigateMenu(label: string, setActiveModule: (module: ActiveModule) => void) {
+  if (label === 'Memoria') {
+    setActiveModule('memory')
+    return
+  }
+  if (label === 'Biblioteca') {
+    setActiveModule('library')
+    return
+  }
+  setActiveModule('dashboard')
+  window.requestAnimationFrame(() => {
+    document.querySelector(hrefForDashboard(label))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+function activeClass(label: string, activeModule: ActiveModule, index: number) {
+  if (label === 'Memoria') return activeModule === 'memory' ? 'active' : ''
+  if (label === 'Biblioteca') return activeModule === 'library' ? 'active' : ''
+  return activeModule === 'dashboard' && index === 0 ? 'active' : ''
+}
+
+function hrefForDashboard(label: string) {
   const map: Record<string, string> = {
     Inicio: '#inicio',
     Conversar: '#conversar',
     Projetos: '#projetos',
     Programador: '#programador',
-    Biblioteca: '#aprendizado',
     Aprendizado: '#aprendizado',
     'Outras IAs': '#inicio',
-    Memoria: '#conversar',
     Tarefas: '#tarefas',
     Autorizacoes: '#autorizacoes',
     Dispositivos: '#seguranca',
