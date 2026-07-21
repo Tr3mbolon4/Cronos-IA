@@ -3,6 +3,9 @@ import platform
 import shutil
 import time
 
+from cronos.core.config import settings
+from cronos.services import embedding_service, llm_provider
+
 
 def hardware_report() -> dict:
     disk = shutil.disk_usage(os.getcwd())
@@ -30,6 +33,58 @@ def hardware_report() -> dict:
         "gpu_percent": None,
         "vram_gb": None,
         "gpu_temperature_c": None,
+    }
+
+
+def core_health() -> dict:
+    llm = llm_provider.status()
+    embeddings = embedding_service.provider_status()
+    whisper_manifest = settings.resource_dir / "voice" / "whisper" / "manifest.json"
+    return {
+        "application": {
+            "status": "ready",
+            "version": settings.version,
+            "lastChecked": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "recommendedAction": "Validar componentes locais pendentes antes da Fase 6.",
+        },
+        "backendLocal": {
+            "status": "ready",
+            "version": settings.version,
+            "bind": "127.0.0.1",
+        },
+        "database": {
+            "status": "ready" if settings.db_path.exists() else "missing",
+            "path": str(settings.db_path),
+        },
+        "llmRuntime": llm,
+        "llmModel": {
+            "status": "ready" if llm.get("ready") else "not_installed",
+            "model": llm.get("model"),
+            "error": llm.get("error"),
+            "recommendedAction": "Importar llama-server.exe e modelo GGUF por canal aprovado.",
+        },
+        "embeddings": embeddings,
+        "vectorIndex": {
+            "status": "requires-document-validation",
+            "recommendedAction": "Executar indexacao real apos importar documentos de teste.",
+        },
+        "storage": {
+            "status": "ready" if settings.data_dir.exists() else "missing",
+            "path": str(settings.data_dir),
+        },
+        "pdfExtractor": {
+            "status": "available",
+            "recommendedAction": "Validar PDF com texto selecionavel e PDF imagem separado.",
+        },
+        "whisper": {
+            "status": "configured" if whisper_manifest.exists() else "not_installed",
+            "manifest": str(whisper_manifest),
+            "recommendedAction": "Importar ggml-base.bin oficial antes da validacao de voz.",
+        },
+        "tts": {
+            "status": "pending-real-validation",
+            "recommendedAction": "Validar reproducao local apos Chat real aprovado.",
+        },
     }
 
 

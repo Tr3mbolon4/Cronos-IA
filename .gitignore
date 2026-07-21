@@ -29,3 +29,8 @@ data/*
 frontend/src-tauri/resources/voice/whisper/bin/*.exe
 frontend/src-tauri/resources/voice/whisper/bin/*.dll
 frontend/src-tauri/resources/voice/whisper/models/*.bin
+
+# Local LLM runtime artifacts
+frontend/src-tauri/resources/ai/llm/bin/*.exe
+frontend/src-tauri/resources/ai/llm/bin/*.dll
+frontend/src-tauri/resources/ai/llm/models/*.gguf

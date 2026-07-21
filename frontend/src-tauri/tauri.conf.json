@@ -38,7 +38,7 @@
     "category": "Productivity",
     "shortDescription": "CRONOS Desktop",
     "longDescription": "IA pessoal local CRONOS para Windows.",
-    "resources": ["resources/voice/whisper"],
+    "resources": ["resources/voice/whisper", "resources/ai/llm"],
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",

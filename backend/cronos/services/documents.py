@@ -1,5 +1,5 @@
 from cronos.core.errors import CronosError
-from cronos.services import document_ingestion_service, knowledge_service
+from cronos.services import document_ingestion_service, knowledge_service, llm_provider
 
 
 def save_pdf(filename: str, content: bytes, owner_id: int = 1) -> dict:
@@ -28,10 +28,26 @@ def ask_document(document_id: int, question: str, owner_id: int = 1) -> dict:
         raise
     citations = [item["citation"] for item in search["items"]]
     legacy_citations = [citation["excerpt"] for citation in citations]
-    answer = (
-        "Com base na biblioteca local, estes trechos parecem mais relacionados a sua pergunta. "
-        "A resposta ainda usa busca lexical; sintese avancada e embeddings ficam para uma fase posterior."
-    )
+    if not citations:
+        answer = "Nao encontrei essa informacao nos documentos selecionados."
+    else:
+        context = "\n".join(
+            f"[{index}] Documento: {citation['source_filename']} | Pagina: {citation['page_number']} | Trecho: {citation['excerpt']}"
+            for index, citation in enumerate(citations, start=1)
+        )
+        answer = llm_provider.generate(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "Voce e o CRONOS. Responda em portugues usando somente o contexto documental fornecido. "
+                        "Inclua documento e pagina quando citar. Se a informacao nao existir no contexto, diga que nao encontrou."
+                    ),
+                },
+                {"role": "system", "content": f"Contexto documental:\n{context}"},
+                {"role": "user", "content": question},
+            ]
+        )
     document = knowledge_service.get_document(owner_id, document_id)["document"]
     return {
         "answer": answer,

@@ -19,6 +19,16 @@ def _default_data_dir() -> Path:
     return Path(__file__).resolve().parents[3] / "data"
 
 
+def _default_resource_dir() -> Path:
+    env_dir = os.environ.get("CRONOS_RESOURCE_DIR")
+    if env_dir:
+        return Path(env_dir)
+    packaged_dir = getattr(__import__("sys"), "_MEIPASS", None)
+    if packaged_dir:
+        return Path(packaged_dir)
+    return Path(__file__).resolve().parents[3] / "frontend" / "src-tauri" / "resources"
+
+
 class Settings:
     def __init__(self) -> None:
         self.app_name = "CRONOS"
@@ -29,6 +39,7 @@ class Settings:
         self.session_minutes = int(os.environ.get("CRONOS_SESSION_MINUTES", "60"))
         self.session_id = os.environ.get("CRONOS_SESSION_ID", "")
         self.parent_pid = os.environ.get("CRONOS_PARENT_PID", "")
+        self.resource_dir = _default_resource_dir()
 
     @property
     def is_visual_test(self) -> bool:
@@ -92,6 +103,7 @@ class Settings:
         log_dir: str | Path | None = None,
         session_id: str | None = None,
         parent_pid: str | None = None,
+        resource_dir: str | Path | None = None,
     ) -> None:
         if env:
             self.env = env
@@ -109,6 +121,12 @@ class Settings:
             self.session_id = session_id
         if parent_pid:
             self.parent_pid = parent_pid
+        if resource_dir:
+            self.resource_dir = Path(resource_dir).expanduser().resolve()
+
+    @property
+    def llm_resource_dir(self) -> Path:
+        return self.resource_dir / "ai" / "llm"
 
     def ensure_directories(self) -> None:
         directories = [

@@ -15,7 +15,7 @@ from cronos.core.config import settings
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
 from cronos.api import document_routes, library_routes, memory_routes
-from cronos.services import auth, backup, chat, diagnostics, documents
+from cronos.services import auth, backup, chat, diagnostics, documents, llm_provider
 
 
 STARTED_AT = time.monotonic()
@@ -75,6 +75,9 @@ class CronosHandler(BaseHTTPRequestHandler):
                         },
                     }
                 )
+            elif path == "/llm/status":
+                self._session()
+                self._send(llm_provider.status())
             elif path == "/setup/status":
                 self._send(auth.setup_status())
             elif path == "/auth/session":
@@ -91,6 +94,9 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif path == "/diagnostics/hardware":
                 self._session()
                 self._send(diagnostics.hardware_report())
+            elif path == "/diagnostics/core":
+                self._session()
+                self._send(diagnostics.core_health())
             elif memory_routes.is_memory_path(path):
                 self._send(memory_routes.handle_get(path, parsed.query, self._session()))
             else:
@@ -113,9 +119,9 @@ class CronosHandler(BaseHTTPRequestHandler):
                 session = self._session()
                 self._send(auth.lock_session(session["token"]))
             elif path == "/chat":
-                self._session()
+                session = self._session()
                 payload = self._json_body()
-                self._send(chat.send_message(payload.get("message", "")))
+                self._send(chat.send_message(payload.get("message", ""), int(session["owner"]["id"])))
             elif path == "/documents/upload":
                 session = self._session()
                 filename, content = self._multipart_file()
@@ -297,6 +303,7 @@ def main() -> None:
     parser.add_argument("--session-id", default=os.environ.get("CRONOS_SESSION_ID", ""))
     parser.add_argument("--parent-pid", default=os.environ.get("CRONOS_PARENT_PID", ""))
     parser.add_argument("--environment", default=os.environ.get("CRONOS_ENV", "development"))
+    parser.add_argument("--resource-dir", default=os.environ.get("CRONOS_RESOURCE_DIR"))
     args = parser.parse_args()
 
     global RUNTIME_TOKEN
@@ -316,6 +323,7 @@ def main() -> None:
         log_dir=args.log_dir,
         session_id=args.session_id or str(uuid.uuid4()),
         parent_pid=args.parent_pid,
+        resource_dir=args.resource_dir,
     )
 
     try:
@@ -342,6 +350,7 @@ def main() -> None:
     try:
         server.serve_forever()
     finally:
+        llm_provider.stop()
         server.server_close()
 
 

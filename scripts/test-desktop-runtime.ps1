@@ -59,9 +59,20 @@ try {
 
     $headers = @{ Authorization = "Bearer $authToken" }
     $chatPayload = @{ message = "Teste desktop com sidecar" } | ConvertTo-Json
-    $chat = Invoke-RestMethod -Method Post -Uri "$baseUrl/chat" -Headers $headers -ContentType "application/json" -Body $chatPayload -TimeoutSec 5
-    if ($chat.role -ne "assistant") {
-        throw "Chat nao retornou resposta do assistente."
+    $chatBlockedByMissingModel = $false
+    try {
+        $chat = Invoke-RestMethod -Method Post -Uri "$baseUrl/chat" -Headers $headers -ContentType "application/json" -Body $chatPayload -TimeoutSec 5
+        if ($chat.role -ne "assistant") {
+            throw "Chat nao retornou resposta do assistente."
+        }
+    } catch {
+        $status = [int]$_.Exception.Response.StatusCode
+        $body = $_.ErrorDetails.Message
+        if ($status -eq 503 -and $body -match "Nenhum modelo de IA local") {
+            $chatBlockedByMissingModel = $true
+        } else {
+            throw
+        }
     }
 
     $pdfPath = Join-Path $testRoot "runtime-test.pdf"
@@ -123,7 +134,7 @@ startxref
         desktop = $exe
         port = $session.port
         login = $true
-        chat = $true
+        chat = if ($chatBlockedByMissingModel) { "blocked-model-not-installed" } else { $true }
         pdf = $true
         lock = $true
         backendDetected = $true

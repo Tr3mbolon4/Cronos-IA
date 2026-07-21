@@ -12,7 +12,7 @@ use std::process::Command as SystemCommand;
 use std::sync::mpsc;
 use std::sync::{Condvar, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
@@ -76,6 +76,10 @@ impl BackendRuntime {
         let session = session_id()?;
         let port = reserve_local_port()?;
         let base_url = format!("http://127.0.0.1:{port}");
+        let resource_dir = app
+            .path()
+            .resource_dir()
+            .map_err(|error| error.to_string())?;
         append_desktop_log(
             &desktop_log,
             "INFO",
@@ -112,7 +116,9 @@ impl BackendRuntime {
             .arg("--parent-pid")
             .arg(std::process::id().to_string())
             .arg("--environment")
-            .arg("desktop");
+            .arg("desktop")
+            .arg("--resource-dir")
+            .arg(resource_dir.to_string_lossy().to_string());
 
         let (mut rx, child) = command.spawn().map_err(|error| {
             let message = error.to_string();

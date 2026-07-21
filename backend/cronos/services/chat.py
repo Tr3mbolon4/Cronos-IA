@@ -1,5 +1,7 @@
 from cronos.core.db import connect
+from cronos.core.errors import CronosError
 from cronos.core.security import utcnow
+from cronos.services import llm_provider, retrieval_service
 
 
 def _save_message(role: str, content: str) -> None:
@@ -19,17 +21,47 @@ def history(limit: int = 50) -> list[dict]:
     return [dict(row) for row in reversed(rows)]
 
 
-def send_message(content: str) -> dict:
+def send_message(content: str, owner_id: int = 1) -> dict:
     clean = content.strip()
+    if not clean:
+        raise CronosError(400, "Mensagem obrigatoria.", code="CHAT_MESSAGE_REQUIRED")
     _save_message("user", clean)
     recent = history(8)
-    response = (
-        "Estou rodando localmente no MVP do CRONOS. "
-        "Ainda nao tenho um modelo de IA completo conectado, mas ja consigo manter historico, "
-        "ler PDFs enviados e responder usando os dados locais. "
-        f"Recebi: {clean}"
-    )
-    if len(recent) > 1:
-        response += f"\n\nMemoria recente: {len(recent)} mensagens registradas."
+    context = _local_context(owner_id, clean)
+    response = llm_provider.generate(_prompt_messages(recent, context))
     _save_message("assistant", response)
     return {"role": "assistant", "content": response, "created_at": utcnow().isoformat()}
+
+
+def _prompt_messages(recent: list[dict], context: dict) -> list[dict]:
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Voce e o CRONOS, uma IA pessoal local. Responda em portugues do Brasil. "
+                "Separe fatos de inferencias quando houver incerteza. Nao invente conteudo de documentos. "
+                "Quando usar documentos, cite nome do documento, pagina e trecho de suporte. "
+                "Se a informacao nao estiver nos documentos recuperados, diga que nao encontrou a informacao. "
+                "Nao afirme acesso a ferramentas indisponiveis e nao execute acoes sem autorizacao."
+            ),
+        }
+    ]
+    if context["items"]:
+        formatted = []
+        for index, item in enumerate(context["items"], start=1):
+            citation = item["citation"]
+            formatted.append(
+                f"[{index}] Documento: {citation['source_filename']} | Pagina: {citation['page_number']} | Trecho: {citation['excerpt']}"
+            )
+        messages.append({"role": "system", "content": "Contexto documental recuperado:\n" + "\n".join(formatted)})
+    for row in recent[-8:]:
+        role = row["role"] if row["role"] in {"user", "assistant"} else "user"
+        messages.append({"role": role, "content": row["content"]})
+    return messages
+
+
+def _local_context(owner_id: int, query: str) -> dict:
+    try:
+        return retrieval_service.retrieve(owner_id, {"query": query, "top_k": 4})
+    except Exception:
+        return {"items": []}

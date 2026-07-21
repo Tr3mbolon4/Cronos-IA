@@ -1,0 +1,20 @@
+{
+  "provider": "cronos-local-llama",
+  "runtime": "llama.cpp",
+  "runtimeVersion": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "runtimeFile": "bin/llama-server.exe",
+  "runtimeSha256": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "runtimeSize": 0,
+  "modelName": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "modelFile": "models/TO_BE_FILLED_BY_PREPARE_SCRIPT.gguf",
+  "modelSha256": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "modelSize": 0,
+  "modelFormat": "GGUF",
+  "quantization": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "contextLength": 4096,
+  "architecture": "cpu",
+  "multilingual": true,
+  "license": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "officialSource": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
+  "integrityValidated": false
+}
