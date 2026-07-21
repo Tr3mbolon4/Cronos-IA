@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Archive, Eye, GitBranch, History, MoreHorizontal, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { Archive, Eye, GitBranch, Grid2X2, History, List, MoreHorizontal, Plus, RefreshCw, RotateCcw, Save, Search, Table2, Trash2 } from 'lucide-react'
 import type { ApiClient } from '../services/apiClient'
 import { friendlyError } from '../utils/errors'
 import { formatDate, percent } from '../utils/formatting'
@@ -58,11 +58,23 @@ export function MemoryPage({ client, onNotice }: { client: ApiClient; onNotice: 
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
   const [confirm, setConfirm] = useState<{ title: string; description: string; action: () => Promise<void>; label: string } | null>(null)
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('cronos.memory.viewMode') || 'list')
   const details = useMemoryDetails(client, selectedId)
   const selected = details.memory
   const page = Math.floor((filters.offset || 0) / (filters.limit || 10)) + 1
   const pages = Math.max(1, Math.ceil(total / (filters.limit || 10)))
   const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category.name])), [categories])
+  const memoryStats = useMemo(() => ({
+    active: items.filter((item) => item.status === 'active').length,
+    archived: items.filter((item) => item.status === 'archived').length,
+    relations: details.relations.length,
+    revisions: details.revisions.length,
+  }), [details.relations.length, details.revisions.length, items])
+
+  function changeViewMode(mode: string) {
+    setViewMode(mode)
+    localStorage.setItem('cronos.memory.viewMode', mode)
+  }
 
   function openCreate() {
     setEditing(null)
@@ -138,6 +150,13 @@ export function MemoryPage({ client, onNotice }: { client: ApiClient; onNotice: 
         actions={<button type="button" className="primary" onClick={openCreate}><Plus size={14} /> Nova memoria</button>}
       />
 
+      <section className="knowledge-overview-grid" data-visual="memory-overview">
+        <MetricTile label="Memorias carregadas" value={items.length} detail={`${total} no filtro atual`} />
+        <MetricTile label="Ativas" value={memoryStats.active} detail={`${memoryStats.archived} arquivadas`} />
+        <MetricTile label="Revisoes" value={memoryStats.revisions} detail="Da memoria selecionada" />
+        <MetricTile label="Relacoes" value={memoryStats.relations} detail="Vizinhanca selecionada" />
+      </section>
+
       <section className="workspace-toolbar">
         <label>
           Buscar
@@ -195,11 +214,16 @@ export function MemoryPage({ client, onNotice }: { client: ApiClient; onNotice: 
           <input type="checkbox" checked={Boolean(filters.include_deleted)} onChange={(event) => setFilters({ ...filters, include_deleted: event.target.checked, offset: 0 })} />
           Incluir excluidas
         </label>
+        <div className="view-toggle" role="group" aria-label="Modo de visualizacao">
+          <button type="button" className={viewMode === 'list' ? 'active' : ''} onClick={() => changeViewMode('list')} title="Lista"><List size={14} /></button>
+          <button type="button" className={viewMode === 'grid' ? 'active' : ''} onClick={() => changeViewMode('grid')} title="Grade"><Grid2X2 size={14} /></button>
+          <button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={() => changeViewMode('table')} title="Tabela"><Table2 size={14} /></button>
+        </div>
         <button type="button" onClick={reload}><RefreshCw size={14} /> Atualizar</button>
       </section>
 
       <div className="workspace-split">
-        <section className="list-surface">
+        <section className={`list-surface memory-list-surface ${viewMode}`}>
           <InlineError message={error} onRetry={reload} />
           {loading && <LoadingState label="Carregando memorias..." />}
           {!loading && !error && items.length === 0 && <EmptyState title="Nenhuma memoria encontrada" description="Crie uma memoria manual ou ajuste os filtros." action={<button type="button" onClick={openCreate}><Plus size={14} /> Nova memoria</button>} />}
@@ -215,6 +239,7 @@ export function MemoryPage({ client, onNotice }: { client: ApiClient; onNotice: 
                   <span>{percent(memory.confidence)}</span>
                   <span>Imp. {memory.importance}</span>
                   <span>{formatDate(memory.updated_at)}</span>
+                  <span>{memory.access_count} acessos</span>
                   {memory.status === 'pending_review' && <span>Revisao pendente</span>}
                 </div>
               </button>
@@ -365,6 +390,7 @@ function MemoryDetails({
           </article>
         ))}
       </section>
+      <MemoryRelationGraph memory={memory} relations={details.relations} />
       <section className="subsection" data-visual="memory-relations">
         <h3><GitBranch size={14} /> Relacoes</h3>
         <InlineError message={relationError} />
@@ -392,6 +418,34 @@ function MemoryDetails({
         ))}
       </section>
     </div>
+  )
+}
+
+function MetricTile({ label, value, detail }: { label: string; value: number | string; detail: string }) {
+  return (
+    <article className="knowledge-metric-tile">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  )
+}
+
+function MemoryRelationGraph({ memory, relations }: { memory: Memory; relations: ReturnType<typeof useMemoryDetails>['relations'] }) {
+  const activeRelations = relations.slice(0, 8)
+  return (
+    <section className="subsection memory-graph" data-visual="memory-graph">
+      <h3><GitBranch size={14} /> Grafo local</h3>
+      <div className="memory-graph-canvas" role="img" aria-label={`Grafo textual da memoria ${memory.title}`}>
+        <div className="memory-node current">#{memory.id}<span>{memory.title}</span></div>
+        {activeRelations.length === 0 ? <p className="muted-text">Sem vizinhos carregados. A lista abaixo permanece como fallback acessivel.</p> : activeRelations.map((relation) => (
+          <div className="memory-edge" key={relation.id}>
+            <span>{relationTypeLabels[relation.relation_type]}</span>
+            <div className="memory-node">#{relation.target_memory_id}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 

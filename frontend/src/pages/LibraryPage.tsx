@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { Database, FileText, RefreshCw, RotateCcw, Search, Trash2, Upload } from 'lucide-react'
+import type { ChangeEvent, DragEvent, FormEvent } from 'react'
+import { BookOpen, Braces, Database, FileText, Layers3, RefreshCw, RotateCcw, Search, Trash2, Upload } from 'lucide-react'
 import type { ApiClient } from '../services/apiClient'
 import { ApiError } from '../services/apiClient'
 import { friendlyError } from '../utils/errors'
@@ -28,13 +28,14 @@ export function LibraryPage({ client, onNotice }: { client: ApiClient; onNotice:
   const [uploading, setUploading] = useState(false)
   const [confirm, setConfirm] = useState<{ title: string; description: string; label: string; action: () => Promise<void> } | null>(null)
   const [operationError, setOperationError] = useState('')
+  const [activeTab, setActiveTab] = useState<'overview' | 'pages' | 'chunks' | 'search' | 'embeddings'>('overview')
+  const [dragActive, setDragActive] = useState(false)
   const details = useDocumentDetails(client, selectedId)
   const search = useLibrarySearch(client)
   const selected = documents.find((document) => document.id === selectedId)
   const provider = status?.provider
 
-  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+  async function importSelectedFile(file: File | undefined | null) {
     if (!file) return
     setUploading(true)
     setOperationError('')
@@ -52,8 +53,27 @@ export function LibraryPage({ client, onNotice }: { client: ApiClient; onNotice:
       }
     } finally {
       setUploading(false)
-      event.target.value = ''
     }
+  }
+
+  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    await importSelectedFile(event.target.files?.[0])
+    event.target.value = ''
+  }
+
+  function handleDrop(event: DragEvent<HTMLElement>) {
+    event.preventDefault()
+    setDragActive(false)
+    importSelectedFile(event.dataTransfer.files?.[0]).catch(() => undefined)
+  }
+
+  const libraryStats = {
+    documents: documents.length,
+    pages: selected ? details.pages.length : 0,
+    chunks: status?.chunks ?? details.chunks.length,
+    embeddings: status?.embeddings ?? 0,
+    pending: status?.pending ?? 0,
+    errors: documents.filter((document) => document.deleted_at).length,
   }
 
   async function runAction(action: () => Promise<void>, success: string) {
@@ -135,16 +155,23 @@ export function LibraryPage({ client, onNotice }: { client: ApiClient; onNotice:
           <Database size={14} /> Reconstruir indice
         </button>
       </section>
+      <section className="knowledge-overview-grid" data-visual="library-overview">
+        <MetricTile label="Documentos" value={libraryStats.documents} detail="Carregados pelo filtro atual" />
+        <MetricTile label="Paginas" value={libraryStats.pages} detail={selected ? 'Do documento aberto' : 'Abra um documento'} />
+        <MetricTile label="Chunks" value={libraryStats.chunks} detail={`${libraryStats.pending} pendentes`} />
+        <MetricTile label="Embeddings" value={libraryStats.embeddings} detail={provider?.dimension ? `${provider.dimension} dimensoes` : 'Dimensao indisponivel'} />
+      </section>
       {providers.some((item) => !item.available && !item.fallback) && <p className="provider-warning">Modelo semantico indisponivel. A busca lexical continua ativa.</p>}
       <InlineError message={operationError || error} onRetry={reload} />
 
       <div className="workspace-split library-split">
-        <section className="list-surface">
+        <section className={`list-surface library-dropzone ${dragActive ? 'drag-active' : ''}`} onDragOver={(event) => { event.preventDefault(); setDragActive(true) }} onDragLeave={() => setDragActive(false)} onDrop={handleDrop}>
           <div className="workspace-toolbar compact-toolbar">
             <label className="checkbox-line">
               <input type="checkbox" checked={includeDeleted} onChange={(event) => setIncludeDeleted(event.target.checked)} />
               Incluir excluidos
             </label>
+            <span className="muted-text">Arraste um PDF publico ou selecione no topo.</span>
           </div>
           {loading && <LoadingState label="Carregando documentos..." />}
           {!loading && documents.length === 0 && <EmptyState title="Nenhum documento" description="Importe um PDF para iniciar a biblioteca." />}
@@ -180,13 +207,21 @@ export function LibraryPage({ client, onNotice }: { client: ApiClient; onNotice:
                   )}
                 </div>
               </div>
+              <div className="library-tabbar" role="tablist" aria-label="Areas do documento">
+                <button type="button" className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}><BookOpen size={14} /> Geral</button>
+                <button type="button" className={activeTab === 'pages' ? 'active' : ''} onClick={() => setActiveTab('pages')}><FileText size={14} /> Paginas</button>
+                <button type="button" className={activeTab === 'chunks' ? 'active' : ''} onClick={() => setActiveTab('chunks')}><Layers3 size={14} /> Chunks</button>
+                <button type="button" className={activeTab === 'embeddings' ? 'active' : ''} onClick={() => setActiveTab('embeddings')}><Braces size={14} /> Embeddings</button>
+                <button type="button" className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}><Search size={14} /> Pesquisa</button>
+              </div>
               <DocumentOverview source={details.details.source} pages={details.pages.length} chunks={details.chunks.length} />
-              <form className="retrieval-form" onSubmit={submitSearch} data-visual="retrieval-search">
+              {activeTab === 'embeddings' && <EmbeddingPanel status={status} providerName={provider?.provider || '--'} />}
+              {(activeTab === 'search' || activeTab === 'overview') && <form className="retrieval-form" onSubmit={submitSearch} data-visual="retrieval-search">
                 <label>Pesquisa na biblioteca<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pergunte sobre o documento ou biblioteca" /></label>
                 <label>Resultados<input type="number" min="1" max="50" value={topK} onChange={(event) => setTopK(Number(event.target.value))} /></label>
                 <label>Pagina<input value={pageFilter} onChange={(event) => setPageFilter(event.target.value)} placeholder="Opcional" /></label>
                 <button type="submit" className="primary" disabled={!query.trim() || search.loading}><Search size={14} /> {search.loading ? 'Pesquisando...' : 'Buscar'}</button>
-              </form>
+              </form>}
               <InlineError message={search.error} />
               {search.result && (
                 <section className="retrieval-results" data-visual="citations">
@@ -207,22 +242,22 @@ export function LibraryPage({ client, onNotice }: { client: ApiClient; onNotice:
                 </section>
               )}
               <section className="document-tabs">
-                <h3>Paginas</h3>
+                {(activeTab === 'pages' || activeTab === 'overview') && <><h3>Paginas</h3>
                 {details.pages.slice(0, 12).map((page) => (
                   <article className="page-row" key={page.id}>
                     <strong>Pagina {page.page_number}</strong>
                     <span>{page.character_count} caracteres | {extractionStatusLabels[page.extraction_status] || page.extraction_status}</span>
                     <p>{page.text_content.slice(0, 220) || page.error_message || 'Sem texto extraivel.'}</p>
                   </article>
-                ))}
-                <h3>Chunks</h3>
+                ))}</>}
+                {(activeTab === 'chunks' || activeTab === 'overview') && <><h3>Chunks</h3>
                 {details.chunks.slice(0, 20).map((chunk) => (
                   <article className="chunk-row" key={chunk.id}>
                     <strong>Chunk {chunk.chunk_index}</strong>
                     <span>Pagina #{chunk.page_id} | {chunk.character_start}-{chunk.character_end} | {chunk.token_estimate} tokens | {shortHash(chunk.content_hash)}</span>
                     <p>{chunk.text_content.slice(0, 180)}</p>
                   </article>
-                ))}
+                ))}</>}
               </section>
             </div>
           ) : details.loading ? (
@@ -250,6 +285,33 @@ function DocumentCard({ document, selected, onOpen }: { document: DocumentItem; 
         </div>
       </button>
     </article>
+  )
+}
+
+function MetricTile({ label, value, detail }: { label: string; value: number | string; detail: string }) {
+  return (
+    <article className="knowledge-metric-tile">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  )
+}
+
+function EmbeddingPanel({ status, providerName }: { status: ReturnType<typeof useDocuments>['status']; providerName: string }) {
+  return (
+    <section className="embedding-panel" data-visual="library-embeddings">
+      <h3><Braces size={14} /> Embeddings</h3>
+      <div className="detail-grid">
+        <span>Total<strong>{status?.embeddings ?? 0}</strong></span>
+        <span>Chunks<strong>{status?.chunks ?? 0}</strong></span>
+        <span>Pendentes<strong>{status?.pending ?? 0}</strong></span>
+        <span>Provider<strong>{providerName}</strong></span>
+        <span>Dimensao<strong>{status?.provider?.dimension ?? 0}</strong></span>
+        <span>Modo<strong>{status?.semantic_available ? 'hibrido' : 'lexical'}</strong></span>
+      </div>
+      <p className="muted-text">Vetores completos nao sao exibidos por seguranca. Use apenas diagnostico resumido.</p>
+    </section>
   )
 }
 
