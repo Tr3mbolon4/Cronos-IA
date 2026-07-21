@@ -1,0 +1,18 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-2",
+  "status": "pending-runtime-and-model",
+  "packagedBuild": "not-run",
+  "outsideProjectDirectory": false,
+  "requiresNodeModules": false,
+  "requiresPythonGlobal": false,
+  "requiresCustomPath": false,
+  "ttsPackaged": "not-run",
+  "sttPackaged": "not-run",
+  "reason": "voice runtime artifacts are intentionally absent until controlled preparation",
+  "visualTest": {
+    "executed": false,
+    "blockedReason": "CRONOS_VISUAL_TEST_PASSWORD and CRONOS_VISUAL_TEST_PIN are not defined in this process",
+    "secretLogged": false
+  }
+}

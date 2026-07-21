@@ -1,0 +1,23 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-2",
+  "provider": "cronos-local-whisper",
+  "status": "benchmark-pending-runtime-and-model",
+  "measurements": {
+    "coldStarts": [],
+    "warmStarts": [],
+    "shortAudioRuns": [],
+    "longAudioRun": null,
+    "modelLoadMs": "not-run",
+    "captureMs": "not-run",
+    "conversionMs": "not-run",
+    "transcriptionMs": "not-run",
+    "frontendReturnMs": "not-run",
+    "cpuAveragePercent": "not-run",
+    "cpuPeakPercent": "not-run",
+    "ramAverageMb": "not-run",
+    "ramPeakMb": "not-run",
+    "realTimeFactor": "not-run"
+  },
+  "reason": "whisper-cli.exe and ggml-base.bin have not been prepared with real SHA-256 values yet"
+}

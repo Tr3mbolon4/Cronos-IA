@@ -1,0 +1,18 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-2",
+  "status": "unit-path-implemented-real-process-pending",
+  "implemented": {
+    "requestIdRegistry": true,
+    "cancelCommand": true,
+    "cancelAllOnClose": true,
+    "timeoutKill": true,
+    "temporaryDirectory": "%LOCALAPPDATA%/CRONOS/runtime/voice-temp",
+    "temporaryCleanup": true
+  },
+  "realProcessValidation": {
+    "orphanProcessCheck": "not-run-runtime-missing",
+    "tempFilesAfterCancel": "not-run-runtime-missing",
+    "tempFilesAfterTimeout": "not-run-runtime-missing"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-2",
+  "status": "pending-runtime-and-model",
+  "networkRequiredByDesign": false,
+  "automaticDownloadAtRuntime": false,
+  "testPlan": [
+    "Disable Wi-Fi and Ethernet",
+    "Open packaged desktop build outside the repository",
+    "Run three pt-BR transcription attempts",
+    "Inspect process network connections before, during, and after transcription",
+    "Confirm no external connection was attempted"
+  ],
+  "connectionsObserved": "not-run",
+  "sanitized": true
+}

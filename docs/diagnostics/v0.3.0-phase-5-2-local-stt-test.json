@@ -1,0 +1,52 @@
+{
+  "createdAt": "2026-07-21T00:00:00.000Z",
+  "phase": "v0.3.0-phase-5-2",
+  "provider": "cronos-local-whisper",
+  "status": "implemented-but-real-runtime-pending",
+  "implemented": {
+    "runtimeManifest": true,
+    "prepareScript": true,
+    "pcmWavCapture": true,
+    "tauriStatusCommand": true,
+    "tauriTranscriptionCommand": true,
+    "tauriCancellationCommand": true,
+    "checksumGate": true,
+    "temporaryFileCleanup": true,
+    "webviewSilentFallback": false
+  },
+  "runtime": {
+    "engine": "whisper.cpp",
+    "version": "v1.8.5",
+    "binary": "frontend/src-tauri/resources/voice/whisper/bin/whisper-cli.exe",
+    "binaryPresent": false,
+    "binarySha256": "pending-controlled-preparation"
+  },
+  "model": {
+    "name": "ggml-base.bin",
+    "path": "frontend/src-tauri/resources/voice/whisper/models/ggml-base.bin",
+    "present": false,
+    "sha256": "pending-controlled-preparation",
+    "language": "pt-BR"
+  },
+  "audio": {
+    "format": "mono PCM WAV 16 kHz 16-bit",
+    "webmRenamedToWav": false,
+    "storedByDefault": false
+  },
+  "realValidation": {
+    "microphone": "not-run-runtime-missing",
+    "offline": "not-run-runtime-missing",
+    "packagedDesktop": "not-run-runtime-missing",
+    "ttsPackaged": "not-run-runtime-missing"
+  },
+  "automatedTests": {
+    "npmRunLint": "passed",
+    "npmRunBuild": "passed",
+    "cargoCheck": "passed",
+    "cargoTest": "passed-4-tests",
+    "backendTests": "passed-57-tests",
+    "loginErrorTest": "passed",
+    "prepareScriptSyntax": "passed",
+    "visualTest": "blocked-missing-local-secret-env"
+  }
+}
