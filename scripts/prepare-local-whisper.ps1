@@ -3,8 +3,10 @@ param(
   [string]$RuntimeSha256,
   [string]$ModelSha256,
   [string]$RuntimeArchiveUrl,
+  [string]$RuntimeBinDir,
   [string]$ModelUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-  [switch]$UseExistingFiles
+  [switch]$UseExistingFiles,
+  [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,19 +43,43 @@ $tempDir = Join-Path $repoRoot ".tmp\local-whisper"
 
 New-Item -ItemType Directory -Force -Path $binDir, $modelDir, $licenseDir, $tempDir | Out-Null
 
+if ($DryRun) {
+  Write-Host "CRONOS Local Whisper dry-run."
+  Write-Host "Whisper version: $WhisperVersion"
+  Write-Host "Runtime target: $runtimePath"
+  Write-Host "Model target: $modelPath"
+  Write-Host "Runtime source: $RuntimeArchiveUrl"
+  Write-Host "Runtime bin dir: $RuntimeBinDir"
+  Write-Host "Model source: $ModelUrl"
+  Write-Host "Runtime SHA provided: $([bool]$RuntimeSha256)"
+  Write-Host "Model SHA provided: $([bool]$ModelSha256)"
+  exit 0
+}
+
 if (-not $UseExistingFiles) {
-  if (-not $RuntimeArchiveUrl) {
-    throw "Informe -RuntimeArchiveUrl oficial ou use -UseExistingFiles apos preparar whisper-cli.exe manualmente."
+  if ($RuntimeBinDir) {
+    $runtimeCandidate = Join-Path $RuntimeBinDir "whisper-cli.exe"
+    if (-not (Test-Path -LiteralPath $runtimeCandidate)) {
+      throw "whisper-cli.exe nao encontrado em RuntimeBinDir: $RuntimeBinDir"
+    }
+    Copy-Item -LiteralPath $runtimeCandidate -Destination $runtimePath -Force
+    Get-ChildItem -LiteralPath $RuntimeBinDir -Filter "*.dll" | Copy-Item -Destination $binDir -Force
+  } elseif ($RuntimeArchiveUrl) {
+    $archive = Join-Path $tempDir "whisper-runtime.zip"
+    Invoke-VerifiedDownload -Url $RuntimeArchiveUrl -OutFile $archive
+    Expand-Archive -LiteralPath $archive -DestinationPath $tempDir -Force
+    $runtime = Get-ChildItem -Path $tempDir -Recurse -Filter "whisper-cli.exe" | Select-Object -First 1
+    if (-not $runtime) {
+      throw "whisper-cli.exe nao encontrado no pacote informado."
+    }
+    Copy-Item -LiteralPath $runtime.FullName -Destination $runtimePath -Force
+    Get-ChildItem -Path $runtime.DirectoryName -Filter "*.dll" | Copy-Item -Destination $binDir -Force
+  } else {
+    throw "Informe -RuntimeArchiveUrl oficial, -RuntimeBinDir de build oficial, ou use -UseExistingFiles."
   }
-  $archive = Join-Path $tempDir "whisper-runtime.zip"
-  Invoke-VerifiedDownload -Url $RuntimeArchiveUrl -OutFile $archive
-  Expand-Archive -LiteralPath $archive -DestinationPath $tempDir -Force
-  $runtime = Get-ChildItem -Path $tempDir -Recurse -Filter "whisper-cli.exe" | Select-Object -First 1
-  if (-not $runtime) {
-    throw "whisper-cli.exe nao encontrado no pacote informado."
+  if (-not (Test-Path -LiteralPath $modelPath)) {
+    Invoke-VerifiedDownload -Url $ModelUrl -OutFile $modelPath
   }
-  Copy-Item -LiteralPath $runtime.FullName -Destination $runtimePath -Force
-  Invoke-VerifiedDownload -Url $ModelUrl -OutFile $modelPath
 }
 
 if (-not (Test-Path -LiteralPath $runtimePath)) {
