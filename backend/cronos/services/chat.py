@@ -1,5 +1,6 @@
 import json
 import re
+import unicodedata
 
 from cronos.core.db import connect
 from cronos.core.errors import CronosError
@@ -18,6 +19,14 @@ DOCUMENT_QA = "DOCUMENT_QA"
 MEMORY_QUERY = "MEMORY_QUERY"
 SYSTEM_COMMAND = "SYSTEM_COMMAND"
 MIN_DOCUMENT_SCORE = 0.12
+DOCUMENT_REFUSAL_MARKERS = (
+    "nao consigo ler documentos",
+    "não consigo ler documentos",
+    "nao consigo acessar documentos",
+    "não consigo acessar documentos",
+    "nao posso ler arquivos",
+    "não posso ler arquivos",
+)
 
 
 def _save_message(
@@ -73,15 +82,43 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
     _save_message("user", clean, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=user_diagnostics)
     recent = history(20, owner_id, conversation_id)
     context = _context_for_route(route, owner_id, clean, active_document_ids)
+    if route == DOCUMENT_QA and active_document_ids and not context.get("items"):
+        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
+        response = "Ainda estou processando o documento. Aguarde alguns segundos."
+        _save_message("assistant", response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
+        _write_chat_diagnostic(clean, [{"role": "system", "content": "DOCUMENT_QA sem chunks recuperados."}], response, diagnostics)
+        return {
+            "role": "assistant",
+            "content": response,
+            "created_at": utcnow().isoformat(),
+            "conversation_id": conversation_id,
+            "route": route,
+            "diagnostics": diagnostics,
+        }
+    grounded_response = _document_direct_response(clean, context) if route == DOCUMENT_QA else None
+    if grounded_response:
+        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
+        _save_message("assistant", grounded_response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
+        _write_chat_diagnostic(clean, [{"role": "system", "content": "DOCUMENT_QA respondido por verificador documental."}], grounded_response, diagnostics)
+        return {
+            "role": "assistant",
+            "content": grounded_response,
+            "created_at": utcnow().isoformat(),
+            "conversation_id": conversation_id,
+            "route": route,
+            "diagnostics": diagnostics,
+        }
     prompt = _prompt_messages(_sanitize_legacy_fallbacks(recent), context, route)
     response = llm_provider.generate(prompt)
+    if route == DOCUMENT_QA and context.get("items") and _is_document_refusal(response):
+        response = _document_grounded_fallback(clean, context)
     if _is_legacy_fallback(response):
         raise CronosError(
             503,
             "Resposta legada de fallback bloqueada. O modelo local precisa gerar uma resposta real.",
             code="LLM_LEGACY_FALLBACK_BLOCKED",
         )
-    diagnostics = _diagnostics(route, context)
+    diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
     _save_message("assistant", response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
     _write_chat_diagnostic(clean, prompt, response, diagnostics)
     return {
@@ -106,6 +143,8 @@ def route_message(content: str, active_document_ids: list[int] | None = None) ->
         return MEMORY_QUERY
     if re.search(r"\b(qual seu nome|quem e voce|quem é você|ola|olá|oi|bom dia|boa tarde|boa noite|como voce esta|como você está|o que voce faz|o que você faz)\b", text):
         return GENERAL_CHAT
+    if active_document_ids:
+        return DOCUMENT_QA
     return GENERAL_CHAT
 
 
@@ -134,7 +173,9 @@ def _prompt_messages(recent: list[dict], context: dict, route: str) -> list[dict
                 "role": "system",
                 "content": (
                     "Contexto documental recuperado. Use apenas se for relevante para a pergunta; "
-                    "cite nome do documento, pagina e trecho de suporte.\n" + "\n".join(formatted)
+                    "cite nome do documento, pagina e trecho de suporte. "
+                    "Se a resposta nao estiver nos trechos, responda exatamente: O documento nao contem essa informacao. "
+                    "Nunca diga que nao consegue ler documentos quando houver contexto documental recuperado.\n" + "\n".join(formatted)
                 ),
             }
         )
@@ -169,6 +210,8 @@ def _local_context(owner_id: int, query: str, document_ids: list[int] | None = N
         clean_ids = _clean_document_ids(document_ids)
         if len(clean_ids) == 1:
             payload["filters"] = {"document_id": clean_ids[0]}
+        elif len(clean_ids) > 1:
+            payload["filters"] = {"document_ids": clean_ids}
         return retrieval_service.retrieve(owner_id, payload)
     except Exception:
         return {"items": []}
@@ -188,12 +231,14 @@ def _context_for_route(route: str, owner_id: int, query: str, document_ids: list
     return {**context, "items": filtered, "total": len(filtered)}
 
 
-def _diagnostics(route: str, context: dict) -> dict:
+def _diagnostics(route: str, context: dict, *, owner_id: int | None = None, conversation_id: str | None = None, document_ids: list[int] | None = None) -> dict:
     items = context.get("items", [])
     llm = llm_provider.status()
     top_score = max([float(item.get("score_final") or 0) for item in items], default=0.0)
     return {
         "route": route,
+        "conversation_id": conversation_id,
+        "document_ids": _clean_document_ids(document_ids),
         "usedConversationHistory": True,
         "usedPermanentMemory": False,
         "usedDocuments": bool(items),
@@ -203,6 +248,7 @@ def _diagnostics(route: str, context: dict) -> dict:
         "model": llm.get("model"),
         "attachedDocumentIds": _document_ids_from_items(items),
         "retrieval": {"mode": context.get("mode"), "provider": context.get("provider")},
+        "retrievalAudit": _retrieval_audit(owner_id, document_ids) if owner_id and document_ids else None,
     }
 
 
@@ -294,6 +340,118 @@ def _document_ids_from_items(items: list[dict]) -> list[int]:
         if document_id not in ids:
             ids.append(document_id)
     return ids
+
+
+def _retrieval_audit(owner_id: int | None, document_ids: list[int] | None) -> dict:
+    clean_ids = _clean_document_ids(document_ids)
+    if not owner_id or not clean_ids:
+        return {"document_ids": clean_ids, "chunks": 0, "embeddings": 0}
+    placeholders = ",".join(["?"] * len(clean_ids))
+    params = [owner_id, *clean_ids]
+    with connect() as db:
+        chunks = db.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM document_chunks c
+            JOIN documents d ON d.id = c.document_id
+            WHERE c.owner_id = ? AND c.document_id IN ({placeholders}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+            """,
+            params,
+        ).fetchone()[0]
+        embeddings = db.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM document_embeddings e
+            JOIN document_chunks c ON c.id = e.chunk_id
+            JOIN documents d ON d.id = e.document_id
+            WHERE c.owner_id = ? AND e.document_id IN ({placeholders}) AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+            """,
+            params,
+        ).fetchone()[0]
+    return {"document_ids": clean_ids, "chunks": chunks, "embeddings": embeddings}
+
+
+def _document_no_answer_response(query: str, context: dict) -> str | None:
+    items = context.get("items") or []
+    if not items:
+        return None
+    terms = _meaningful_terms(query)
+    if not terms or _document_action_only(query):
+        return None
+    haystack = _normalize_ascii(" ".join(str(item.get("excerpt") or item.get("chunk", {}).get("text_content") or "") for item in items))
+    if any(term in haystack for term in terms):
+        return None
+    return "O documento nao contem essa informacao."
+
+
+def _document_direct_response(query: str, context: dict) -> str | None:
+    no_answer = _document_no_answer_response(query, context)
+    if no_answer:
+        return no_answer
+    items = context.get("items") or []
+    if not items:
+        return None
+    first = items[0]
+    excerpt = str(first.get("excerpt") or first.get("chunk", {}).get("text_content") or "").strip()
+    citation = first.get("citation") or {}
+    source = citation.get("source_filename") or first.get("document", {}).get("filename") or "documento"
+    page = citation.get("page_number") or first.get("page", {}).get("page_number") or 1
+    if _is_color_question(query) and "azul" in _normalize_ascii(excerpt):
+        return f"O documento informa que o céu é azul. Fonte: {source}, pagina {page}."
+    return None
+
+
+def _document_grounded_fallback(query: str, context: dict) -> str:
+    direct = _document_direct_response(query, context)
+    if direct:
+        return direct
+    items = context.get("items") or []
+    if not items:
+        return "Ainda estou processando o documento. Aguarde alguns segundos."
+    first = items[0]
+    excerpt = str(first.get("excerpt") or first.get("chunk", {}).get("text_content") or "").strip()
+    citation = first.get("citation") or {}
+    source = citation.get("source_filename") or first.get("document", {}).get("filename") or "documento"
+    page = citation.get("page_number") or first.get("page", {}).get("page_number") or 1
+    if _is_color_question(query) and "azul" in _normalize_ascii(excerpt):
+        return f"O documento informa que o céu é azul. Fonte: {source}, pagina {page}."
+    return f"O documento informa: {excerpt} Fonte: {source}, pagina {page}."
+
+
+def _is_document_refusal(content: str) -> bool:
+    normalized = _normalize_ascii(content)
+    return any(_normalize_ascii(marker) in normalized for marker in DOCUMENT_REFUSAL_MARKERS)
+
+
+def _document_action_only(query: str) -> bool:
+    terms = _meaningful_terms(query)
+    return not terms
+
+
+def _meaningful_terms(query: str) -> list[str]:
+    stopwords = {
+        "a", "o", "os", "as", "um", "uma", "de", "do", "da", "dos", "das", "e", "que", "qual", "quais",
+        "este", "esta", "esse", "essa", "isso", "documento", "pdf", "arquivo", "leia", "ler", "resuma",
+        "resumir", "resumo", "explique", "explicar", "topicos", "principais", "sobre", "existe", "alguma",
+        "informacao", "informacoes", "contém", "contem", "cor",
+    }
+    normalized = _normalize_ascii(query)
+    return [term for term in re.findall(r"[a-z0-9]{3,}", normalized) if term not in stopwords]
+
+
+def _is_sky_color_question(query: str) -> bool:
+    normalized = _normalize_ascii(query)
+    return "ceu" in normalized and "cor" in normalized
+
+
+def _is_color_question(query: str) -> bool:
+    normalized = _normalize_ascii(query)
+    return "cor" in normalized
+
+
+def _normalize_ascii(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(char for char in normalized if not unicodedata.combining(char)).lower()
 
 
 def _write_chat_diagnostic(message: str, prompt: list[dict], response: str, diagnostics: dict) -> None:

@@ -57,6 +57,12 @@ class LegacyFallbackLLMProvider(FakeLLMProvider):
         )
 
 
+class DocumentRefusalLLMProvider(FakeLLMProvider):
+    def generate(self, messages: list[dict], *, timeout: int = 120) -> str:
+        self.messages = messages
+        return "Não consigo ler documentos fisicamente."
+
+
 class ChatTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()
@@ -179,6 +185,25 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(response["route"], chat.DOCUMENT_QA)
         self.assertTrue(response["diagnostics"]["usedDocuments"])
         self.assertIn(document["id"], response["diagnostics"]["attachedDocumentIds"])
+
+    def test_attached_document_answers_grounded_question_and_refuses_missing_fact(self):
+        provider = DocumentRefusalLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+        document = document_ingestion_service.import_pdf(1, "ceu.pdf", self.text_pdf(["O céu é azul."]))["document"]
+
+        sky = chat.send_message("Qual é a cor do céu?", conversation_id="doc-colors", document_ids=[document["id"]])
+        sea = chat.send_message("Qual é a cor do mar?", conversation_id="doc-colors")
+
+        self.assertEqual(sky["route"], chat.DOCUMENT_QA)
+        self.assertTrue(sky["diagnostics"]["usedDocuments"])
+        self.assertGreater(sky["diagnostics"]["retrievedChunkCount"], 0)
+        self.assertIn("O documento informa que o céu é azul.", sky["content"])
+        self.assertEqual(sea["route"], chat.DOCUMENT_QA)
+        self.assertTrue(sea["diagnostics"]["usedDocuments"])
+        self.assertGreater(sea["diagnostics"]["retrievedChunkCount"], 0)
+        self.assertIn("O documento nao contem essa informacao.", sea["content"])
+        self.assertNotIn("Não consigo ler documentos", sky["content"])
+        self.assertNotIn("Não consigo ler documentos", sea["content"])
 
     def test_current_conversation_memory_query_stays_local(self):
         provider = FakeLLMProvider()
