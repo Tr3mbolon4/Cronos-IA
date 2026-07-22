@@ -1,8 +1,40 @@
 from cronos.models.document import normalize_document_text
 
+STOPWORDS = {
+    "a",
+    "as",
+    "com",
+    "como",
+    "da",
+    "das",
+    "de",
+    "deve",
+    "do",
+    "dos",
+    "e",
+    "em",
+    "esta",
+    "este",
+    "foi",
+    "nao",
+    "no",
+    "o",
+    "os",
+    "para",
+    "por",
+    "qual",
+    "que",
+    "um",
+    "uma",
+}
+
 
 def search(chunks: list[dict], query: str) -> list[dict]:
-    terms = [term for term in normalize_document_text(query).split() if len(term) > 2]
+    terms = [
+        term
+        for term in normalize_document_text(query).split()
+        if term not in STOPWORDS and (len(term) > 2 or term.isdigit())
+    ]
     if not terms:
         return []
     results: list[dict] = []

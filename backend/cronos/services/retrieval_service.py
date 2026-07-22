@@ -1,5 +1,6 @@
 import json
 import math
+import re
 
 from cronos.core.db import connect
 from cronos.core.retrieval_config import retrieval_config
@@ -29,14 +30,28 @@ def retrieve(owner_id: int, payload: dict) -> dict:
 
     combined_ids = set(lexical_by_chunk) | set(semantic_by_chunk)
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
+    requested_page = _requested_page(query)
     items = []
     for chunk_id in combined_ids:
         chunk = chunk_by_id.get(chunk_id) or semantic_by_chunk[chunk_id]["chunk"]
+        lexical_score = lexical_by_chunk.get(chunk_id, {}).get("score_lexical", 0.0)
+        semantic_score = semantic_by_chunk.get(chunk_id, {}).get("score_semantic", 0.0)
+        proximity = lexical_by_chunk.get(chunk_id, {}).get("proximity", 0.0)
+        importance = 0.0
+        if requested_page is not None:
+            if int(chunk.get("page_number") or 0) == requested_page:
+                lexical_score = min(1.0, lexical_score + 0.35)
+                proximity = max(proximity, 1.0)
+                importance = 1.0
+            else:
+                semantic_score *= 0.25
+                lexical_score *= 0.35
         item = {
             "chunk": chunk,
-            "score_lexical": lexical_by_chunk.get(chunk_id, {}).get("score_lexical", 0.0),
-            "score_semantic": semantic_by_chunk.get(chunk_id, {}).get("score_semantic", 0.0),
-            "proximity": lexical_by_chunk.get(chunk_id, {}).get("proximity", 0.0),
+            "score_lexical": lexical_score,
+            "score_semantic": semantic_score,
+            "proximity": proximity,
+            "importance": importance,
         }
         items.append(item)
     ranked = [item for item in reranking_service.rerank(items) if item["score_final"] >= retrieval_config.minimum_score]
@@ -146,3 +161,11 @@ def _top_k(value: object) -> int:
     except (TypeError, ValueError):
         parsed = retrieval_config.top_k
     return min(max(parsed, 1), retrieval_config.max_top_k)
+
+
+def _requested_page(query: str) -> int | None:
+    normalized = query.lower()
+    match = re.search(r"p[áa]gina\s+(\d{1,4})", normalized)
+    if not match:
+        return None
+    return int(match.group(1))
