@@ -1,5 +1,6 @@
 param(
-    [string]$BackendExe
+    [string]$BackendExe,
+    [string]$ResourceDir
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,6 +11,12 @@ if (!$BackendExe) {
 }
 if (!(Test-Path $BackendExe)) {
     throw "Backend empacotado nao encontrado: $BackendExe"
+}
+if (!$ResourceDir) {
+    $ResourceDir = Join-Path $root "frontend\src-tauri\resources"
+}
+if (!(Test-Path $ResourceDir)) {
+    throw "Diretorio de recursos nao encontrado: $ResourceDir"
 }
 
 $temp = Join-Path $env:TEMP ("Cronos Backend Package Test " + [guid]::NewGuid().ToString("N"))
@@ -25,7 +32,7 @@ $rng.GetBytes($tokenBytes)
 $runtimeToken = [Convert]::ToBase64String($tokenBytes)
 $sessionId = [guid]::NewGuid().ToString()
 
-$argsLine = "--host 127.0.0.1 --port 0 --data-dir `"$data`" --log-dir `"$logs`" --runtime-token `"$runtimeToken`" --session-id $sessionId --environment desktop"
+$argsLine = "--host 127.0.0.1 --port 0 --data-dir `"$data`" --log-dir `"$logs`" --runtime-token `"$runtimeToken`" --session-id $sessionId --environment desktop --resource-dir `"$ResourceDir`""
 $process = Start-Process -FilePath $BackendExe -ArgumentList $argsLine -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden -PassThru
 
 try {
@@ -80,9 +87,9 @@ try {
     } | ConvertTo-Json -Compress) -TimeoutSec 5
     $authHeaders = @{ "Authorization" = "Bearer $($owner.token)" }
     $providers = Invoke-RestMethod -Uri "$baseUrl/library/index/providers" -Headers $authHeaders -TimeoutSec 5
-    $semantic = $providers | Where-Object { $_.provider -eq "cronos-local-semantic" } | Select-Object -First 1
+    $semantic = $providers | Where-Object { $_.provider -eq "cronos-local-llama-embedding" } | Select-Object -First 1
     if (!$semantic -or !$semantic.available -or $semantic.dimension -ne 384) {
-        throw "Provider semantico empacotado indisponivel: $($providers | ConvertTo-Json -Compress)"
+        throw "Provider de embeddings real indisponivel: $($providers | ConvertTo-Json -Compress)"
     }
 
     $shutdown = Invoke-RestMethod -Method Post -Uri "$baseUrl/runtime/shutdown" -Headers @{ "X-Cronos-Runtime-Token" = $runtimeToken } -TimeoutSec 5

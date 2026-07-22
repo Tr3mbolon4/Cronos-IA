@@ -15,6 +15,9 @@ if (!(Test-Path $venvPython)) {
 
 & $venvPython -m PyInstaller --version | Out-Null
 
+Get-Process -Name "cronos-backend","cronos-backend-console" -ErrorAction SilentlyContinue |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+
 if (Test-Path $buildDir) {
     Remove-Item -LiteralPath $buildDir -Recurse -Force
 }

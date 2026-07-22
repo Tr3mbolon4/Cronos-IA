@@ -7,7 +7,7 @@ use serde_json::Value;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command as SystemCommand;
 use std::sync::mpsc;
 use std::sync::{Condvar, Mutex};
@@ -76,20 +76,18 @@ impl BackendRuntime {
         let session = session_id()?;
         let port = reserve_local_port()?;
         let base_url = format!("http://127.0.0.1:{port}");
-        let resource_dir = app
-            .path()
-            .resource_dir()
-            .map_err(|error| error.to_string())?;
+        let resource_dir = resolve_resource_dir(&app)?;
         append_desktop_log(
             &desktop_log,
             "INFO",
             "sidecar",
             "STARTUP-010",
             &format!(
-                "Starting backend sidecar base_url={} data_dir={} logs_dir={}",
+                "Starting backend sidecar base_url={} data_dir={} logs_dir={} resource_dir={}",
                 base_url,
                 directories.root.to_string_lossy(),
-                directories.logs.to_string_lossy()
+                directories.logs.to_string_lossy(),
+                resource_dir.to_string_lossy()
             ),
         );
         let (ready_tx, ready_rx) = mpsc::channel::<RuntimeConnection>();
@@ -385,6 +383,36 @@ fn append_desktop_log(path: &Path, level: &str, component: &str, code: &str, mes
         path,
         &format!("{now} {level} {component} {code} {message}\n"),
     );
+}
+
+fn resolve_resource_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let tauri_resource_dir = app.path().resource_dir().map_err(|error| error.to_string())?;
+    if has_cronos_resources(&tauri_resource_dir) {
+        return Ok(tauri_resource_dir);
+    }
+    let exe_dir = std::env::current_exe()
+        .map_err(|error| error.to_string())?
+        .parent()
+        .ok_or_else(|| "Nao foi possivel resolver o diretorio do executavel.".to_string())?
+        .to_path_buf();
+    let beside_exe = exe_dir.join("resources");
+    if has_cronos_resources(&beside_exe) {
+        return Ok(beside_exe);
+    }
+    Err(format!(
+        "Recursos locais do CRONOS nao encontrados. tauri_resource_dir={} beside_exe={}",
+        tauri_resource_dir.to_string_lossy(),
+        beside_exe.to_string_lossy()
+    ))
+}
+
+fn has_cronos_resources(path: &Path) -> bool {
+    path.join("ai").join("llm").join("manifest.json").is_file()
+        && path
+            .join("ai")
+            .join("embeddings")
+            .join("manifest.json")
+            .is_file()
 }
 
 fn rotate_log(path: &Path) {
