@@ -49,16 +49,6 @@ function App() {
   const owner = setup?.owner?.name || ownerName || 'Alexandre'
   const apiClient = useMemo(() => new ApiClient({ baseUrl: apiBaseUrl, runtimeToken, authToken: token }), [apiBaseUrl, runtimeToken, token])
   const api = useCallback(<T,>(path: string, options: RequestInit = {}) => apiClient.request<T>(path, options), [apiClient])
-  const chat = useChatWorkspace({
-    client: apiClient,
-    token,
-    initialMessages: messages,
-    retrieval,
-    documents,
-    onCoreState: setCoreState,
-    onHistoryChange: setMessages,
-  })
-
   const refreshProtectedData = useCallback(async (activeToken = token) => {
     if (!activeToken) return
     const protectedClient = new ApiClient({ baseUrl: apiBaseUrl, runtimeToken, authToken: activeToken })
@@ -82,6 +72,17 @@ function App() {
       })
     }
   }, [apiBaseUrl, runtimeToken, token])
+
+  const chat = useChatWorkspace({
+    client: apiClient,
+    token,
+    initialMessages: messages,
+    retrieval,
+    documents,
+    onCoreState: setCoreState,
+    onHistoryChange: setMessages,
+    onDocumentsImported: () => refreshProtectedData(),
+  })
 
   const initializeStartup = useCallback(async (phase: StartupPhase = 'backend_starting') => {
     try {

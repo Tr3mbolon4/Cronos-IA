@@ -1501,13 +1501,39 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(116, 168, 211, .18);
   padding: 5px 7px;
   font-size: 11px;
 }
 
+.attachment-tray span > * {
+  position: relative;
+  z-index: 1;
+}
+
+.attachment-tray span i {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(42, 169, 255, .38), rgba(106, 255, 192, .62));
+}
+
+.attachment-tray span small {
+  color: var(--cronos-muted);
+  font-size: 11px;
+}
+
 .attachment-tray span.blocked {
   border-color: rgba(255, 82, 108, .34);
+}
+
+.attachment-tray span.failed {
+  border-color: rgba(255, 82, 108, .42);
+  background: rgba(255, 82, 108, .08);
 }
 
 .composer-row {

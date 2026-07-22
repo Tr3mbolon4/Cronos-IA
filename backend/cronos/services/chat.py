@@ -62,15 +62,17 @@ def history(limit: int = 50, owner_id: int = 1, conversation_id: str = "principa
     return [dict(row) for row in reversed(rows)]
 
 
-def send_message(content: str, owner_id: int = 1, conversation_id: str = "principal") -> dict:
+def send_message(content: str, owner_id: int = 1, conversation_id: str = "principal", document_ids: list[int] | None = None) -> dict:
     clean = content.strip()
     if not clean:
         raise CronosError(400, "Mensagem obrigatoria.", code="CHAT_MESSAGE_REQUIRED")
     conversation_id = _conversation_id(conversation_id)
-    route = route_message(clean)
-    _save_message("user", clean, owner_id=owner_id, conversation_id=conversation_id, route=route)
+    active_document_ids = _active_document_ids(owner_id, conversation_id, document_ids)
+    route = route_message(clean, active_document_ids)
+    user_diagnostics = {"attachedDocumentIds": active_document_ids} if active_document_ids else None
+    _save_message("user", clean, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=user_diagnostics)
     recent = history(20, owner_id, conversation_id)
-    context = _context_for_route(route, owner_id, clean)
+    context = _context_for_route(route, owner_id, clean, active_document_ids)
     prompt = _prompt_messages(_sanitize_legacy_fallbacks(recent), context, route)
     response = llm_provider.generate(prompt)
     if _is_legacy_fallback(response):
@@ -92,11 +94,13 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
     }
 
 
-def route_message(content: str) -> str:
+def route_message(content: str, active_document_ids: list[int] | None = None) -> str:
     text = _normalize(content)
     if re.search(r"\b(abrir|execute|executar|instalar|desinstalar|atualizar|apagar|deletar|mover|copiar)\b", text):
         return SYSTEM_COMMAND
     if re.search(r"\b(documento|pdf|arquivo enviado|fonte|citacao|citação|pagina|página|biblioteca)\b", text):
+        return DOCUMENT_QA
+    if active_document_ids and re.search(r"\b(leia|ler|resuma|resumir|resumo|explique|explicar|interprete|o que esta escrito|sobre isso)\b", text):
         return DOCUMENT_QA
     if re.search(r"\b(nesta conversa|mensagem anterior|codigo que falei|código que falei|lembra|historico|histórico)\b", text):
         return MEMORY_QUERY
@@ -157,23 +161,30 @@ def _prompt_messages(recent: list[dict], context: dict, route: str) -> list[dict
     return messages
 
 
-def _local_context(owner_id: int, query: str) -> dict:
+def _local_context(owner_id: int, query: str, document_ids: list[int] | None = None) -> dict:
     try:
         from cronos.services import retrieval_service
 
-        return retrieval_service.retrieve(owner_id, {"query": query, "top_k": 4})
+        payload: dict = {"query": query, "top_k": 4}
+        clean_ids = _clean_document_ids(document_ids)
+        if len(clean_ids) == 1:
+            payload["filters"] = {"document_id": clean_ids[0]}
+        return retrieval_service.retrieve(owner_id, payload)
     except Exception:
         return {"items": []}
 
 
-def _context_for_route(route: str, owner_id: int, query: str) -> dict:
+def _context_for_route(route: str, owner_id: int, query: str, document_ids: list[int] | None = None) -> dict:
     if route != DOCUMENT_QA:
         return {"items": [], "total": 0, "mode": "none", "provider": {}, "skipped": "route_without_document_retrieval"}
-    context = _local_context(owner_id, query)
+    clean_ids = _clean_document_ids(document_ids)
+    context = _local_context(owner_id, query, clean_ids)
     filtered = []
     for item in context.get("items", []):
         if float(item.get("score_final") or 0) >= MIN_DOCUMENT_SCORE:
             filtered.append(item)
+    if not filtered and clean_ids:
+        filtered = _first_document_chunks(owner_id, clean_ids)
     return {**context, "items": filtered, "total": len(filtered)}
 
 
@@ -190,7 +201,99 @@ def _diagnostics(route: str, context: dict) -> dict:
         "topScore": round(top_score, 6),
         "provider": llm.get("provider"),
         "model": llm.get("model"),
+        "attachedDocumentIds": _document_ids_from_items(items),
+        "retrieval": {"mode": context.get("mode"), "provider": context.get("provider")},
     }
+
+
+def _first_document_chunks(owner_id: int, document_ids: list[int]) -> list[dict]:
+    try:
+        from cronos.repositories import retrieval_repository
+        from cronos.services import document_citation_service
+
+        items: list[dict] = []
+        with connect() as db:
+            for document_id in document_ids[:4]:
+                chunks = retrieval_repository.list_active_chunks(db, owner_id, {"document_id": document_id})
+                for chunk in chunks[:2]:
+                    document = {"id": chunk["document_id"], "filename": chunk["document_title"]}
+                    source = {"id": chunk["source_id"], "original_filename": chunk["original_filename"]}
+                    page = {"id": chunk["page_id"], "page_number": chunk["page_number"]}
+                    citation = document_citation_service.build_citation(document, source, page, chunk, relevance_score=0.15)
+                    items.append(
+                        {
+                            "document": document,
+                            "page": page,
+                            "chunk": chunk,
+                            "citation": citation,
+                            "score_lexical": 0.0,
+                            "score_semantic": 0.0,
+                            "score_final": 0.15,
+                            "excerpt": citation["excerpt"],
+                        }
+                    )
+                    if len(items) >= 4:
+                        return items
+    except Exception:
+        return []
+    return items
+
+
+def _active_document_ids(owner_id: int, conversation_id: str, document_ids: list[int] | None = None) -> list[int]:
+    ids = _clean_document_ids(document_ids)
+    if ids:
+        return ids
+    found: list[int] = []
+    with connect() as db:
+        rows = db.execute(
+            """
+            SELECT diagnostics_json
+            FROM messages
+            WHERE owner_id = ? AND conversation_id = ? AND diagnostics_json IS NOT NULL AND deleted_at IS NULL
+            ORDER BY id DESC LIMIT 20
+            """,
+            (owner_id, conversation_id),
+        ).fetchall()
+    for row in rows:
+        try:
+            payload = json.loads(row["diagnostics_json"] or "{}")
+        except Exception:
+            continue
+        for value in payload.get("attachedDocumentIds") or []:
+            try:
+                parsed = int(value)
+            except (TypeError, ValueError):
+                continue
+            if parsed not in found:
+                found.append(parsed)
+        if found:
+            break
+    return found[:8]
+
+
+def _clean_document_ids(document_ids: list[int] | None) -> list[int]:
+    clean: list[int] = []
+    for value in document_ids or []:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            continue
+        if parsed > 0 and parsed not in clean:
+            clean.append(parsed)
+    return clean[:8]
+
+
+def _document_ids_from_items(items: list[dict]) -> list[int]:
+    ids: list[int] = []
+    for item in items:
+        document = item.get("document") or {}
+        try:
+            document_id = int(document.get("id"))
+        except (TypeError, ValueError):
+            continue
+        if document_id not in ids:
+            ids.append(document_id)
+    return ids
 
 
 def _write_chat_diagnostic(message: str, prompt: list[dict], response: str, diagnostics: dict) -> None:

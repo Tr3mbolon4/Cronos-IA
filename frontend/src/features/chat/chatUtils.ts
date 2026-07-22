@@ -54,16 +54,15 @@ export function filterConversations(items: ConversationSummary[], filter: Conver
 }
 
 export function validateAttachment(file: File): AttachmentDraft {
-  const allowed = new Set(['application/pdf', 'text/plain', 'text/markdown'])
-  const markdownByName = file.name.toLowerCase().endsWith('.md') && (file.type === '' || file.type === 'text/markdown')
-  const ok = allowed.has(file.type) || markdownByName
+  const ok = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   return {
     id: `${file.name}-${file.size}-${file.lastModified}`,
     name: file.name,
     size: file.size,
-    type: file.type || (markdownByName ? 'text/markdown' : 'desconhecido'),
-    status: ok ? 'ready' : 'blocked',
-    reason: ok ? undefined : 'Tipo ainda nao suportado pelo backend de documentos.',
+    type: file.type || 'application/pdf',
+    file,
+    status: ok ? 'READY' : 'BLOCKED',
+    reason: ok ? undefined : 'Somente PDF e suportado pelo pipeline real da Biblioteca.',
   }
 }
 

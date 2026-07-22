@@ -124,7 +124,7 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif path == "/chat":
                 session = self._session()
                 payload = self._json_body()
-                self._send(chat.send_message(payload.get("message", ""), int(session["owner"]["id"]), payload.get("conversation_id", "principal")))
+                self._send(chat.send_message(payload.get("message", ""), int(session["owner"]["id"]), payload.get("conversation_id", "principal"), payload.get("document_ids")))
             elif path == "/documents/upload":
                 session = self._session()
                 filename, content = self._multipart_file()

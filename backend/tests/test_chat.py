@@ -2,10 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from reportlab.pdfgen import canvas
+
 from cronos.core import config
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
 from cronos.services import auth, chat, llm_provider
+from cronos.services import document_ingestion_service
 
 
 class FakeLLMProvider(llm_provider.LLMProvider):
@@ -151,6 +154,32 @@ class ChatTests(unittest.TestCase):
 
         self.assertEqual(response["route"], chat.DOCUMENT_QA)
 
+    def test_attached_document_routes_short_question_to_rag(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+        document = document_ingestion_service.import_pdf(1, "codigo.pdf", self.text_pdf(["Codigo de validacao CRONOS-777."]))["document"]
+
+        response = chat.send_message("Resuma", conversation_id="doc-chat", document_ids=[document["id"]])
+
+        self.assertEqual(response["route"], chat.DOCUMENT_QA)
+        self.assertTrue(response["diagnostics"]["usedDocuments"])
+        self.assertIn(document["id"], response["diagnostics"]["attachedDocumentIds"])
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertIn("Contexto documental recuperado", prompt_text)
+        self.assertIn("codigo.pdf", prompt_text)
+
+    def test_attached_document_context_persists_in_conversation(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+        document = document_ingestion_service.import_pdf(1, "persistente.pdf", self.text_pdf(["Conteudo persistente do anexo."]))["document"]
+        chat.send_message("Leia o documento", conversation_id="doc-persist", document_ids=[document["id"]])
+
+        response = chat.send_message("Explique", conversation_id="doc-persist")
+
+        self.assertEqual(response["route"], chat.DOCUMENT_QA)
+        self.assertTrue(response["diagnostics"]["usedDocuments"])
+        self.assertIn(document["id"], response["diagnostics"]["attachedDocumentIds"])
+
     def test_current_conversation_memory_query_stays_local(self):
         provider = FakeLLMProvider()
         llm_provider.set_provider_for_tests(provider)
@@ -161,6 +190,21 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(response["route"], chat.MEMORY_QUERY)
         prompt_text = "\n".join(item["content"] for item in provider.messages)
         self.assertIn("CRONOS-123", prompt_text)
+
+    @staticmethod
+    def text_pdf(pages: list[str]) -> bytes:
+        import tempfile
+
+        path = Path(tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name)
+        pdf = canvas.Canvas(str(path))
+        for text in pages:
+            pdf.drawString(72, 720, text)
+            pdf.showPage()
+        pdf.save()
+        try:
+            return path.read_bytes()
+        finally:
+            path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,12 @@ export type AttachmentDraft = {
   name: string
   size: number
   type: string
-  status: 'ready' | 'blocked'
+  file: File
+  status: 'READY' | 'UPLOADING' | 'EXTRACTING' | 'OCR' | 'CHUNKING' | 'EMBEDDING' | 'INDEXING' | 'FAILED' | 'BLOCKED'
+  documentId?: number
+  pageCount?: number
+  chunkCount?: number
+  progress?: number
   reason?: string
 }
 
@@ -85,6 +90,7 @@ export type ChatWorkspaceActions = {
   onEditingTextChange: (value: string) => void
   onFilesSelected: (files: FileList | null) => void
   onRemoveAttachment: (id: string) => void
+  onRetryAttachment: (id: string) => void
   onDismissNotice: (id: string) => void
   onMenuChange: (id: number | string | null) => void
 }

@@ -13,6 +13,10 @@ def list_active_chunks(db: sqlite3.Connection, owner_id: int, filters: dict | No
     if filters.get("document_id") not in (None, ""):
         clauses.append("c.document_id = ?")
         params.append(int(filters["document_id"]))
+    document_ids = _document_ids(filters.get("document_ids"))
+    if document_ids:
+        clauses.append(f"c.document_id IN ({','.join(['?'] * len(document_ids))})")
+        params.extend(document_ids)
     if filters.get("source_id") not in (None, ""):
         clauses.append("c.source_id = ?")
         params.append(int(filters["source_id"]))
@@ -104,6 +108,10 @@ def list_embeddings(db: sqlite3.Connection, provider: str, model: str, filters: 
     if filters.get("document_id") not in (None, ""):
         clauses.append("e.document_id = ?")
         params.append(int(filters["document_id"]))
+    document_ids = _document_ids(filters.get("document_ids"))
+    if document_ids:
+        clauses.append(f"e.document_id IN ({','.join(['?'] * len(document_ids))})")
+        params.extend(document_ids)
     where = " AND ".join(clauses)
     rows = db.execute(
         f"""
@@ -143,3 +151,19 @@ def index_status(db: sqlite3.Connection, owner_id: int) -> dict:
         (owner_id,),
     ).fetchone()[0]
     return {"chunks": total_chunks, "embeddings": total_embeddings, "pending": max(total_chunks - total_embeddings, 0)}
+
+
+def _document_ids(value: Any) -> list[int]:
+    if not value:
+        return []
+    if not isinstance(value, list):
+        value = [value]
+    parsed: list[int] = []
+    for item in value:
+        try:
+            document_id = int(item)
+        except (TypeError, ValueError):
+            continue
+        if document_id > 0 and document_id not in parsed:
+            parsed.append(document_id)
+    return parsed[:16]

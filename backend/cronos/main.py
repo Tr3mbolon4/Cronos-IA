@@ -59,7 +59,7 @@ def session(session_data: dict = Depends(require_session)) -> dict:
 
 @app.post("/chat")
 def send_chat(payload: ChatRequest, _: dict = Depends(require_session)) -> dict:
-    return chat.send_message(payload.message)
+    return chat.send_message(payload.message, conversation_id=payload.conversation_id, document_ids=payload.document_ids)
 
 
 @app.get("/chat/history")

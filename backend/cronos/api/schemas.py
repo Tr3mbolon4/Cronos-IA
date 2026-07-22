@@ -14,6 +14,8 @@ class LoginRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
+    conversation_id: str = "principal"
+    document_ids: list[int] = Field(default_factory=list)
 
 
 class DocumentQuestion(BaseModel):

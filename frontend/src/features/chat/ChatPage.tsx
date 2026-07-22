@@ -202,16 +202,17 @@ function MessageActions({ isOwner, message, onAction }: { isOwner: boolean; mess
 
 function MessageComposer(props: ChatPageProps) {
   const copiedTranscriptRef = useRef('')
+  const { onDraftChange, voice } = props
 
   useEffect(() => {
-    const transcriptId = props.voice.transcript?.createdAt || ''
-    if (props.voice.state === 'reviewing' && props.voice.draft && transcriptId && copiedTranscriptRef.current !== transcriptId) {
-      props.onDraftChange(props.voice.draft)
+    const transcriptId = voice.transcript?.createdAt || ''
+    if (voice.state === 'reviewing' && voice.draft && transcriptId && copiedTranscriptRef.current !== transcriptId) {
+      onDraftChange(voice.draft)
       copiedTranscriptRef.current = transcriptId
     }
-  }, [props.voice.state, props.voice.draft, props.voice.transcript?.createdAt, props.onDraftChange])
+  }, [voice.state, voice.draft, voice.transcript?.createdAt, onDraftChange])
 
-  const voiceStatus = voiceComposerStatus(props.voice.state, props.voice.error)
+  const voiceStatus = voiceComposerStatus(voice.state, voice.error)
 
   return (
     <form className="message-composer" onSubmit={(event) => { props.voice.clearTranscript(); props.onSubmit(event) }}>
@@ -224,8 +225,11 @@ function MessageComposer(props: ChatPageProps) {
       {props.attachments.length > 0 && (
         <div className="attachment-tray">
           {props.attachments.map((item) => (
-            <span key={item.id} className={item.status}>
-              <FileText size={13} /> {item.name} <em>{Math.ceil(item.size / 1024)} KB</em>
+            <span key={item.id} className={item.status.toLowerCase()}>
+              <FileText size={13} /> {item.name} <em>{attachmentLabel(item)}</em>
+              {item.progress !== undefined && <i style={{ width: `${Math.max(4, item.progress)}%` }} />}
+              <small>{item.reason || attachmentStatusLabel(item.status)}</small>
+              {item.status === 'FAILED' && <button type="button" onClick={() => props.onRetryAttachment(item.id)}>Tentar novamente</button>}
               <button type="button" aria-label={`Remover ${item.name}`} onClick={() => props.onRemoveAttachment(item.id)}><X size={12} /></button>
             </span>
           ))}
@@ -234,7 +238,7 @@ function MessageComposer(props: ChatPageProps) {
       <div className="composer-row">
         <label className="icon-button" title="Anexar arquivo">
           <Paperclip size={17} />
-          <input type="file" multiple accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" onChange={(event) => props.onFilesSelected(event.target.files)} />
+          <input type="file" multiple accept=".pdf,application/pdf" onChange={(event) => props.onFilesSelected(event.target.files)} />
         </label>
         <textarea
           value={props.draft}
@@ -261,6 +265,29 @@ function MessageComposer(props: ChatPageProps) {
       )}
     </form>
   )
+}
+
+function attachmentLabel(item: ChatPageProps['attachments'][number]) {
+  const pieces = [`${Math.ceil(item.size / 1024)} KB`, attachmentStatusLabel(item.status)]
+  if (item.pageCount !== undefined) pieces.push(`${item.pageCount} pag.`)
+  if (item.chunkCount !== undefined) pieces.push(`${item.chunkCount} chunks`)
+  return pieces.join(' | ')
+}
+
+function attachmentStatusLabel(status: ChatPageProps['attachments'][number]['status']) {
+  const labels = {
+    READY: 'Pronto',
+    UPLOADING: 'Enviando',
+    EXTRACTING: 'Extraindo',
+    OCR: 'OCR',
+    CHUNKING: 'Criando chunks',
+    EMBEDDING: 'Gerando embeddings',
+    INDEXING: 'Indexando',
+    READY_INDEXED: 'Pronto',
+    FAILED: 'Falhou',
+    BLOCKED: 'Bloqueado',
+  } as Record<string, string>
+  return labels[status] || status
 }
 
 function voiceComposerStatus(state: ChatPageProps['voice']['state'], error: string) {
