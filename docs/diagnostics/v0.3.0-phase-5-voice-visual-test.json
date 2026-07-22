@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-07-21T21:30:53.954Z",
+  "createdAt": "2026-07-22T16:40:53.055Z",
   "results": [
     {
       "viewport": {
@@ -58,16 +58,16 @@
           "chatValidation": {
             "ok": true,
             "ownerMenu": {
-              "x": 619,
-              "y": 359,
+              "x": 949,
+              "y": 113,
               "width": 170,
               "height": 196,
               "insideViewport": true,
               "placement": "left"
             },
             "cronosMenu": {
-              "x": 1332,
-              "y": 560,
+              "x": 1308,
+              "y": 289,
               "width": 170,
               "height": 196,
               "insideViewport": true,
@@ -400,31 +400,31 @@
           "metrics": {
             "shell": {
               "x": 0,
-              "y": -23,
+              "y": -414,
               "width": 1920,
-              "height": 1289
+              "height": 1494
             },
             "sidebar": {
               "x": 0,
-              "y": -23,
+              "y": -414,
               "width": 248,
-              "height": 1289
+              "height": 1494
             },
             "topbar": {
               "x": 248,
-              "y": -23,
+              "y": -414,
               "width": 1672,
               "height": 66
             },
             "viewport": {
               "x": 248,
-              "y": 43,
+              "y": -348,
               "width": 1672,
-              "height": 1193
+              "height": 1398
             },
             "statusbar": {
               "x": 248,
-              "y": 1236,
+              "y": 1050,
               "width": 1672,
               "height": 30
             },
@@ -530,17 +530,17 @@
       ],
       "performanceSummary": {
         "animated": {
-          "routeSwitchMs": 73,
-          "domContentLoadedMs": 1195,
+          "routeSwitchMs": 84,
+          "domContentLoadedMs": 219,
           "corePresent": true,
-          "dashboardTextLength": 1419,
-          "domNodes": 509,
-          "heapUsed": 35612996
+          "dashboardTextLength": 1490,
+          "domNodes": 527,
+          "heapUsed": 38469548
         },
         "reducedMotion": {
           "corePresent": true,
-          "domNodes": 509,
-          "heapUsed": 23471422
+          "domNodes": 527,
+          "heapUsed": 38469548
         }
       }
     },
@@ -564,13 +564,13 @@
               "x": 0,
               "y": 0,
               "width": 1600,
-              "height": 1516
+              "height": 1407
             },
             "sidebar": {
               "x": 0,
               "y": 0,
               "width": 248,
-              "height": 1516
+              "height": 1407
             },
             "topbar": {
               "x": 248,
@@ -582,11 +582,11 @@
               "x": 248,
               "y": 66,
               "width": 1352,
-              "height": 1420
+              "height": 1311
             },
             "statusbar": {
               "x": 248,
-              "y": 1486,
+              "y": 1377,
               "width": 1352,
               "height": 30
             },
@@ -601,16 +601,16 @@
           "chatValidation": {
             "ok": true,
             "ownerMenu": {
-              "x": 468,
-              "y": 426,
+              "x": 629,
+              "y": 465,
               "width": 170,
               "height": 196,
               "insideViewport": true,
               "placement": "left"
             },
             "cronosMenu": {
-              "x": 1332,
-              "y": 627,
+              "x": 1308,
+              "y": 289,
               "width": 170,
               "height": 196,
               "insideViewport": true,
@@ -726,13 +726,13 @@
               "x": 0,
               "y": 0,
               "width": 1600,
-              "height": 971
+              "height": 939
             },
             "sidebar": {
               "x": 0,
               "y": 0,
               "width": 248,
-              "height": 971
+              "height": 939
             },
             "topbar": {
               "x": 248,
@@ -744,11 +744,11 @@
               "x": 248,
               "y": 66,
               "width": 1352,
-              "height": 875
+              "height": 843
             },
             "statusbar": {
               "x": 248,
-              "y": 941,
+              "y": 909,
               "width": 1352,
               "height": 30
             },
@@ -943,27 +943,27 @@
           "metrics": {
             "shell": {
               "x": 0,
-              "y": -389,
+              "y": -678,
               "width": 1600,
-              "height": 1289
+              "height": 1578
             },
             "sidebar": {
               "x": 0,
-              "y": -389,
+              "y": -678,
               "width": 248,
-              "height": 1289
+              "height": 1578
             },
             "topbar": {
               "x": 248,
-              "y": -389,
+              "y": -678,
               "width": 1352,
               "height": 66
             },
             "viewport": {
               "x": 248,
-              "y": -323,
+              "y": -612,
               "width": 1352,
-              "height": 1193
+              "height": 1482
             },
             "statusbar": {
               "x": 248,
@@ -1028,16 +1028,16 @@
       "performanceSummary": {
         "animated": {
           "routeSwitchMs": 73,
-          "domContentLoadedMs": 135,
+          "domContentLoadedMs": 150,
           "corePresent": true,
-          "dashboardTextLength": 1582,
-          "domNodes": 518,
-          "heapUsed": 32594832
+          "dashboardTextLength": 1654,
+          "domNodes": 535,
+          "heapUsed": 29068087
         },
         "reducedMotion": {
           "corePresent": true,
-          "domNodes": 518,
-          "heapUsed": 32594832
+          "domNodes": 535,
+          "heapUsed": 29068087
         }
       }
     },
@@ -1061,13 +1061,13 @@
               "x": 0,
               "y": 0,
               "width": 1366,
-              "height": 2174
+              "height": 2064
             },
             "sidebar": {
               "x": 0,
               "y": 0,
               "width": 218,
-              "height": 2174
+              "height": 2064
             },
             "topbar": {
               "x": 218,
@@ -1079,11 +1079,11 @@
               "x": 218,
               "y": 66,
               "width": 1148,
-              "height": 2078
+              "height": 1968
             },
             "statusbar": {
               "x": 218,
-              "y": 2144,
+              "y": 2034,
               "width": 1148,
               "height": 30
             },
@@ -1096,18 +1096,18 @@
           "label": "Conversas",
           "screenshotPath": "G:\\Cronos-IA\\data\\project-backups\\cronos-v030-conversas-1366.png",
           "chatValidation": {
-            "ok": true,
+            "ok": false,
             "ownerMenu": {
-              "x": 1127,
-              "y": 192,
+              "x": 1125,
+              "y": 584,
               "width": 170,
               "height": 196,
-              "insideViewport": true,
+              "insideViewport": false,
               "placement": "left"
             },
             "cronosMenu": {
-              "x": 552,
-              "y": 405,
+              "x": 548,
+              "y": 408,
               "width": 170,
               "height": 196,
               "insideViewport": true,
@@ -1223,13 +1223,13 @@
               "x": 0,
               "y": 0,
               "width": 1366,
-              "height": 1312
+              "height": 1296
             },
             "sidebar": {
               "x": 0,
               "y": 0,
               "width": 218,
-              "height": 1312
+              "height": 1296
             },
             "topbar": {
               "x": 218,
@@ -1241,11 +1241,11 @@
               "x": 218,
               "y": 66,
               "width": 1148,
-              "height": 1216
+              "height": 1200
             },
             "statusbar": {
               "x": 218,
-              "y": 1282,
+              "y": 1266,
               "width": 1148,
               "height": 30
             },
@@ -1440,27 +1440,27 @@
           "metrics": {
             "shell": {
               "x": 0,
-              "y": -493,
+              "y": -734,
               "width": 1366,
-              "height": 1261
+              "height": 1502
             },
             "sidebar": {
               "x": 0,
-              "y": -493,
+              "y": -734,
               "width": 218,
-              "height": 1261
+              "height": 1502
             },
             "topbar": {
               "x": 218,
-              "y": -493,
+              "y": -734,
               "width": 1148,
               "height": 66
             },
             "viewport": {
               "x": 218,
-              "y": -427,
+              "y": -668,
               "width": 1148,
-              "height": 1165
+              "height": 1406
             },
             "statusbar": {
               "x": 218,
@@ -1524,17 +1524,17 @@
       "coreStates": [],
       "performanceSummary": {
         "animated": {
-          "routeSwitchMs": 70,
-          "domContentLoadedMs": 130,
+          "routeSwitchMs": 65,
+          "domContentLoadedMs": 149,
           "corePresent": true,
-          "dashboardTextLength": 1606,
-          "domNodes": 518,
-          "heapUsed": 40827129
+          "dashboardTextLength": 1763,
+          "domNodes": 539,
+          "heapUsed": 38103685
         },
         "reducedMotion": {
           "corePresent": true,
-          "domNodes": 518,
-          "heapUsed": 40827129
+          "domNodes": 539,
+          "heapUsed": 38103685
         }
       }
     },
@@ -1595,19 +1595,19 @@
           "chatValidation": {
             "ok": false,
             "ownerMenu": {
-              "x": 1041,
-              "y": 337,
-              "width": 170,
-              "height": 196,
-              "insideViewport": true,
-              "placement": "left"
-            },
-            "cronosMenu": {
-              "x": 530,
-              "y": 538,
+              "x": 1039,
+              "y": 536,
               "width": 170,
               "height": 196,
               "insideViewport": false,
+              "placement": "left"
+            },
+            "cronosMenu": {
+              "x": 526,
+              "y": 360,
+              "width": 170,
+              "height": 196,
+              "insideViewport": true,
               "placement": "right"
             },
             "contextVisibleAfterToggle": 1,
@@ -1718,31 +1718,31 @@
           "metrics": {
             "shell": {
               "x": 0,
-              "y": -9,
+              "y": 0,
               "width": 1280,
-              "height": 1312
+              "height": 1296
             },
             "sidebar": {
               "x": 0,
-              "y": -9,
+              "y": 0,
               "width": 196,
-              "height": 1312
+              "height": 1296
             },
             "topbar": {
               "x": 196,
-              "y": -9,
+              "y": 0,
               "width": 1084,
               "height": 66
             },
             "viewport": {
               "x": 196,
-              "y": 57,
+              "y": 66,
               "width": 1084,
-              "height": 1216
+              "height": 1200
             },
             "statusbar": {
               "x": 196,
-              "y": 1273,
+              "y": 1266,
               "width": 1084,
               "height": 30
             },
@@ -1937,27 +1937,27 @@
           "metrics": {
             "shell": {
               "x": 0,
-              "y": -541,
+              "y": -782,
               "width": 1280,
-              "height": 1261
+              "height": 1502
             },
             "sidebar": {
               "x": 0,
-              "y": -541,
+              "y": -782,
               "width": 196,
-              "height": 1261
+              "height": 1502
             },
             "topbar": {
               "x": 196,
-              "y": -541,
+              "y": -782,
               "width": 1084,
               "height": 66
             },
             "viewport": {
               "x": 196,
-              "y": -475,
+              "y": -716,
               "width": 1084,
-              "height": 1165
+              "height": 1406
             },
             "statusbar": {
               "x": 196,
@@ -2021,17 +2021,17 @@
       "coreStates": [],
       "performanceSummary": {
         "animated": {
-          "routeSwitchMs": 71,
-          "domContentLoadedMs": 129,
+          "routeSwitchMs": 61,
+          "domContentLoadedMs": 142,
           "corePresent": true,
-          "dashboardTextLength": 1606,
+          "dashboardTextLength": 1320,
           "domNodes": 518,
-          "heapUsed": 38141773
+          "heapUsed": 33221101
         },
         "reducedMotion": {
           "corePresent": true,
           "domNodes": 518,
-          "heapUsed": 38141773
+          "heapUsed": 33221101
         }
       }
     }

@@ -126,6 +126,9 @@ export class ApiClient {
 
 export function readableApiError(error: unknown) {
   if (error instanceof ApiError) return error.message
+  if (error instanceof TypeError && error.message.toLowerCase().includes('failed to fetch')) {
+    return 'Nao foi possivel comunicar com o backend. Verifique se o nucleo local esta iniciado e tente novamente.'
+  }
   if (error instanceof Error) return error.message
   return 'Erro inesperado.'
 }

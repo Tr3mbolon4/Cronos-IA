@@ -45,7 +45,7 @@ export function useChatWorkspace({
   const [offline, setOffline] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [cancelled, setCancelled] = useState(false)
-  const [contextOpen, setContextOpen] = useState(() => window.innerWidth > 1320)
+  const [contextOpen, setContextOpen] = useState(false)
   const [menuMessageId, setMenuMessageId] = useState<number | string | null>(null)
 
   const draft = drafts[activeConversationId] || ''

@@ -1,8 +1,8 @@
-import { Archive, BookOpen, ChevronDown, Copy, Edit3, FileText, Info, MessageSquarePlus, MoreVertical, PanelRightClose, PanelRightOpen, Paperclip, Pin, RefreshCw, RotateCcw, Search, Send, Square, Star, Trash2, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Archive, BookOpen, Copy, Edit3, FileText, Info, MessageSquarePlus, MoreVertical, PanelRightClose, PanelRightOpen, Paperclip, Pin, RefreshCw, RotateCcw, Search, Send, Square, Star, Trash2, X } from 'lucide-react'
 import type { Message } from '../../app/types'
 import { CronosCore } from '../../components/core/CronosCore'
 import { SpeechControls } from '../voice/components/SpeechControls'
-import { TranscriptionReview } from '../voice/components/TranscriptionReview'
 import { VoiceButton } from '../voice/components/VoiceButton'
 import { filterConversations, formatChatTime, messageKey, renderSafeMarkdown, trimMessage } from './chatUtils'
 import type { ChatAction, ChatPageProps, ConversationFilter, ConversationSummary } from './types'
@@ -112,7 +112,7 @@ function ConversationHeader({ conversation, messageCount, coreState, owner, subm
       <div className="conversation-title-block">
         <span>{owner} com CRONOS</span>
         <h2>{conversation?.title || 'Conversa'}</h2>
-        <p>{submitting ? 'Preparando resposta segura' : `${messageCount} mensagens carregadas no contrato atual`}</p>
+        <p>{submitting ? 'Preparando resposta' : `${messageCount} mensagens`}</p>
       </div>
       <div className="conversation-header-actions">
         <button type="button" onClick={onLock}><Square size={15} /> Bloquear</button>
@@ -201,8 +201,20 @@ function MessageActions({ isOwner, message, onAction }: { isOwner: boolean; mess
 }
 
 function MessageComposer(props: ChatPageProps) {
+  const copiedTranscriptRef = useRef('')
+
+  useEffect(() => {
+    const transcriptId = props.voice.transcript?.createdAt || ''
+    if (props.voice.state === 'reviewing' && props.voice.draft && transcriptId && copiedTranscriptRef.current !== transcriptId) {
+      props.onDraftChange(props.voice.draft)
+      copiedTranscriptRef.current = transcriptId
+    }
+  }, [props.voice.state, props.voice.draft, props.voice.transcript?.createdAt, props.onDraftChange])
+
+  const voiceStatus = voiceComposerStatus(props.voice.state, props.voice.error)
+
   return (
-    <form className="message-composer" onSubmit={props.onSubmit}>
+    <form className="message-composer" onSubmit={(event) => { props.voice.clearTranscript(); props.onSubmit(event) }}>
       {props.replyTarget && (
         <div className="reply-preview">
           <span>Respondendo {props.replyTarget.role === 'user' ? 'Proprietario' : 'CRONOS'}: {trimMessage(props.replyTarget.content, 84)}</span>
@@ -236,14 +248,27 @@ function MessageComposer(props: ChatPageProps) {
           disabled={!props.backendReady || props.offline}
           placeholder="Digite uma mensagem para o CRONOS..."
         />
-        <VoiceButton voice={props.voice} label="Falar" />
+        <VoiceButton voice={props.voice} compact />
         {props.submitting
-          ? <button type="button" className="warn" onClick={props.onStopResponse}><Square size={16} /> Parar</button>
-          : <button type="submit" className="primary" disabled={!props.draft.trim() || props.offline}><Send size={16} /> Enviar</button>}
+          ? <button type="button" className="composer-action-button warn" onClick={props.onStopResponse}><Square size={16} /> Parar</button>
+          : <button type="submit" className="composer-action-button primary" disabled={!props.draft.trim() || props.offline}><Send size={16} /> Enviar</button>}
       </div>
-      <TranscriptionReview voice={props.voice} onUseText={props.onDraftChange} onSend={(text) => { props.onDraftChange(text); setTimeout(() => document.querySelector<HTMLButtonElement>('.message-composer button[type="submit"]')?.click(), 0) }} />
+      {voiceStatus && (
+        <div className={`composer-voice-status ${voiceStatus.tone}`} role="status">
+          <span>{voiceStatus.label}</span>
+          {props.voice.state === 'reviewing' && props.voice.draft && <button type="button" onClick={props.voice.clearTranscript}>Limpar transcricao</button>}
+        </div>
+      )}
     </form>
   )
+}
+
+function voiceComposerStatus(state: ChatPageProps['voice']['state'], error: string) {
+  if (state === 'requesting_permission' || state === 'recording') return { label: 'Gravando...', tone: 'recording' }
+  if (state === 'transcribing') return { label: 'Processando...', tone: 'processing' }
+  if (state === 'reviewing') return { label: 'Transcricao pronta para revisar no campo.', tone: 'ready' }
+  if (state === 'error' && error) return { label: 'Erro na voz. Veja detalhes em Configuracoes.', tone: 'error' }
+  return null
 }
 
 function ContextPanel({ conversation, retrieval, documents, attachments, onToggleContext, onOpenLibrary }: ChatPageProps & { conversation?: ConversationSummary }) {
@@ -256,7 +281,7 @@ function ContextPanel({ conversation, retrieval, documents, attachments, onToggl
         </div>
         <button type="button" className="icon-button" onClick={onToggleContext} aria-label="Fechar painel contextual"><X size={15} /></button>
       </header>
-      <section>
+      <section className="developer-only">
         <h3>Retrieval</h3>
         <p>Modo {retrieval.mode}. Provider {retrieval.loaded ? 'carregado' : 'em fallback'}.</p>
       </section>
@@ -269,11 +294,10 @@ function ContextPanel({ conversation, retrieval, documents, attachments, onToggl
         <h3>Anexos</h3>
         {attachments.length ? attachments.map((item) => <p key={item.id}>{item.name}: {item.reason || 'aguardando envio integrado'}</p>) : <p>Nenhum anexo selecionado.</p>}
       </section>
-      <section>
+      <section className="developer-only">
         <h3>Limites atuais</h3>
         <p>Replies, edicao auditada, regeneracao e conversas reais aguardam contrato backend futuro.</p>
       </section>
-      <button type="button" className="context-collapse"><ChevronDown size={14} /> Detalhes operacionais seguros</button>
     </aside>
   )
 }
