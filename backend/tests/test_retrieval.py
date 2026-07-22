@@ -11,7 +11,7 @@ from cronos.core.retrieval_config import retrieval_config
 from cronos.core.security import utcnow
 from cronos.repositories import retrieval_repository
 from cronos.services import auth, embedding_service, retrieval_service
-from cronos.services.embedding_provider import DeterministicEmbeddingProvider, LocalSemanticEmbeddingProvider
+from cronos.services.embedding_provider import DeterministicEmbeddingProvider, LlamaCppEmbeddingProvider, LocalSemanticEmbeddingProvider
 
 
 class RetrievalTests(unittest.TestCase):
@@ -252,6 +252,12 @@ class RetrievalTests(unittest.TestCase):
         self.assertEqual(second["indexed"], 0)
         self.assertEqual(second["skipped"], 4)
         self.assertEqual(count, 4)
+
+    def test_33_llama_cpp_provider_projects_native_embedding_to_384(self) -> None:
+        provider = LlamaCppEmbeddingProvider(384)
+        projected = provider._to_persisted_dimension([float(index + 1) for index in range(1536)])
+        self.assertEqual(len(projected), 384)
+        self.assertAlmostEqual(sum(value * value for value in projected), 1.0, places=6)
 
     def seed_document(self, filename: str, pages: list[str], source_type: str = "upload") -> int:
         now = utcnow().isoformat()

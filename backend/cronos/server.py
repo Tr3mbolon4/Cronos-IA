@@ -15,7 +15,7 @@ from cronos.core.config import settings
 from cronos.core.db import init_db
 from cronos.core.errors import CronosError
 from cronos.api import document_routes, library_routes, memory_routes
-from cronos.services import auth, backup, chat, diagnostics, documents, llm_provider
+from cronos.services import auth, backup, chat, diagnostics, documents, embedding_service, llm_provider
 
 
 STARTED_AT = time.monotonic()
@@ -350,6 +350,7 @@ def main() -> None:
     try:
         server.serve_forever()
     finally:
+        embedding_service.stop()
         llm_provider.stop()
         server.server_close()
 

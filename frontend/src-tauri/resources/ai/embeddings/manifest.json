@@ -1,0 +1,19 @@
+{
+  "provider": "cronos-local-llama-embedding",
+  "runtime": "llama.cpp",
+  "runtimeVersion": "llama.cpp b10078",
+  "modelName": "Qwen2.5-1.5B-Instruct-GGUF",
+  "modelFile": "../llm/models/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "modelSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "modelSize": 1117320736,
+  "modelFormat": "GGUF",
+  "dimension": 384,
+  "nativeDimension": 1536,
+  "projection": "mean-pool-1536-to-384-normalized",
+  "pooling": "mean",
+  "multilingual": true,
+  "license": "apache-2.0",
+  "officialSource": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/91cad51170dc346986eccefdc2dd33a9da36ead9/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "integrityValidated": true,
+  "externalNetworkRequired": false
+}

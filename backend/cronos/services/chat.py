@@ -26,7 +26,7 @@ def send_message(content: str, owner_id: int = 1) -> dict:
     if not clean:
         raise CronosError(400, "Mensagem obrigatoria.", code="CHAT_MESSAGE_REQUIRED")
     _save_message("user", clean)
-    recent = history(8)
+    recent = history(20)
     context = _local_context(owner_id, clean)
     response = llm_provider.generate(_prompt_messages(recent, context))
     _save_message("assistant", response)
@@ -54,6 +54,21 @@ def _prompt_messages(recent: list[dict], context: dict) -> list[dict]:
                 f"[{index}] Documento: {citation['source_filename']} | Pagina: {citation['page_number']} | Trecho: {citation['excerpt']}"
             )
         messages.append({"role": "system", "content": "Contexto documental recuperado:\n" + "\n".join(formatted)})
+    if recent:
+        transcript = "\n".join(
+            f"[{index}] {row['role']}: {row['content']}"
+            for index, row in enumerate(recent[-20:], start=1)
+        )
+        messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "Historico recente numerado em ordem cronologica. "
+                    "Quando o proprietario perguntar sobre a primeira mensagem ou primeira pergunta desta conversa, use o item [1].\n"
+                    f"{transcript}"
+                ),
+            }
+        )
     for row in recent[-8:]:
         role = row["role"] if row["role"] in {"user", "assistant"} else "user"
         messages.append({"role": role, "content": row["content"]})

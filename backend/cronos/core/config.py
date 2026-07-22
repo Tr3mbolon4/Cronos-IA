@@ -128,6 +128,10 @@ class Settings:
     def llm_resource_dir(self) -> Path:
         return self.resource_dir / "ai" / "llm"
 
+    @property
+    def embedding_resource_dir(self) -> Path:
+        return self.resource_dir / "ai" / "embeddings"
+
     def ensure_directories(self) -> None:
         directories = [
             self.data_dir,

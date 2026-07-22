@@ -6,7 +6,7 @@ from cronos.core.db import connect
 from cronos.core.retrieval_config import retrieval_config
 from cronos.core.security import utcnow
 from cronos.repositories import retrieval_repository
-from cronos.services.embedding_provider import EmbeddingProvider, SentenceTransformerEmbeddingProvider
+from cronos.services.embedding_provider import EmbeddingProvider, LlamaCppEmbeddingProvider
 
 _provider: EmbeddingProvider | None = None
 
@@ -14,11 +14,7 @@ _provider: EmbeddingProvider | None = None
 def get_provider() -> EmbeddingProvider:
     global _provider
     if _provider is None:
-        _provider = SentenceTransformerEmbeddingProvider(
-            retrieval_config.model_name,
-            retrieval_config.expected_dimension,
-            retrieval_config.packaged_model_dir,
-        )
+        _provider = LlamaCppEmbeddingProvider(retrieval_config.expected_dimension)
         _provider.initialize()
     return _provider
 
@@ -45,6 +41,12 @@ def providers() -> list[dict]:
             "fallback": True,
         },
     ]
+
+
+def stop() -> None:
+    provider = _provider
+    if provider is not None and hasattr(provider, "stop"):
+        provider.stop()
 
 
 def index_chunks(owner_id: int, *, filters: dict | None = None, force: bool = False) -> dict:

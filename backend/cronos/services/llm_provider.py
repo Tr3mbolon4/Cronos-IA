@@ -80,8 +80,17 @@ class CronosLocalLlamaProvider(LLMProvider):
                 "provider": PROVIDER_NAME,
                 "status": "ready" if loaded else "not_started",
                 "configured": True,
+                "providerConfigured": True,
                 "loaded": loaded,
                 "ready": loaded,
+                "runtimeAvailable": runtime_path.is_file(),
+                "runtimeIntegrityValid": integrity,
+                "modelAvailable": model_path.is_file(),
+                "modelIntegrityValid": integrity,
+                "processRunning": self.process is not None and self.process.poll() is None,
+                "healthCheck": "ready" if loaded else "not_started",
+                "listeningAddress": "127.0.0.1",
+                "externalNetworkRequired": False,
                 "runtime": manifest["runtime"],
                 "runtimeVersion": manifest["runtimeVersion"],
                 "model": manifest["modelName"],
@@ -100,8 +109,17 @@ class CronosLocalLlamaProvider(LLMProvider):
                 "provider": PROVIDER_NAME,
                 "status": "not_installed",
                 "configured": False,
+                "providerConfigured": False,
                 "loaded": False,
                 "ready": False,
+                "runtimeAvailable": False,
+                "runtimeIntegrityValid": False,
+                "modelAvailable": False,
+                "modelIntegrityValid": False,
+                "processRunning": False,
+                "healthCheck": "error",
+                "listeningAddress": "127.0.0.1",
+                "externalNetworkRequired": False,
                 "error": error.detail,
             }
 
@@ -213,7 +231,7 @@ class CronosLocalLlamaProvider(LLMProvider):
         if not self.manifest_path.exists():
             raise CronosError(503, LOCAL_LLM_ERROR, code="LLM_MODEL_NOT_INSTALLED")
         try:
-            manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+            manifest = json.loads(self.manifest_path.read_text(encoding="utf-8-sig"))
         except Exception as error:
             raise CronosError(503, "Manifest do modelo local invalido.", code="LLM_MANIFEST_INVALID") from error
         _validate_manifest(manifest)
@@ -240,6 +258,15 @@ class CronosLocalLlamaProvider(LLMProvider):
             raise CronosError(503, "Modelo local e um ponteiro Git LFS, nao o arquivo real.", code="LLM_MODEL_LFS_POINTER")
         if _sha256(runtime_path) != str(manifest["runtimeSha256"]).lower():
             raise CronosError(503, "Integridade do runtime do modelo invalida.", code="LLM_RUNTIME_HASH_INVALID")
+        for dll in manifest.get("runtimeDlls") or []:
+            dll_path = self.base_dir / str(dll.get("file") or "")
+            _ensure_inside(self.base_dir, dll_path)
+            if not dll_path.is_file():
+                raise CronosError(503, "DLL do runtime do modelo nao encontrada.", code="LLM_DLL_MISSING")
+            if dll_path.stat().st_size != int(dll.get("size") or 0):
+                raise CronosError(503, "Integridade de DLL do runtime invalida.", code="LLM_DLL_SIZE_INVALID")
+            if not _is_sha256(dll.get("sha256")) or _sha256(dll_path) != str(dll["sha256"]).lower():
+                raise CronosError(503, "Integridade de DLL do runtime invalida.", code="LLM_DLL_HASH_INVALID")
         if _sha256(model_path) != str(manifest["modelSha256"]).lower():
             raise CronosError(503, "Integridade do modelo invalida.", code="LLM_MODEL_HASH_INVALID")
         return True

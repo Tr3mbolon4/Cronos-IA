@@ -118,10 +118,19 @@ if ((Split-Path -Leaf $ImportModelPath) -ne $ModelName) {
   throw "Modelo recusado: nome informado nao corresponde ao arquivo importado."
 }
 
-Assert-ArtifactCandidate -Path $runtimeSource -Label "Runtime LLM" -MinimumBytes 1MB
+Assert-ArtifactCandidate -Path $runtimeSource -Label "Runtime LLM" -MinimumBytes 1
 Assert-ArtifactCandidate -Path $ImportModelPath -Label "Modelo LLM" -MinimumBytes 100MB
 $runtimeHash = Assert-Sha256 -Path $runtimeSource -Expected $normalizedRuntimeSha256 -Label "Runtime LLM"
 $modelHash = Assert-Sha256 -Path $ImportModelPath -Expected $normalizedModelSha256 -Label "Modelo LLM"
+$runtimeDlls = @()
+foreach ($dll in Get-ChildItem -LiteralPath $RuntimeBinDir -Filter "*.dll") {
+  Assert-ArtifactCandidate -Path $dll.FullName -Label "DLL LLM $($dll.Name)" -MinimumBytes 1
+  $runtimeDlls += [ordered]@{
+    file = "bin/$($dll.Name)"
+    sha256 = (Get-FileHash -LiteralPath $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    size = $dll.Length
+  }
+}
 
 if ($DryRun) {
   Write-Host "CRONOS Local LLM dry-run."
@@ -145,6 +154,7 @@ $manifest = [ordered]@{
   runtimeFile = "bin/llama-server.exe"
   runtimeSha256 = $destRuntimeHash
   runtimeSize = (Get-Item -LiteralPath $runtimeTarget).Length
+  runtimeDlls = $runtimeDlls
   modelName = $ModelName
   modelFile = "models/$ModelName"
   modelSha256 = $destModelHash
