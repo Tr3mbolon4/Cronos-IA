@@ -73,6 +73,9 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
           <span>{voice.sttProvider.available ? 'Disponivel' : 'Indisponivel'} | {voice.sttProvider.offline ? 'offline' : 'offline nao garantido'} | {voice.sttProvider.experimental ? 'experimental' : 'recomendado'}</span>
           <small>{voice.sttProvider.diagnostic}</small>
           <small>Modelo: {voice.sttProvider.modelName || 'runtime'} | Checksum: {voice.sttProvider.checksum || 'n/a'}</small>
+          <small>Provider: {voice.sttProvider.id} | Integridade: {voice.sttProvider.available ? 'valida' : 'pendente'}</small>
+          {voice.sttProvider.sourceKind && <small>Origem: {voice.sttProvider.sourceKind}</small>}
+          {voice.sttProvider.sourcePath && <small>Caminho de origem: {voice.sttProvider.sourcePath}</small>}
           {voice.sttProvider.modelPath && <small>Modelo local: {voice.sttProvider.modelPath}</small>}
           {voice.sttProvider.runtimePath && <small>Runtime: {voice.sttProvider.runtimePath}</small>}
         </article>

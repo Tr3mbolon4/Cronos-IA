@@ -64,6 +64,9 @@ type LocalWhisperStatus = {
   license: string
   audioFormat: string
   lastStartedAt: string
+  sourceKind: string
+  sourcePath: string
+  searchedPaths: string[]
 }
 
 type LocalWhisperTranscript = {
@@ -128,6 +131,9 @@ export async function localWhisperStatus(): Promise<VoiceProviderStatus> {
       checksum: status.modelSha256 || status.checksum,
       sizeMb: status.sizeMb,
       lastStartedAt: status.lastStartedAt,
+      sourceKind: status.sourceKind,
+      sourcePath: status.sourcePath,
+      searchedPaths: status.searchedPaths,
     }
   } catch (error) {
     return {

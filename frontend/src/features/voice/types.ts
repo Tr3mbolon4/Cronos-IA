@@ -30,6 +30,9 @@ export type VoiceProviderStatus = {
   checksum?: string
   sizeMb?: number
   lastStartedAt?: string
+  sourceKind?: string
+  sourcePath?: string
+  searchedPaths?: string[]
 }
 
 export type VoiceSettings = {

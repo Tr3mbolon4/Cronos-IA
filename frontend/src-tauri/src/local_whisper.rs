@@ -2,17 +2,23 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::Manager;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 const MAX_AUDIO_BYTES: usize = 10 * 1024 * 1024;
 const MAX_STDIO_BYTES: usize = 64 * 1024;
 const TRANSCRIPTION_TIMEOUT_SECS: u64 = 120;
 const OVERRIDE_ENV: &str = "CRONOS_LOCAL_WHISPER_DIR";
+const LOG_FILE_NAME: &str = "whisper.log";
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 type SharedChild = Arc<Mutex<std::process::Child>>;
 
@@ -64,6 +70,9 @@ pub struct LocalWhisperStatus {
     license: String,
     audio_format: String,
     last_started_at: String,
+    source_kind: String,
+    source_path: String,
+    searched_paths: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -127,7 +136,8 @@ pub fn transcribe_local_audio(
     let stderr_file = fs::File::create(&stderr_path).map_err(|error| error.to_string())?;
 
     let language = normalize_language(&request.language);
-    let child = Command::new(&paths.runtime_path)
+    let mut command = Command::new(&paths.runtime_path);
+    command
         .arg("-m")
         .arg(&paths.model_path)
         .arg("-f")
@@ -141,9 +151,28 @@ pub fn transcribe_local_audio(
         .current_dir(&paths.base_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::from(stdout_file))
-        .stderr(Stdio::from(stderr_file))
-        .spawn()
-        .map_err(|error| format!("Nao foi possivel iniciar whisper-cli.exe: {error}"))?;
+        .stderr(Stdio::from(stderr_file));
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    append_whisper_log(&format!(
+        "START request={} runtime={} model={} audioMs={} source={} temp={}",
+        request.request_id,
+        paths.runtime_path.display(),
+        paths.model_path.display(),
+        duration_ms,
+        paths.source_kind,
+        temp_dir.display()
+    ));
+    let child = command.spawn().map_err(|error| {
+        let message = voice_error(
+            "VOICE_RUNTIME_START_FAILED",
+            "Nao foi possivel iniciar o reconhecimento local de voz.",
+            &paths.runtime_path,
+            Some(&error),
+        );
+        append_whisper_log(&message);
+        message
+    })?;
 
     let child = Arc::new(Mutex::new(child));
     active_children()
@@ -166,10 +195,19 @@ pub fn transcribe_local_audio(
             return Err(error);
         }
     };
+    append_whisper_log(&format!(
+        "END request={} exit={:?} processingMs={} stderr={} stdout={}",
+        request.request_id,
+        exit_status.code(),
+        started.elapsed().as_millis(),
+        sanitize_cli_text(&stderr_text),
+        sanitize_cli_text(&stdout_text)
+    ));
+
     if !exit_status.success() {
         let _ = cleanup_temp_files(&[wav_path, output_path, stdout_path, stderr_path]);
         return Err(format!(
-            "whisper-cli.exe finalizou com codigo {:?}. {}",
+            "VOICE_RUNTIME_START_FAILED: whisper-cli.exe finalizou com codigo {:?}. {}",
             exit_status.code(),
             sanitize_cli_text(&stderr_text)
         ));
@@ -234,6 +272,8 @@ struct LocalWhisperPaths {
     manifest_path: PathBuf,
     runtime_path: PathBuf,
     model_path: PathBuf,
+    source_kind: String,
+    searched_paths: Vec<PathBuf>,
 }
 
 fn inspect_local_whisper(app: &tauri::AppHandle) -> Result<LocalWhisperStatus, String> {
@@ -303,39 +343,82 @@ fn inspect_local_whisper(app: &tauri::AppHandle) -> Result<LocalWhisperStatus, S
         license: manifest.license,
         audio_format: manifest.audio_format,
         last_started_at: String::new(),
+        source_kind: paths.source_kind,
+        source_path: paths.base_dir.display().to_string(),
+        searched_paths: paths
+            .searched_paths
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect(),
     })
 }
 
 fn resolve_paths(app: &tauri::AppHandle) -> Result<LocalWhisperPaths, String> {
-    let base_dir = if let Ok(path) = std::env::var(OVERRIDE_ENV) {
-        PathBuf::from(path)
-    } else if let Ok(resource_dir) = app.path().resource_dir() {
-        resource_dir.join("voice").join("whisper")
-    } else {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("resources")
-            .join("voice")
-            .join("whisper")
-    };
-    let manifest_path = base_dir.join("manifest.json");
-    let manifest = read_manifest(&manifest_path)?;
-    let runtime_path = base_dir.join(&manifest.runtime_file);
-    let model_path = base_dir.join(&manifest.model_file);
-    ensure_inside(&base_dir, &runtime_path)?;
-    ensure_inside(&base_dir, &model_path)?;
-    Ok(LocalWhisperPaths {
-        base_dir,
-        manifest_path,
-        runtime_path,
-        model_path,
-    })
+    let candidates = whisper_candidates(app);
+    let searched_paths: Vec<PathBuf> = candidates
+        .iter()
+        .map(|candidate| candidate.path.clone())
+        .collect();
+    let mut missing = Vec::new();
+
+    for candidate in candidates {
+        let manifest_path = candidate.path.join("manifest.json");
+        if !manifest_path.is_file() {
+            missing.push(manifest_path.display().to_string());
+            continue;
+        }
+        let manifest = read_manifest(&manifest_path)?;
+        let runtime_path = candidate.path.join(&manifest.runtime_file);
+        let model_path = candidate.path.join(&manifest.model_file);
+        ensure_inside(&candidate.path, &runtime_path)?;
+        ensure_inside(&candidate.path, &model_path)?;
+        if !runtime_path.is_file() {
+            return Err(voice_error(
+                "VOICE_RUNTIME_NOT_FOUND",
+                "Runtime local do Whisper nao encontrado.",
+                &runtime_path,
+                None,
+            ));
+        }
+        if !model_path.is_file() {
+            return Err(voice_error(
+                "VOICE_MODEL_NOT_FOUND",
+                "Modelo local do Whisper nao encontrado.",
+                &model_path,
+                None,
+            ));
+        }
+        return Ok(LocalWhisperPaths {
+            base_dir: candidate.path,
+            manifest_path,
+            runtime_path,
+            model_path,
+            source_kind: candidate.kind,
+            searched_paths,
+        });
+    }
+
+    Err(format!(
+        "VOICE_MANIFEST_NOT_FOUND: Manifest local de voz nao encontrado. Caminhos procurados: {}",
+        missing.join(" | ")
+    ))
 }
 
 fn read_manifest(path: &Path) -> Result<LocalWhisperManifest, String> {
-    let text = fs::read_to_string(path)
-        .map_err(|error| format!("Manifest local de voz nao encontrado: {error}"))?;
-    let manifest: LocalWhisperManifest = serde_json::from_str(&text)
-        .map_err(|error| format!("Manifest local de voz invalido: {error}"))?;
+    let text = fs::read_to_string(path).map_err(|error| {
+        voice_error(
+            "VOICE_MANIFEST_NOT_FOUND",
+            "Manifest local de voz nao encontrado.",
+            path,
+            Some(&error),
+        )
+    })?;
+    let manifest: LocalWhisperManifest = serde_json::from_str(&text).map_err(|error| {
+        format!(
+            "VOICE_MANIFEST_INVALID: Manifest local de voz invalido. Caminho: {}. Erro: {error}",
+            path.display()
+        )
+    })?;
     if manifest.provider != "cronos-local-whisper" {
         return Err("Manifest local de voz possui provider inesperado.".to_string());
     }
@@ -387,6 +470,76 @@ fn read_manifest(path: &Path) -> Result<LocalWhisperManifest, String> {
         );
     }
     Ok(manifest)
+}
+
+struct WhisperCandidate {
+    kind: String,
+    path: PathBuf,
+}
+
+fn whisper_candidates(app: &tauri::AppHandle) -> Vec<WhisperCandidate> {
+    let mut candidates = Vec::new();
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            candidates.push(WhisperCandidate {
+                kind: "build-resource-dir".to_string(),
+                path: exe_dir.join("resources").join("voice").join("whisper"),
+            });
+        }
+    }
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(WhisperCandidate {
+            kind: "tauri-resource-dir".to_string(),
+            path: resource_dir.join("voice").join("whisper"),
+        });
+    }
+    if let Ok(path) = std::env::var(OVERRIDE_ENV) {
+        candidates.push(WhisperCandidate {
+            kind: format!("admin-env:{OVERRIDE_ENV}"),
+            path: PathBuf::from(path),
+        });
+    }
+    if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
+        let base = PathBuf::from(local_app_data)
+            .join("CRONOS")
+            .join("models")
+            .join("voice");
+        candidates.push(WhisperCandidate {
+            kind: "localappdata-models".to_string(),
+            path: base.join("whisper"),
+        });
+        candidates.push(WhisperCandidate {
+            kind: "localappdata-models-root".to_string(),
+            path: base,
+        });
+    }
+    if let Some(program_data) = std::env::var_os("PROGRAMDATA") {
+        let base = PathBuf::from(program_data)
+            .join("CRONOS")
+            .join("models")
+            .join("voice");
+        candidates.push(WhisperCandidate {
+            kind: "programdata-models".to_string(),
+            path: base.join("whisper"),
+        });
+        candidates.push(WhisperCandidate {
+            kind: "programdata-models-root".to_string(),
+            path: base,
+        });
+    }
+    candidates
+}
+
+fn voice_error(
+    code: &str,
+    message: &str,
+    path: &Path,
+    io_error: Option<&std::io::Error>,
+) -> String {
+    let detail = io_error
+        .map(|error| format!(" Codigo: {:?}. Erro: {error}", error.raw_os_error()))
+        .unwrap_or_default();
+    format!("{code}: {message} Caminho: {}.{detail}", path.display())
 }
 
 fn active_children() -> &'static Mutex<HashMap<String, SharedChild>> {
@@ -464,6 +617,19 @@ fn cleanup_temp_files(paths: &[PathBuf]) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn append_whisper_log(line: &str) {
+    let Some(log_dir) = std::env::var_os("LOCALAPPDATA")
+        .map(|value| PathBuf::from(value).join("CRONOS").join("logs"))
+    else {
+        return;
+    };
+    let _ = fs::create_dir_all(&log_dir);
+    let path = log_dir.join(LOG_FILE_NAME);
+    if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(file, "{line}");
+    }
 }
 
 fn validate_request_id(request_id: &str) -> Result<(), String> {
@@ -590,6 +756,9 @@ fn unavailable_status(diagnostic: String) -> LocalWhisperStatus {
         license: "MIT".to_string(),
         audio_format: "mono PCM WAV 16 kHz 16-bit".to_string(),
         last_started_at: String::new(),
+        source_kind: "not-resolved".to_string(),
+        source_path: String::new(),
+        searched_paths: Vec::new(),
     }
 }
 

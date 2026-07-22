@@ -93,7 +93,13 @@ try {
       "frontend\src-tauri\resources\ai\llm\bin\llama-server.exe",
       "frontend\src-tauri\resources\ai\llm\models\qwen2.5-1.5b-instruct-q4_k_m.gguf",
       "frontend\src-tauri\resources\ai\embeddings\manifest.json",
-      "frontend\src-tauri\resources\voice\whisper\manifest.json"
+      "frontend\src-tauri\resources\voice\whisper\manifest.json",
+      "frontend\src-tauri\resources\voice\whisper\bin\whisper-cli.exe",
+      "frontend\src-tauri\resources\voice\whisper\bin\whisper.dll",
+      "frontend\src-tauri\resources\voice\whisper\bin\ggml-base.dll",
+      "frontend\src-tauri\resources\voice\whisper\bin\ggml-cpu.dll",
+      "frontend\src-tauri\resources\voice\whisper\bin\ggml.dll",
+      "frontend\src-tauri\resources\voice\whisper\models\ggml-base.bin"
     )
     $missing = @()
     foreach ($relative in $required) {
@@ -163,7 +169,13 @@ try {
       "resources\ai\llm\bin\llama-server.exe",
       "resources\ai\llm\models\qwen2.5-1.5b-instruct-q4_k_m.gguf",
       "resources\ai\embeddings\manifest.json",
-      "resources\voice\whisper\manifest.json"
+      "resources\voice\whisper\manifest.json",
+      "resources\voice\whisper\bin\whisper-cli.exe",
+      "resources\voice\whisper\bin\whisper.dll",
+      "resources\voice\whisper\bin\ggml-base.dll",
+      "resources\voice\whisper\bin\ggml-cpu.dll",
+      "resources\voice\whisper\bin\ggml.dll",
+      "resources\voice\whisper\models\ggml-base.bin"
     )
     $missing = @()
     foreach ($relative in $required) {
