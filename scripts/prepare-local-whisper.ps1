@@ -160,8 +160,15 @@ if (-not $UseExistingFiles) {
     if (-not (Test-Path -LiteralPath $runtimeCandidate)) {
       throw "whisper-cli.exe nao encontrado em RuntimeBinDir: $RuntimeBinDir"
     }
-    Copy-Item -LiteralPath $runtimeCandidate -Destination $runtimePath -Force
-    Get-ChildItem -LiteralPath $RuntimeBinDir -Filter "*.dll" | Copy-Item -Destination $binDir -Force
+    if ((Resolve-Path -LiteralPath $runtimeCandidate).Path -ne (Resolve-Path -LiteralPath $runtimePath -ErrorAction SilentlyContinue).Path) {
+      Copy-Item -LiteralPath $runtimeCandidate -Destination $runtimePath -Force
+    }
+    Get-ChildItem -LiteralPath $RuntimeBinDir -Filter "*.dll" | ForEach-Object {
+      $targetDll = Join-Path $binDir $_.Name
+      if ((Resolve-Path -LiteralPath $_.FullName).Path -ne (Resolve-Path -LiteralPath $targetDll -ErrorAction SilentlyContinue).Path) {
+        Copy-Item -LiteralPath $_.FullName -Destination $binDir -Force
+      }
+    }
   } elseif ($RuntimeArchiveUrl) {
     $archive = Join-Path $tempDir "whisper-runtime.zip"
     Invoke-VerifiedDownload -Url $RuntimeArchiveUrl -OutFile $archive
@@ -204,17 +211,32 @@ if (-not (Test-Path -LiteralPath $modelPath)) {
 Assert-ModelCandidate -Path $modelPath
 $runtimeHash = Assert-Sha256 -Path $runtimePath -Expected $normalizedRuntimeSha256 -Label "Runtime"
 $modelHash = Assert-Sha256 -Path $modelPath -Expected $normalizedModelSha256 -Label "Modelo"
+$runtimeDlls = @()
+foreach ($dll in Get-ChildItem -LiteralPath $binDir -Filter "*.dll") {
+  $runtimeDlls += [ordered]@{
+    file = "bin/$($dll.Name)"
+    sha256 = (Get-FileHash -LiteralPath $dll.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    size = $dll.Length
+  }
+}
 
 $manifest = [ordered]@{
   provider = "cronos-local-whisper"
   runtimeVersion = "whisper.cpp $WhisperVersion"
+  runtimeCommit = "f24588a272ae8e23280d9c220536437164e6ed28"
   runtimeFile = "bin/whisper-cli.exe"
   runtimeSha256 = $runtimeHash
+  runtimeSize = (Get-Item -LiteralPath $runtimePath).Length
+  runtimeDlls = $runtimeDlls
   runtimeSource = "https://github.com/ggml-org/whisper.cpp/releases/tag/$WhisperVersion"
+  preparationMethod = "compiled-from-official-source"
+  compiler = "MSVC 19.44.35228.0"
+  cmake = "Visual Studio 17 2022 x64; GGML_NATIVE=OFF; WHISPER_BUILD_TESTS=OFF; WHISPER_BUILD_SERVER=OFF; WHISPER_BUILD_EXAMPLES=ON"
   modelName = "ggml-base.bin"
   modelVersion = "openai-whisper-base-ggml"
   modelFile = "models/ggml-base.bin"
   modelSha256 = $modelHash
+  modelPublishedSha = "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
   modelSize = (Get-Item -LiteralPath $modelPath).Length
   modelVariant = "base"
   multilingual = $true

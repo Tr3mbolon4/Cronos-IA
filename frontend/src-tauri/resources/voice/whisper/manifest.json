@@ -1,53 +1,56 @@
-{
-  "provider": "cronos-local-whisper",
-  "runtimeVersion": "whisper.cpp v1.8.5",
-  "runtimeCommit": "f24588a272ae8e23280d9c220536437164e6ed28",
-  "runtimeFile": "bin/whisper-cli.exe",
-  "runtimeSha256": "3716AC2A3203DEF41CB49FC0CB49A03A4E4B75D7C5A1889F77164553D75FE060",
-  "runtimeSize": 488960,
-  "runtimeDlls": [
-    {
-      "file": "bin/ggml-base.dll",
-      "sha256": "90F847186B7744A80292D130143BFE540EE301CDD6A3FD7FCE0C20F745856202",
-      "size": 636928
-    },
-    {
-      "file": "bin/ggml-cpu.dll",
-      "sha256": "094DD55A49119682040C39B5695C308222D6ECE712721C2D3AAECEF17E766C02",
-      "size": 782848
-    },
-    {
-      "file": "bin/ggml.dll",
-      "sha256": "38B364B30E9B32767ADC8409878F18AF6A85AED0D94A0CCE61EA56837EDBBAAC",
-      "size": 67072
-    },
-    {
-      "file": "bin/whisper.dll",
-      "sha256": "94253510458259621729E591957B4B653E6CAEE78B7A69B150F0D533742D8041",
-      "size": 484864
-    }
-  ],
-  "runtimeSource": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
-  "preparationMethod": "compiled-from-official-source",
-  "compiler": "MSVC 19.44.35228.0",
-  "cmake": "Visual Studio 17 2022 x64; GGML_NATIVE=OFF; WHISPER_BUILD_TESTS=OFF; WHISPER_BUILD_SERVER=OFF; WHISPER_BUILD_EXAMPLES=ON",
-  "modelName": "ggml-base.bin",
-  "modelVersion": "openai-whisper-base-ggml",
-  "modelFile": "models/ggml-base.bin",
-  "modelSha256": "TO_BE_FILLED_BY_PREPARE_SCRIPT",
-  "modelPublishedSha": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
-  "modelSize": 0,
-  "modelVariant": "base",
-  "multilingual": true,
-  "officialSource": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-  "importedFromApprovedChannel": false,
-  "sourceAndDestinationHashesMatch": false,
-  "integrityValidated": false,
-  "modelStatus": "blocked-by-local-firewall",
-  "modelSource": "https://huggingface.co/ggerganov/whisper.cpp",
-  "architecture": "windows-x86_64-cpu",
-  "languageSupport": ["pt-BR", "pt", "multilingual"],
-  "audioFormat": "mono PCM WAV 16 kHz 16-bit",
-  "license": "MIT",
-  "createdAt": "2026-07-21T00:00:00Z"
+﻿{
+    "provider":  "cronos-local-whisper",
+    "runtimeVersion":  "whisper.cpp v1.8.5",
+    "runtimeCommit":  "f24588a272ae8e23280d9c220536437164e6ed28",
+    "runtimeFile":  "bin/whisper-cli.exe",
+    "runtimeSha256":  "3716ac2a3203def41cb49fc0cb49a03a4e4b75d7c5a1889f77164553d75fe060",
+    "runtimeSize":  488960,
+    "runtimeDlls":  [
+                        {
+                            "file":  "bin/ggml-base.dll",
+                            "sha256":  "90f847186b7744a80292d130143bfe540ee301cdd6a3fd7fce0c20f745856202",
+                            "size":  636928
+                        },
+                        {
+                            "file":  "bin/ggml-cpu.dll",
+                            "sha256":  "094dd55a49119682040c39b5695c308222d6ece712721c2d3aaecef17e766c02",
+                            "size":  782848
+                        },
+                        {
+                            "file":  "bin/ggml.dll",
+                            "sha256":  "38b364b30e9b32767adc8409878f18af6a85aed0d94a0cce61ea56837edbbaac",
+                            "size":  67072
+                        },
+                        {
+                            "file":  "bin/whisper.dll",
+                            "sha256":  "94253510458259621729e591957b4b653e6caee78b7a69b150f0d533742d8041",
+                            "size":  484864
+                        }
+                    ],
+    "runtimeSource":  "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.8.5",
+    "preparationMethod":  "compiled-from-official-source",
+    "compiler":  "MSVC 19.44.35228.0",
+    "cmake":  "Visual Studio 17 2022 x64; GGML_NATIVE=OFF; WHISPER_BUILD_TESTS=OFF; WHISPER_BUILD_SERVER=OFF; WHISPER_BUILD_EXAMPLES=ON",
+    "modelName":  "ggml-base.bin",
+    "modelVersion":  "openai-whisper-base-ggml",
+    "modelFile":  "models/ggml-base.bin",
+    "modelSha256":  "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+    "modelPublishedSha":  "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+    "modelSize":  147951465,
+    "modelVariant":  "base",
+    "multilingual":  true,
+    "officialSource":  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "importedFromApprovedChannel":  true,
+    "sourceAndDestinationHashesMatch":  true,
+    "integrityValidated":  true,
+    "modelSource":  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "architecture":  "windows-x86_64-cpu",
+    "languageSupport":  [
+                            "pt-BR",
+                            "pt",
+                            "multilingual"
+                        ],
+    "audioFormat":  "mono PCM WAV 16 kHz 16-bit",
+    "license":  "MIT",
+    "createdAt":  "2026-07-22T00:48:31Z"
 }
