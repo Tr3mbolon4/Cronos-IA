@@ -1,0 +1,24 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "pending-manual-network-disconnect",
+  "validatedLocalComponents": {
+    "llmRuntime": true,
+    "llmModel": true,
+    "embeddingRuntime": true,
+    "whisperRuntime": true,
+    "whisperModel": true,
+    "isolatedDesktopRuntime": true
+  },
+  "notExecutedAutomatically": [
+    "desligar Wi-Fi",
+    "desconectar Ethernet",
+    "repetir Chat/PDF/voz sem internet",
+    "inspecionar conexoes externas durante voz"
+  ],
+  "expectedNetworkPolicy": {
+    "cronos-backend": "127.0.0.1 only",
+    "llama-server": "127.0.0.1 only",
+    "whisper-cli": "no network required"
+  },
+  "approval": false
+}

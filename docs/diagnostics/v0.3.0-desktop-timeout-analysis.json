@@ -1,0 +1,205 @@
+﻿{
+    "phase":  "v0.3.0-final-desktop-voice-real-use",
+    "status":  "passed",
+    "generatedAt":  "2026-07-22T00:45:57Z",
+    "buildDir":  "C:\\Users\\ALEXAN~1\\AppData\\Local\\Temp\\CRONOS-v0.3.0-isolated-build\\build-20260721-214359",
+    "reportPath":  "G:\\Cronos-IA\\docs\\diagnostics\\v0.3.0-desktop-timeout-analysis.json",
+    "baseUrl":  "http://127.0.0.1:64462",
+    "error":  "",
+    "steps":  [
+                  {
+                      "name":  "start",
+                      "timeoutSeconds":  0,
+                      "startedAt":  "2026-07-22T00:45:34.116Z",
+                      "finishedAt":  "2026-07-22T00:45:34.122Z",
+                      "durationMs":  5,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  "test-isolated-runtime"
+                  },
+                  {
+                      "name":  "validate-isolated-build",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:34.130Z",
+                      "finishedAt":  "2026-07-22T00:45:34.140Z",
+                      "durationMs":  11,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "missing":  0,
+                                     "required":  5
+                                 }
+                  },
+                  {
+                      "name":  "prepare-test-localappdata",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:34.140Z",
+                      "finishedAt":  "2026-07-22T00:45:34.148Z",
+                      "durationMs":  8,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "localAppData":  "C:\\Users\\ALEXAN~1\\AppData\\Local\\Temp\\Cronos Isolated Runtime Test 95d4a42e-b40c-479b-bbdb-14b9c77c9e06\\LocalAppData"
+                                 }
+                  },
+                  {
+                      "name":  "start-desktop",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:34.148Z",
+                      "finishedAt":  "2026-07-22T00:45:34.430Z",
+                      "durationMs":  282,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "path":  "C:\\Users\\ALEXAN~1\\AppData\\Local\\Temp\\CRONOS-v0.3.0-isolated-build\\build-20260721-214359\\cronos-desktop.exe",
+                                     "pid":  20364
+                                 }
+                  },
+                  {
+                      "name":  "wait-current-session",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:34.431Z",
+                      "finishedAt":  "2026-07-22T00:45:37.339Z",
+                      "durationMs":  2908,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "port":  64462,
+                                     "status":  null,
+                                     "backendPid":  24616,
+                                     "version":  "0.2.0"
+                                 }
+                  },
+                  {
+                      "name":  "detect-backend",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:37.340Z",
+                      "finishedAt":  "2026-07-22T00:45:37.357Z",
+                      "durationMs":  17,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "path":  "C:\\Users\\alexandre_santos\\AppData\\Local\\Temp\\CRONOS-v0.3.0-isolated-build\\build-20260721-214359\\cronos-backend.exe",
+                                     "pid":  24616
+                                 }
+                  },
+                  {
+                      "name":  "health-check",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:37.358Z",
+                      "finishedAt":  "2026-07-22T00:45:37.399Z",
+                      "durationMs":  40,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "attempts":  1,
+                                     "health":  {
+                                                    "status":  "ok",
+                                                    "service":  "cronos-backend",
+                                                    "version":  "0.2.0",
+                                                    "environment":  "desktop",
+                                                    "uptime":  0.282,
+                                                    "readiness":  "ready",
+                                                    "database":  "ready",
+                                                    "runtime":  "ready"
+                                                }
+                                 }
+                  },
+                  {
+                      "name":  "login",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:37.399Z",
+                      "finishedAt":  "2026-07-22T00:45:37.720Z",
+                      "durationMs":  322,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "token":  "redacted",
+                                     "owner":  "created"
+                                 }
+                  },
+                  {
+                      "name":  "llama-server-load-and-chat",
+                      "timeoutSeconds":  180,
+                      "startedAt":  "2026-07-22T00:45:37.734Z",
+                      "finishedAt":  "2026-07-22T00:45:48.007Z",
+                      "durationMs":  10274,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "port":  62853,
+                                     "firstResponseMs":  9602,
+                                     "llamaPid":  24244,
+                                     "llmStatus":  "ready",
+                                     "answer":  "CRONOS FUNCIONANDO."
+                                 }
+                  },
+                  {
+                      "name":  "warm-chat",
+                      "timeoutSeconds":  60,
+                      "startedAt":  "2026-07-22T00:45:48.007Z",
+                      "finishedAt":  "2026-07-22T00:45:54.601Z",
+                      "durationMs":  6594,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "answerPreview":  "CRONOS FUNCIONANDO. Uma VLAN (Virtual Local Area Network) é uma tecnologia que divide um mesmo rede em múltiplos sub-red",
+                                     "responseMs":  6592
+                                 }
+                  },
+                  {
+                      "name":  "upload-pdf",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:54.602Z",
+                      "finishedAt":  "2026-07-22T00:45:54.653Z",
+                      "durationMs":  51,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "pages":  1,
+                                     "chunks":  1,
+                                     "id":  1,
+                                     "indexing":  "completed"
+                                 }
+                  },
+                  {
+                      "name":  "lock-session",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:54.653Z",
+                      "finishedAt":  "2026-07-22T00:45:54.689Z",
+                      "durationMs":  36,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "locked":  true
+                                 }
+                  },
+                  {
+                      "name":  "shutdown",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:54.689Z",
+                      "finishedAt":  "2026-07-22T00:45:57.474Z",
+                      "durationMs":  2785,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "closed":  true
+                                 }
+                  },
+                  {
+                      "name":  "orphan-process-check",
+                      "timeoutSeconds":  30,
+                      "startedAt":  "2026-07-22T00:45:57.474Z",
+                      "finishedAt":  "2026-07-22T00:45:57.482Z",
+                      "durationMs":  8,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "orphanProcesses":  0
+                                 }
+                  }
+              ],
+    "remainingProcesses":  {
+
+                           }
+}

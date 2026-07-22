@@ -1,0 +1,30 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "ready-for-owner-manual-validation",
+  "buildDir": "see docs/diagnostics/v0.3.0-isolated-build-test.json",
+  "instructions": "Nao executar PowerShell, npm, Cargo, Python ou servidores manualmente.",
+  "checklist": [
+    {"step": 1, "action": "Abrir CRONOS", "result": "pending", "observation": ""},
+    {"step": 2, "action": "Fazer login", "result": "pending", "observation": ""},
+    {"step": 3, "action": "Aguardar Modelo local pronto", "result": "pending", "observation": ""},
+    {"step": 4, "action": "Escrever Ola", "result": "pending", "observation": ""},
+    {"step": 5, "action": "Perguntar sobre VLAN", "result": "pending", "observation": ""},
+    {"step": 6, "action": "Informar: Minha palavra de teste e Saturno", "result": "pending", "observation": ""},
+    {"step": 7, "action": "Enviar outras mensagens", "result": "pending", "observation": ""},
+    {"step": 8, "action": "Perguntar a palavra", "result": "pending", "observation": ""},
+    {"step": 9, "action": "Fechar", "result": "pending", "observation": ""},
+    {"step": 10, "action": "Abrir novamente", "result": "pending", "observation": ""},
+    {"step": 11, "action": "Conferir conversa", "result": "pending", "observation": ""},
+    {"step": 12, "action": "Enviar PDF", "result": "pending", "observation": ""},
+    {"step": 13, "action": "Aguardar Documento pronto", "result": "pending", "observation": ""},
+    {"step": 14, "action": "Perguntar sobre o documento", "result": "pending", "observation": ""},
+    {"step": 15, "action": "Conferir nome, pagina e trecho", "result": "pending", "observation": ""},
+    {"step": 16, "action": "Gravar uma pergunta", "result": "pending", "observation": ""},
+    {"step": 17, "action": "Revisar a transcricao", "result": "pending", "observation": ""},
+    {"step": 18, "action": "Enviar", "result": "pending", "observation": ""},
+    {"step": 19, "action": "Ouvir a resposta", "result": "pending", "observation": ""},
+    {"step": 20, "action": "Pausar e parar a voz", "result": "pending", "observation": ""},
+    {"step": 21, "action": "Desligar a internet", "result": "pending", "observation": ""},
+    {"step": 22, "action": "Repetir Chat, PDF e voz", "result": "pending", "observation": ""}
+  ]
+}

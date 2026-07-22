@@ -1,13 +1,76 @@
-{
-  "phase": "v0.3.0-functional-real-validation",
-  "status": "blocked-timeout",
-  "installerRcGenerated": false,
-  "script": "scripts/test-desktop-runtime.ps1",
-  "failure": "script exceeded 300 seconds during desktop runtime validation after backend packaging started",
-  "cleanup": "stale cronos-backend-console test process was stopped",
-  "sourcePathRequired": "must-be-false-after-validation",
-  "nodeRequired": "must-be-false-after-validation",
-  "pythonGlobalRequired": "must-be-false-after-validation",
-  "internetRequired": "must-be-false-after-validation",
-  "nextAction": "rerun isolated desktop build validation with longer timeout or split build and runtime probes"
+﻿{
+    "phase":  "v0.3.0-final-desktop-voice-real-use",
+    "status":  "passed",
+    "generatedAt":  "2026-07-22T00:44:23Z",
+    "buildDir":  "C:\\Users\\ALEXAN~1\\AppData\\Local\\Temp\\CRONOS-v0.3.0-isolated-build\\build-20260721-214359",
+    "reportPath":  "G:\\Cronos-IA\\docs\\diagnostics\\v0.3.0-isolated-build-test.json",
+    "error":  "",
+    "steps":  [
+                  {
+                      "name":  "start",
+                      "startedAt":  "2026-07-22T00:43:59.638Z",
+                      "finishedAt":  "2026-07-22T00:43:59.643Z",
+                      "durationMs":  6,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  "build-isolated"
+                  },
+                  {
+                      "name":  "cleanup-existing-processes",
+                      "startedAt":  "2026-07-22T00:43:59.651Z",
+                      "finishedAt":  "2026-07-22T00:43:59.660Z",
+                      "durationMs":  10,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "stopped":  true
+                                 }
+                  },
+                  {
+                      "name":  "validate-resources",
+                      "startedAt":  "2026-07-22T00:43:59.660Z",
+                      "finishedAt":  "2026-07-22T00:43:59.666Z",
+                      "durationMs":  6,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "missing":  0,
+                                     "required":  5
+                                 }
+                  },
+                  {
+                      "name":  "skip-compilation",
+                      "startedAt":  "2026-07-22T00:43:59.666Z",
+                      "finishedAt":  "2026-07-22T00:43:59.667Z",
+                      "durationMs":  1,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  "using existing target/release artifacts"
+                  },
+                  {
+                      "name":  "prepare-isolated-folder",
+                      "startedAt":  "2026-07-22T00:43:59.667Z",
+                      "finishedAt":  "2026-07-22T00:44:21.896Z",
+                      "durationMs":  22228,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "path":  "C:\\Users\\ALEXAN~1\\AppData\\Local\\Temp\\CRONOS-v0.3.0-isolated-build\\build-20260721-214359",
+                                     "files":  45,
+                                     "bytes":  1459447898
+                                 }
+                  },
+                  {
+                      "name":  "validate-isolated-artifacts",
+                      "startedAt":  "2026-07-22T00:44:21.897Z",
+                      "finishedAt":  "2026-07-22T00:44:23.780Z",
+                      "durationMs":  1883,
+                      "result":  "passed",
+                      "error":  null,
+                      "output":  {
+                                     "missing":  0,
+                                     "required":  7
+                                 }
+                  }
+              ]
 }

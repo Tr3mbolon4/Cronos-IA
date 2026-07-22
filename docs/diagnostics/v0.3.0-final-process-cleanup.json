@@ -1,0 +1,23 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "passed-automated-isolated-runtime",
+  "validatedBy": "scripts/test-isolated-runtime.ps1",
+  "processesChecked": [
+    "cronos-desktop",
+    "cronos-backend",
+    "cronos-backend-console",
+    "llama-server",
+    "whisper-cli"
+  ],
+  "result": {
+    "orphanProcesses": 0,
+    "desktopClosed": true,
+    "backendStopped": true,
+    "llamaServerStopped": true
+  },
+  "remainingManualChecks": [
+    "fechamento durante transcricao real",
+    "fechamento durante TTS real",
+    "fechamento durante uso offline completo"
+  ]
+}

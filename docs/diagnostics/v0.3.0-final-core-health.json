@@ -1,15 +1,17 @@
 {
   "phase": "v0.3.0-functional-real-validation",
-  "status": "not-approved",
+  "status": "pending-owner-manual-validation",
   "chatRealModel": true,
   "pdfRealRag": true,
   "realEmbeddings": true,
-  "memoryRestart": false,
-  "voiceRealStt": false,
-  "ttsReal": false,
-  "offlineFullFlow": false,
-  "isolatedBuild": false,
+  "ragQualityMultipleDocuments": true,
+  "largeDocumentRetrieval": true,
+  "memoryRestart": "pending-owner-manual-validation",
+  "voiceRealStt": "runtime-and-model-validated-microphone-pending",
+  "ttsReal": "pending-owner-manual-validation",
+  "offlineFullFlow": "pending-manual-network-disconnect",
+  "isolatedBuild": true,
   "ownerManualValidation": false,
   "approvedForPhase6": false,
-  "reason": "LLM, chat, embeddings and backend PDF/RAG are real and validated; Whisper import, full voice, isolated build, offline full-flow and owner manual validation are still pending."
+  "reason": "Desktop isolado, LLM, Chat, embeddings, RAG, PDF grande e Whisper tecnico passaram; microfone real, voz completa, TTS, offline fisico e validacao manual do proprietario ainda estao pendentes."
 }

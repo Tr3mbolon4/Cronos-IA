@@ -1,0 +1,23 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "pending-owner-manual-validation",
+  "dependency": "WebView2 speechSynthesis",
+  "automatedCoverage": {
+    "packagedDesktopStarts": true,
+    "chatRealLlmWorks": true,
+    "ttsAudioPlayback": "not-automated-in-this-session"
+  },
+  "manualChecksRequired": [
+    "listar vozes",
+    "selecionar voz pt-BR",
+    "reproduzir resposta",
+    "pausar",
+    "retomar",
+    "parar",
+    "alterar velocidade",
+    "alterar volume",
+    "bloquear sessao durante reproducao",
+    "fechar aplicativo durante reproducao"
+  ],
+  "approval": false
+}

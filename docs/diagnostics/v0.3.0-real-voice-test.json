@@ -1,8 +1,33 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "blocked-whisper-model-not-installed",
-  "sttProvider": "cronos-local-whisper",
-  "chatFlow": "must-use-same-real-chat-provider",
-  "tts": "pending-real-validation",
-  "manualMicrophoneTest": "pending"
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "partial-runtime-and-model-validated",
+  "provider": "cronos-local-whisper",
+  "runtime": {
+    "version": "whisper.cpp v1.8.5",
+    "file": "frontend/src-tauri/resources/voice/whisper/bin/whisper-cli.exe",
+    "sha256": "3716ac2a3203def41cb49fc0cb49a03a4e4b75d7c5a1889f77164553d75fe060",
+    "helpCommand": "passed"
+  },
+  "model": {
+    "name": "ggml-base.bin",
+    "source": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+    "size": 147951465,
+    "integrityValidated": true,
+    "storedOutsideGit": true
+  },
+  "directRuntimeProbe": {
+    "input": "1 second mono PCM WAV 16 kHz silence",
+    "exitCode": 0,
+    "modelLoaded": true,
+    "notes": "Silence can produce a non-empty music/noise label; this probe validates runtime/model loading, not speech accuracy."
+  },
+  "microphone": {
+    "status": "pending-owner-manual-validation",
+    "reason": "No controlled microphone recording was provided in this automated session."
+  },
+  "voiceFlow": {
+    "status": "pending-owner-manual-validation",
+    "requiredFlow": "microphone -> WAV PCM -> Whisper -> review -> Chat real -> LLM real -> response -> TTS"
+  }
 }

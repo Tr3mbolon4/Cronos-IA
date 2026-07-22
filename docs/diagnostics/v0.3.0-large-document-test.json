@@ -1,0 +1,81 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "passed",
+  "generatedAt": "2026-07-22T00:36:10Z",
+  "document": {
+    "id": 4,
+    "filename": "documento-grande-cronos.pdf",
+    "characters": 1620,
+    "source_id": 4,
+    "page_count": 10,
+    "chunk_count": 10,
+    "indexing_status": "completed"
+  },
+  "index": {
+    "provider_available": true,
+    "indexed": 10,
+    "skipped": 0,
+    "chunks": 13,
+    "embeddings": 13,
+    "pending": 0,
+    "durationMs": 1675
+  },
+  "counts": {
+    "pages": 10,
+    "chunks": 10,
+    "embeddings": 10
+  },
+  "results": [
+    {
+      "id": "inicio",
+      "query": "Qual conteudo aparece no inicio sobre redes?",
+      "expectedPage": 1,
+      "actualPage": 1,
+      "expectedText": "PAGINA-01",
+      "top": {
+        "document": "documento-grande-cronos.pdf",
+        "page": 1,
+        "score_lexical": 0.6,
+        "score_semantic": 0.912271,
+        "score_final": 0.760059,
+        "citation": "documento-grande-cronos.pdf - pagina 1",
+        "excerpt": "Documento grande CRONOS\nCapitulo 1 do documento grande do CRONOS.\nA chave da pagina 1 e PAGINA-01.\nConteudo inicial sobre redes aparece na pagina 1.\nPagina 1"
+      },
+      "passed": true
+    },
+    {
+      "id": "meio",
+      "query": "Qual e a chave da pagina 5?",
+      "expectedPage": 5,
+      "actualPage": 5,
+      "expectedText": "PAGINA-05",
+      "top": {
+        "document": "documento-grande-cronos.pdf",
+        "page": 5,
+        "score_lexical": 1.0,
+        "score_semantic": 0.936429,
+        "score_final": 1.02775,
+        "citation": "documento-grande-cronos.pdf - pagina 5",
+        "excerpt": "Documento grande CRONOS\nCapitulo 5 do documento grande do CRONOS.\nA chave da pagina 5 e PAGINA-05.\nConteudo intermediario de operacao local.\nPagina 5"
+      },
+      "passed": true
+    },
+    {
+      "id": "final",
+      "query": "O que aparece no final sobre auditoria?",
+      "expectedPage": 10,
+      "actualPage": 10,
+      "expectedText": "PAGINA-10",
+      "top": {
+        "document": "documento-grande-cronos.pdf",
+        "page": 10,
+        "score_lexical": 0.75,
+        "score_semantic": 0.909084,
+        "score_final": 0.843931,
+        "citation": "documento-grande-cronos.pdf - pagina 10",
+        "excerpt": "Documento grande CRONOS\nCapitulo 10 do documento grande do CRONOS.\nA chave da pagina 10 e PAGINA-10.\nConteudo final sobre auditoria aparece na pagina 10.\nPagina 10"
+      },
+      "passed": true
+    }
+  ]
+}

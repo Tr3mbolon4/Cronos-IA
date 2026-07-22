@@ -1,0 +1,225 @@
+{
+  "phase": "v0.3.0-final-desktop-voice-real-use",
+  "status": "passed",
+  "generatedAt": "2026-07-22T00:36:09Z",
+  "documents": {
+    "redes.pdf": {
+      "id": 1,
+      "filename": "redes.pdf",
+      "characters": 255,
+      "source_id": 1,
+      "page_count": 1,
+      "chunk_count": 1,
+      "indexing_status": "completed"
+    },
+    "seguranca.pdf": {
+      "id": 2,
+      "filename": "seguranca.pdf",
+      "characters": 256,
+      "source_id": 2,
+      "page_count": 1,
+      "chunk_count": 1,
+      "indexing_status": "completed"
+    },
+    "rh.pdf": {
+      "id": 3,
+      "filename": "rh.pdf",
+      "characters": 267,
+      "source_id": 3,
+      "page_count": 1,
+      "chunk_count": 1,
+      "indexing_status": "completed"
+    }
+  },
+  "index": {
+    "provider_available": true,
+    "indexed": 3,
+    "skipped": 0,
+    "chunks": 3,
+    "embeddings": 3,
+    "pending": 0,
+    "durationMs": 2812
+  },
+  "counts": {
+    "documents": 3,
+    "pages": 3,
+    "chunks": 3,
+    "embeddings": 3
+  },
+  "provider": {
+    "provider": "cronos-local-llama-embedding",
+    "configured_provider": "llama.cpp",
+    "model": "Qwen2.5-1.5B-Instruct-GGUF",
+    "model_path": "G:\\Cronos-IA\\frontend\\src-tauri\\resources\\ai\\llm\\models\\qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "available": true,
+    "loaded": true,
+    "dimension": 384,
+    "native_dimension": 1536,
+    "index_dimension": 384,
+    "projection": "mean-pool-1536-to-384-normalized",
+    "reductionMethod": "mean-pool contiguous 1536-to-384 buckets",
+    "normalized": true,
+    "experimentalReduction": true,
+    "mode": "hybrid",
+    "error": null,
+    "license": "apache-2.0",
+    "multilingual": true,
+    "runtime": "llama.cpp"
+  },
+  "results": [
+    {
+      "id": "direta_vlan",
+      "query": "O que separa dominios logicos em um switch?",
+      "expectedDocument": "redes.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 84,
+      "top": {
+        "document": "redes.pdf",
+        "page": 1,
+        "score_lexical": 0.75,
+        "score_semantic": 0.943911,
+        "score_final": 0.85959,
+        "citation": "redes.pdf - pagina 1",
+        "excerpt": "Documento A - Redes\nVLAN separa dominios logicos em um switch gerenciavel.\nMascara de rede define a porcao de rede e hosts.\nGateway padrao encaminha trafego para outras redes.\nSwitch gerenciavel permite configurar VLANs e portas trunk.\nPagi"
+      },
+      "passed": true
+    },
+    {
+      "id": "parafrase_gateway",
+      "query": "Qual item leva pacotes para fora da rede local?",
+      "expectedDocument": "redes.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 82,
+      "top": {
+        "document": "redes.pdf",
+        "page": 1,
+        "score_lexical": 0.516667,
+        "score_semantic": 0.927958,
+        "score_final": 0.678952,
+        "citation": "redes.pdf - pagina 1",
+        "excerpt": "Documento A - Redes\nVLAN separa dominios logicos em um switch gerenciavel.\nMascara de rede define a porcao de rede e hosts.\nGateway padrao encaminha trafego para outras redes.\nSwitch gerenciavel permite configurar VLANs e portas trunk.\nPagi"
+      },
+      "passed": true
+    },
+    {
+      "id": "sem_literal_mfa",
+      "query": "Que mecanismo aumenta a seguranca usando mais de uma prova de identidade?",
+      "expectedDocument": "seguranca.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 101,
+      "top": {
+        "document": "seguranca.pdf",
+        "page": 1,
+        "score_lexical": 0.142857,
+        "score_semantic": 0.95967,
+        "score_final": 0.484456,
+        "citation": "seguranca.pdf - pagina 1",
+        "excerpt": "Documento B - Seguranca\nAutenticacao multifator combina senha e segundo fator.\nFirewall filtra trafego de rede por regras.\nPrincipio do menor privilegio limita acessos ao necessario.\nBackup garante recuperacao apos falhas ou incidentes.\nPag"
+      },
+      "passed": true
+    },
+    {
+      "id": "backup_global",
+      "query": "Como recuperar dados apos incidente?",
+      "expectedDocument": "seguranca.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 68,
+      "top": {
+        "document": "seguranca.pdf",
+        "page": 1,
+        "score_lexical": 0.25,
+        "score_semantic": 0.937549,
+        "score_final": 0.535642,
+        "citation": "seguranca.pdf - pagina 1",
+        "excerpt": "Documento B - Seguranca\nAutenticacao multifator combina senha e segundo fator.\nFirewall filtra trafego de rede por regras.\nPrincipio do menor privilegio limita acessos ao necessario.\nBackup garante recuperacao apos falhas ou incidentes.\nPag"
+      },
+      "passed": true
+    },
+    {
+      "id": "rh_beneficios",
+      "query": "Quais beneficios ficticios existem?",
+      "expectedDocument": "rh.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 63,
+      "top": {
+        "document": "rh.pdf",
+        "page": 1,
+        "score_lexical": 0.5,
+        "score_semantic": 0.903713,
+        "score_final": 0.709151,
+        "citation": "rh.pdf - pagina 1",
+        "excerpt": "Documento C - Recursos Humanos\nFerias ficticias devem ser solicitadas com antecedencia.\nHorario padrao ficticio vai das 09h as 18h.\nTreinamento interno ficticio ocorre trimestralmente.\nBeneficios ficticios incluem vale aprendizado e clube d"
+      },
+      "passed": true
+    },
+    {
+      "id": "sem_resposta",
+      "query": "Qual e o salario do proprietario?",
+      "expectedDocument": null,
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 52,
+      "top": {
+        "document": "rh.pdf",
+        "page": 1,
+        "score_lexical": 0.0,
+        "score_semantic": 0.936113,
+        "score_final": 0.39764,
+        "citation": "rh.pdf - pagina 1",
+        "excerpt": "Documento C - Recursos Humanos\nFerias ficticias devem ser solicitadas com antecedencia.\nHorario padrao ficticio vai das 09h as 18h.\nTreinamento interno ficticio ocorre trimestralmente.\nBeneficios ficticios incluem vale aprendizado e clube d"
+      },
+      "passed": true
+    },
+    {
+      "id": "filtro_redes",
+      "query": "O documento de redes fala de firewall?",
+      "expectedDocument": null,
+      "filters": {
+        "document_id": 1
+      },
+      "mode": "hybrid",
+      "total": 1,
+      "elapsedMs": 57,
+      "top": {
+        "document": "redes.pdf",
+        "page": 1,
+        "score_lexical": 0.675,
+        "score_semantic": 0.929992,
+        "score_final": 0.813878,
+        "citation": "redes.pdf - pagina 1",
+        "excerpt": "Documento A - Redes\nVLAN separa dominios logicos em um switch gerenciavel.\nMascara de rede define a porcao de rede e hosts.\nGateway padrao encaminha trafego para outras redes.\nSwitch gerenciavel permite configurar VLANs e portas trunk.\nPagi"
+      },
+      "passed": true
+    },
+    {
+      "id": "confusao_switch_firewall",
+      "query": "Qual equipamento configura VLAN e nao deve ser confundido com firewall?",
+      "expectedDocument": "redes.pdf",
+      "filters": null,
+      "mode": "hybrid",
+      "total": 3,
+      "elapsedMs": 65,
+      "top": {
+        "document": "redes.pdf",
+        "page": 1,
+        "score_lexical": 0.45,
+        "score_semantic": 0.960054,
+        "score_final": 0.666019,
+        "citation": "redes.pdf - pagina 1",
+        "excerpt": "Documento A - Redes\nVLAN separa dominios logicos em um switch gerenciavel.\nMascara de rede define a porcao de rede e hosts.\nGateway padrao encaminha trafego para outras redes.\nSwitch gerenciavel permite configurar VLANs e portas trunk.\nPagi"
+      },
+      "passed": true
+    }
+  ]
+}
