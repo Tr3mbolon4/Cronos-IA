@@ -9,6 +9,9 @@ from cronos.services import auth, chat, llm_provider
 
 
 class FakeLLMProvider(llm_provider.LLMProvider):
+    def __init__(self) -> None:
+        self.messages: list[dict] = []
+
     def get_status(self) -> dict:
         return {"configured": True, "ready": True, "provider": "fake-local-llm"}
 
@@ -28,6 +31,7 @@ class FakeLLMProvider(llm_provider.LLMProvider):
         return None
 
     def generate(self, messages: list[dict], *, timeout: int = 120) -> str:
+        self.messages = messages
         user_message = next(item["content"] for item in reversed(messages) if item["role"] == "user")
         return f"Resposta real do provider local para: {user_message}"
 
@@ -39,6 +43,15 @@ class FakeLLMProvider(llm_provider.LLMProvider):
 
     def get_capabilities(self) -> dict:
         return {"chat": True}
+
+
+class LegacyFallbackLLMProvider(FakeLLMProvider):
+    def generate(self, messages: list[dict], *, timeout: int = 120) -> str:
+        self.messages = messages
+        return (
+            "Estou rodando localmente no MVP do CRONOS. Ainda nao tenho um modelo de IA completo conectado, "
+            "mas ja consigo manter historico, ler PDFs enviados e responder usando os dados locais. Recebi: Ola"
+        )
 
 
 class ChatTests(unittest.TestCase):
@@ -58,7 +71,8 @@ class ChatTests(unittest.TestCase):
         with self.assertRaises(CronosError) as context:
             chat.send_message("Ola Cronos")
         self.assertEqual(context.exception.status_code, 503)
-        self.assertEqual(context.exception.detail, "Nenhum modelo de IA local está instalado ou configurado.")
+        self.assertEqual(context.exception.detail, llm_provider.LOCAL_LLM_ERROR)
+        self.assertEqual(context.exception.code, "LLM_MODEL_NOT_AVAILABLE")
         history = chat.history()
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0]["role"], "user")
@@ -71,6 +85,33 @@ class ChatTests(unittest.TestCase):
         self.assertNotIn("Estou rodando localmente no MVP do CRONOS", response["content"])
         history = chat.history()
         self.assertEqual(len(history), 2)
+        self.assertEqual(history[0]["role"], "user")
+
+    def test_legacy_mvp_fallback_history_is_not_sent_to_llm_prompt(self):
+        chat._save_message("user", "ola")
+        chat._save_message(
+            "assistant",
+            "Estou rodando localmente no MVP do CRONOS. Ainda nao tenho um modelo de IA completo conectado. Recebi: ola",
+        )
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+
+        chat.send_message("Ola qual seu nome?")
+
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertNotIn("Estou rodando localmente no MVP do CRONOS", prompt_text)
+        self.assertIn("resposta(s) legada(s) de fallback MVP foram omitidas", prompt_text)
+
+    def test_legacy_mvp_fallback_response_is_blocked(self):
+        llm_provider.set_provider_for_tests(LegacyFallbackLLMProvider())
+
+        with self.assertRaises(CronosError) as context:
+            chat.send_message("Ola qual seu nome?")
+
+        self.assertEqual(context.exception.status_code, 503)
+        self.assertEqual(context.exception.code, "LLM_LEGACY_FALLBACK_BLOCKED")
+        history = chat.history()
+        self.assertEqual(len(history), 1)
         self.assertEqual(history[0]["role"], "user")
 
 

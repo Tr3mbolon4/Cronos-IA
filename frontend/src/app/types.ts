@@ -91,8 +91,13 @@ export type RetrievalSummary = {
 export type RuntimeIdentity = {
   appVersion: string
   gitCommit: string
+  runtimeGitCommit?: string
   buildTimestamp: string
   buildId: string
+  runtimeBuildId?: string
+  protocolVersion?: string
+  runtimeProtocolVersion?: string
+  sessionId?: string
   backendExecutable: string
   backendPid: number
   parentPid?: string

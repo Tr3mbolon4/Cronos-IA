@@ -5,7 +5,7 @@ import type { CoreState, DocumentItem, Hardware, MemorySummary, Message, Retriev
 import { useAppRouter } from './app/useAppRouter'
 import { coreStateMeta } from './app/coreState'
 import { ApiClient } from './services/apiClient'
-import { authHeaders, loadSetupStatus, loginFailureMessage, startupMessage } from './app/startup'
+import { assertRuntimeIdentityMatches, authHeaders, loadRuntimeIdentity, loadSetupStatus, loginFailureMessage, startupMessage } from './app/startup'
 import { LockedScreen, StartupErrorScreen } from './app/AppScreens'
 import { openRuntimeLogs, resolveRuntimeConnection, restartRuntimeConnection, shutdownCronos } from './services/runtimeConnection'
 import { AppShell } from './layouts/AppShell'
@@ -97,6 +97,10 @@ function App() {
       setRuntimeReady(true)
       setCoreState(connection.state === 'ready' || connection.state === 'web' ? 'locked' : 'offline')
       setStartupPhase('loading_identity')
+      if (connection.state !== 'web') {
+        const runtimeIdentity = await loadRuntimeIdentity(connection.base_url, connection.runtime_token)
+        assertRuntimeIdentityMatches(connection, runtimeIdentity)
+      }
       const setupStatus = await loadSetupStatus(connection.base_url, connection.runtime_token)
       setSetup(setupStatus)
       setStartupPhase(setupStatus.configured ? 'owner_exists' : 'owner_not_registered')

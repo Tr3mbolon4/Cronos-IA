@@ -40,6 +40,9 @@ class Settings:
         self.session_id = os.environ.get("CRONOS_SESSION_ID", "")
         self.parent_pid = os.environ.get("CRONOS_PARENT_PID", "")
         self.resource_dir = _default_resource_dir()
+        self.build_id = os.environ.get("CRONOS_BUILD_ID", "")
+        self.git_commit = os.environ.get("CRONOS_GIT_COMMIT", "")
+        self.protocol_version = os.environ.get("CRONOS_PROTOCOL_VERSION", "1")
 
     @property
     def is_visual_test(self) -> bool:
@@ -104,6 +107,9 @@ class Settings:
         session_id: str | None = None,
         parent_pid: str | None = None,
         resource_dir: str | Path | None = None,
+        build_id: str | None = None,
+        git_commit: str | None = None,
+        protocol_version: str | None = None,
     ) -> None:
         if env:
             self.env = env
@@ -123,6 +129,12 @@ class Settings:
             self.parent_pid = parent_pid
         if resource_dir:
             self.resource_dir = Path(resource_dir).expanduser().resolve()
+        if build_id:
+            self.build_id = build_id
+        if git_commit:
+            self.git_commit = git_commit
+        if protocol_version:
+            self.protocol_version = protocol_version
 
     @property
     def llm_resource_dir(self) -> Path:

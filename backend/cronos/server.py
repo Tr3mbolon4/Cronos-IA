@@ -274,7 +274,10 @@ class CronosHandler(BaseHTTPRequestHandler):
         self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Cronos-Runtime-Token")
-        self.send_header("Access-Control-Expose-Headers", "X-Cronos-Version,X-Cronos-Commit,X-Cronos-Backend-Pid,X-Cronos-Provider")
+        self.send_header(
+            "Access-Control-Expose-Headers",
+            "X-Cronos-Version,X-Cronos-Commit,X-Cronos-Build-Id,X-Cronos-Protocol-Version,X-Cronos-Backend-Pid,X-Cronos-Provider",
+        )
 
     def log_message(self, format: str, *args: object) -> None:
         print(f"{self.address_string()} - {format % args}")
@@ -310,6 +313,9 @@ def main() -> None:
     parser.add_argument("--parent-pid", default=os.environ.get("CRONOS_PARENT_PID", ""))
     parser.add_argument("--environment", default=os.environ.get("CRONOS_ENV", "development"))
     parser.add_argument("--resource-dir", default=os.environ.get("CRONOS_RESOURCE_DIR"))
+    parser.add_argument("--build-id", default=os.environ.get("CRONOS_BUILD_ID", ""))
+    parser.add_argument("--git-commit", default=os.environ.get("CRONOS_GIT_COMMIT", ""))
+    parser.add_argument("--protocol-version", default=os.environ.get("CRONOS_PROTOCOL_VERSION", "1"))
     args = parser.parse_args()
 
     global RUNTIME_TOKEN
@@ -330,6 +336,9 @@ def main() -> None:
         session_id=args.session_id or str(uuid.uuid4()),
         parent_pid=args.parent_pid,
         resource_dir=args.resource_dir,
+        build_id=args.build_id,
+        git_commit=args.git_commit,
+        protocol_version=args.protocol_version,
     )
 
     try:
@@ -352,6 +361,10 @@ def main() -> None:
         pid=os.getpid(),
         session_id=settings.session_id,
         version=settings.version,
+        build_id=settings.build_id,
+        git_commit=settings.git_commit,
+        protocol_version=settings.protocol_version,
+        resource_dir=str(settings.resource_dir),
     )
     try:
         server.serve_forever()

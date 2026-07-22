@@ -229,7 +229,7 @@ class CronosLocalLlamaProvider(LLMProvider):
 
     def _read_manifest(self) -> dict:
         if not self.manifest_path.exists():
-            raise CronosError(503, LOCAL_LLM_ERROR, code="LLM_MODEL_NOT_INSTALLED")
+            raise CronosError(503, LOCAL_LLM_ERROR, code="LLM_MODEL_NOT_AVAILABLE")
         try:
             manifest = json.loads(self.manifest_path.read_text(encoding="utf-8-sig"))
         except Exception as error:
@@ -291,7 +291,7 @@ def status() -> dict:
 def generate(messages: list[dict]) -> str:
     provider = get_provider()
     if not provider.get_status().get("configured"):
-        raise CronosError(503, LOCAL_LLM_ERROR, code="LLM_MODEL_NOT_INSTALLED")
+        raise CronosError(503, LOCAL_LLM_ERROR, code="LLM_MODEL_NOT_AVAILABLE")
     return provider.generate(messages)
 
 

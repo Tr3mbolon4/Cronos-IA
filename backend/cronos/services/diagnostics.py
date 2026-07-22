@@ -93,11 +93,19 @@ def core_health() -> dict:
 def runtime_identity() -> dict:
     build_info = _build_info()
     llm = llm_provider.status()
+    build_id = build_info.get("buildId") or settings.build_id or "unknown"
+    git_commit = build_info.get("gitCommit") or settings.git_commit or "unknown"
+    protocol_version = build_info.get("protocolVersion") or settings.protocol_version
     return {
         "appVersion": build_info.get("version") or settings.version,
-        "gitCommit": build_info.get("gitCommit") or "unknown",
+        "gitCommit": git_commit,
+        "runtimeGitCommit": settings.git_commit or git_commit,
         "buildTimestamp": build_info.get("buildTimestamp") or "unknown",
-        "buildId": build_info.get("buildId") or "unknown",
+        "buildId": build_id,
+        "runtimeBuildId": settings.build_id or build_id,
+        "protocolVersion": protocol_version,
+        "runtimeProtocolVersion": settings.protocol_version,
+        "sessionId": settings.session_id,
         "backendExecutable": sys.executable,
         "backendPid": os.getpid(),
         "parentPid": settings.parent_pid,
@@ -119,7 +127,9 @@ def response_headers() -> dict[str, str]:
     build_info = _build_info()
     return {
         "X-Cronos-Version": str(build_info.get("version") or settings.version),
-        "X-Cronos-Commit": str(build_info.get("gitCommit") or "unknown"),
+        "X-Cronos-Commit": str(build_info.get("gitCommit") or settings.git_commit or "unknown"),
+        "X-Cronos-Build-Id": str(build_info.get("buildId") or settings.build_id or "unknown"),
+        "X-Cronos-Protocol-Version": str(build_info.get("protocolVersion") or settings.protocol_version),
         "X-Cronos-Backend-Pid": str(os.getpid()),
         "X-Cronos-Provider": "cronos-local-llama",
     }

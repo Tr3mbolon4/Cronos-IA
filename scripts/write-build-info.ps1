@@ -20,6 +20,7 @@ $info = [ordered]@{
   gitCommitFull = $fullCommit
   buildTimestamp = $timestamp
   buildId = $buildId
+  protocolVersion = "1"
   source = "generated-by-scripts/write-build-info.ps1"
 }
 

@@ -7,6 +7,9 @@ export type RuntimeConnection = {
   session_id: string
   backend_pid?: number | null
   runtime_token: string
+  build_id: string
+  git_commit: string
+  protocol_version: string
 }
 
 const fallbackConnection: RuntimeConnection = {
@@ -16,6 +19,9 @@ const fallbackConnection: RuntimeConnection = {
   session_id: '',
   backend_pid: null,
   runtime_token: '',
+  build_id: 'web-development',
+  git_commit: 'web-development',
+  protocol_version: '1',
 }
 
 export function isTauriRuntime() {
