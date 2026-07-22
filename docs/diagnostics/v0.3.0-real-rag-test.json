@@ -1,8 +1,52 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "blocked-model-not-installed",
-  "lexicalRetrieval": "available",
-  "semanticRetrieval": "requires embedding provider validation",
-  "llmAnswer": "requires local GGUF model",
-  "noAnswerPolicy": "Nao encontrei essa informacao nos documentos selecionados."
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "passed-backend-real-pdf-rag",
+  "testDocument": "teste-funcional-cronos.pdf",
+  "documentContent": {
+    "key": "AZUL-4729",
+    "system": "CRONOS",
+    "color": "verde",
+    "salary": "not-present"
+  },
+  "ingestion": {
+    "pageCount": 1,
+    "chunkCount": 1,
+    "indexingStatus": "completed"
+  },
+  "embeddings": {
+    "provider": "cronos-local-llama-embedding",
+    "runtime": "llama.cpp",
+    "model": "Qwen2.5-1.5B-Instruct-GGUF",
+    "nativeDimension": 1536,
+    "persistedDimension": 384,
+    "projection": "mean-pool-1536-to-384-normalized",
+    "chunksBefore": 1,
+    "embeddingsBefore": 0,
+    "indexed": 1,
+    "embeddingsAfter": 1,
+    "mode": "hybrid"
+  },
+  "answers": [
+    {
+      "question": "Qual e a chave documental?",
+      "answer": "A chave documental e AZUL-4729.",
+      "citation": "teste-funcional-cronos.pdf - pagina 1"
+    },
+    {
+      "question": "Qual sistema esta sendo validado?",
+      "answer": "O sistema validado e CRONOS.",
+      "citation": "teste-funcional-cronos.pdf - pagina 1"
+    },
+    {
+      "question": "Qual cor esta registrada?",
+      "answer": "A cor registrada e verde.",
+      "citation": "teste-funcional-cronos.pdf - pagina 1"
+    },
+    {
+      "question": "O documento informa um salario?",
+      "answer": "Nao encontrei informacoes sobre um salario no documento fornecido.",
+      "citation": "teste-funcional-cronos.pdf - pagina 1"
+    }
+  ],
+  "manualDesktopUiValidation": "pending-owner-build"
 }

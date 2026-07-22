@@ -1,8 +1,9 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "pending-real-process-validation",
-  "backendSidecarCleanup": "existing-runtime-path",
-  "llmRuntimeCleanup": "implemented-stop-on-backend-shutdown",
-  "whisperCleanup": "existing-cancel-path",
-  "orphanProcessTest": "pending"
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "partial-passed-backend-runtime",
+  "backendSidecarCleanup": "pending-isolated-desktop-build",
+  "llmRuntimeCleanup": "passed-provider-stop-and-backend-finally",
+  "embeddingRuntimeCleanup": "passed-provider-stop-and-backend-finally",
+  "whisperCleanup": "pending-real-model-and-microphone",
+  "orphanProcessTest": "no llama-server, cronos-backend or cronos-desktop process after backend validation"
 }

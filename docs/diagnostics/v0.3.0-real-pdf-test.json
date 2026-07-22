@@ -1,11 +1,13 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "pending-real-ui-validation",
-  "controlledPdfCreated": false,
-  "upload": "pending",
-  "extraction": "existing-code-path",
-  "chunks": "existing-code-path",
-  "embeddings": "pending-provider-validation",
-  "citations": "existing-code-path",
-  "llmSynthesis": "blocked-model-not-installed"
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "passed-backend-controlled-pdf",
+  "controlledPdfCreated": true,
+  "upload": "passed-service-path",
+  "extraction": "passed",
+  "pages": 1,
+  "chunks": 1,
+  "embeddings": 1,
+  "citations": "passed",
+  "llmSynthesis": "passed-real-local-llm",
+  "manualDesktopUiValidation": "pending-owner-build"
 }

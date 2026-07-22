@@ -1,8 +1,41 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "blocked-model-not-installed",
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "passed-backend-real-llm",
   "fixedResponseRemoved": true,
-  "missingModelError": "Nenhum modelo de IA local está instalado ou configurado.",
-  "realModelResponseTest": "pending-llm-import",
-  "notes": "The chat path now calls LLMProvider. It must not present fallback text as an assistant answer."
+  "provider": "cronos-local-llama",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "runtimeStatus": {
+    "runtimeAvailable": true,
+    "runtimeIntegrityValid": true,
+    "modelAvailable": true,
+    "modelIntegrityValid": true,
+    "processRunning": true,
+    "healthCheck": "ready",
+    "listeningAddress": "127.0.0.1",
+    "externalNetworkRequired": false
+  },
+  "questions": [
+    {
+      "input": "Ola.",
+      "result": "real-model-response"
+    },
+    {
+      "input": "Qual e o seu nome?",
+      "result": "real-model-response"
+    },
+    {
+      "input": "Explique o que e uma VLAN.",
+      "result": "real-model-response"
+    },
+    {
+      "input": "Responda somente com: CRONOS FUNCIONANDO.",
+      "answer": "CRONOS FUNCIONANDO."
+    },
+    {
+      "input": "Qual foi a primeira pergunta desta conversa?",
+      "answer": "A primeira pergunta desta conversa foi: \"Ola.\""
+    }
+  ],
+  "historyContextFix": "recent chat context increased to 20 messages and includes a numbered chronological transcript",
+  "manualDesktopUiValidation": "pending-owner-build"
 }

@@ -1,8 +1,10 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "pending-real-ui-validation",
-  "historyPersistence": "existing-database-path",
-  "semanticMemory": "requires provider validation",
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "partial-backend-history-passed",
+  "historyPersistence": "backend chat messages persisted in the active database during real LLM test",
+  "recentHistoryContext": "20 messages with numbered chronological transcript",
   "controlledPhrase": "Saturno",
-  "restartValidation": "pending"
+  "semanticMemory": "pending-real-owner-validation",
+  "restartValidation": "pending-isolated-desktop-build",
+  "notes": "Do not claim persistent semantic memory approval until the owner completes the desktop restart roteiro."
 }

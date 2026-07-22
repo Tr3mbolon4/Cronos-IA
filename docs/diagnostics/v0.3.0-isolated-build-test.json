@@ -1,9 +1,13 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
-  "status": "pending",
+  "phase": "v0.3.0-functional-real-validation",
+  "status": "blocked-timeout",
   "installerRcGenerated": false,
+  "script": "scripts/test-desktop-runtime.ps1",
+  "failure": "script exceeded 300 seconds during desktop runtime validation after backend packaging started",
+  "cleanup": "stale cronos-backend-console test process was stopped",
   "sourcePathRequired": "must-be-false-after-validation",
   "nodeRequired": "must-be-false-after-validation",
   "pythonGlobalRequired": "must-be-false-after-validation",
-  "internetRequired": "must-be-false-after-validation"
+  "internetRequired": "must-be-false-after-validation",
+  "nextAction": "rerun isolated desktop build validation with longer timeout or split build and runtime probes"
 }

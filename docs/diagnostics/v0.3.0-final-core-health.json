@@ -1,11 +1,15 @@
 {
-  "phase": "v0.3.0-functional-core-recovery",
+  "phase": "v0.3.0-functional-real-validation",
   "status": "not-approved",
-  "chatRealModel": false,
-  "pdfRealRag": false,
+  "chatRealModel": true,
+  "pdfRealRag": true,
+  "realEmbeddings": true,
   "memoryRestart": false,
   "voiceRealStt": false,
   "ttsReal": false,
+  "offlineFullFlow": false,
   "isolatedBuild": false,
-  "reason": "local LLM runtime/model and Whisper model still require approved physical import and real owner validation"
+  "ownerManualValidation": false,
+  "approvedForPhase6": false,
+  "reason": "LLM, chat, embeddings and backend PDF/RAG are real and validated; Whisper import, full voice, isolated build, offline full-flow and owner manual validation are still pending."
 }
