@@ -54,6 +54,111 @@ function Assert-ModelCandidate {
   }
 }
 
+function Write-JsonUtf8NoBomAtomic {
+  param([string]$Path, [object]$Value)
+  $json = $Value | ConvertTo-Json -Depth 10
+  $tempPath = "$Path.tmp"
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  try {
+    [System.IO.File]::WriteAllText($tempPath, ($json + "`n"), $utf8NoBom)
+    Assert-VoiceManifestFile -Path $tempPath -BaseDir (Split-Path -Parent $Path) | Out-Null
+    if (Test-Path -LiteralPath $Path) {
+      Move-Item -LiteralPath $tempPath -Destination $Path -Force
+    } else {
+      Rename-Item -LiteralPath $tempPath -NewName (Split-Path -Leaf $Path)
+    }
+  } catch {
+    if (Test-Path -LiteralPath $tempPath) {
+      Remove-Item -LiteralPath $tempPath -Force
+    }
+    throw
+  }
+}
+
+function Assert-Utf8JsonNoBom {
+  param([string]$Path)
+  $bytes = [System.IO.File]::ReadAllBytes($Path)
+  if ($bytes.Length -eq 0) {
+    throw "Manifest local de voz invalido: arquivo vazio."
+  }
+  if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+    throw "Manifest local de voz invalido: UTF-8 com BOM nao e aceito pelo parser Rust."
+  }
+  if ($bytes.Length -ge 2 -and (($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) -or ($bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF))) {
+    throw "Manifest local de voz invalido: UTF-16 nao e aceito."
+  }
+  $strictUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
+  try {
+    $text = $strictUtf8.GetString($bytes)
+  } catch {
+    throw "Manifest local de voz invalido: bytes nao sao UTF-8 valido. $($_.Exception.Message)"
+  }
+  if ($text.TrimStart().StartsWith("<")) {
+    throw "Manifest local de voz invalido: conteudo parece HTML."
+  }
+  if ($text.StartsWith("version https://git-lfs.github.com/spec/v1")) {
+    throw "Manifest local de voz invalido: conteudo e ponteiro Git LFS."
+  }
+  try {
+    return $text | ConvertFrom-Json
+  } catch {
+    throw "Manifest local de voz invalido: JSON nao parseavel. $($_.Exception.Message)"
+  }
+}
+
+function Assert-VoiceManifestFile {
+  param([string]$Path, [string]$BaseDir)
+  $manifest = Assert-Utf8JsonNoBom -Path $Path
+  $required = @(
+    "provider",
+    "runtimeVersion",
+    "runtimeFile",
+    "runtimeSha256",
+    "runtimeSize",
+    "modelName",
+    "modelFile",
+    "modelSha256",
+    "modelSize",
+    "modelVariant",
+    "multilingual",
+    "integrityValidated"
+  )
+  foreach ($field in $required) {
+    if (-not $manifest.PSObject.Properties.Name.Contains($field)) {
+      throw "Manifest local de voz invalido: campo obrigatorio ausente: $field"
+    }
+  }
+  if ($manifest.provider -ne "cronos-local-whisper") {
+    throw "Manifest local de voz invalido: provider inesperado."
+  }
+  if ($manifest.runtimeFile -ne "bin/whisper-cli.exe") {
+    throw "Manifest local de voz invalido: runtimeFile inesperado."
+  }
+  if ($manifest.modelFile -ne "models/ggml-base.bin") {
+    throw "Manifest local de voz invalido: modelFile inesperado."
+  }
+  foreach ($relative in @($manifest.runtimeFile, $manifest.modelFile)) {
+    if ([System.IO.Path]::IsPathRooted([string]$relative)) {
+      throw "Manifest local de voz invalido: caminho absoluto recusado: $relative"
+    }
+    $candidate = Join-Path $BaseDir ([string]$relative)
+    if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+      throw "Manifest local de voz invalido: arquivo referenciado ausente: $candidate"
+    }
+  }
+  $runtimePath = Join-Path $BaseDir ([string]$manifest.runtimeFile)
+  $modelPath = Join-Path $BaseDir ([string]$manifest.modelFile)
+  Assert-Sha256 -Path $runtimePath -Expected $manifest.runtimeSha256 -Label "Runtime no manifest" | Out-Null
+  Assert-Sha256 -Path $modelPath -Expected $manifest.modelSha256 -Label "Modelo no manifest" | Out-Null
+  if ((Get-Item -LiteralPath $runtimePath).Length -ne [int64]$manifest.runtimeSize) {
+    throw "Manifest local de voz invalido: tamanho do runtime diverge."
+  }
+  if ((Get-Item -LiteralPath $modelPath).Length -ne [int64]$manifest.modelSize) {
+    throw "Manifest local de voz invalido: tamanho do modelo diverge."
+  }
+  return $manifest
+}
+
 function Invoke-SelfTest {
   $validLower = "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
   $validUpper = $validLower.ToUpperInvariant()
@@ -252,7 +357,7 @@ $manifest = [ordered]@{
   createdAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 }
 
-$manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+Write-JsonUtf8NoBomAtomic -Path $manifestPath -Value $manifest
 
 $runtimeSize = [Math]::Round((Get-Item -LiteralPath $runtimePath).Length / 1MB, 2)
 $modelSize = [Math]::Round((Get-Item -LiteralPath $modelPath).Length / 1MB, 2)

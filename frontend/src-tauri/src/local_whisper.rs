@@ -415,8 +415,9 @@ fn read_manifest(path: &Path) -> Result<LocalWhisperManifest, String> {
     })?;
     let manifest: LocalWhisperManifest = serde_json::from_str(&text).map_err(|error| {
         format!(
-            "VOICE_MANIFEST_INVALID: Manifest local de voz invalido. Caminho: {}. Erro: {error}",
-            path.display()
+            "VOICE_MANIFEST_INVALID: Manifest local de voz invalido. Caminho: {}. {} Erro: {error}",
+            path.display(),
+            manifest_file_diagnostics(path)
         )
     })?;
     if manifest.provider != "cronos-local-whisper" {
@@ -540,6 +541,39 @@ fn voice_error(
         .map(|error| format!(" Codigo: {:?}. Erro: {error}", error.raw_os_error()))
         .unwrap_or_default();
     format!("{code}: {message} Caminho: {}.{detail}", path.display())
+}
+
+fn manifest_file_diagnostics(path: &Path) -> String {
+    let bytes = match fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(error) => return format!("Nao foi possivel inspecionar bytes: {error}."),
+    };
+    let size = bytes.len();
+    let sha256 = sha256_file(path).unwrap_or_else(|_| "sha256-indisponivel".to_string());
+    let first_bytes = bytes
+        .iter()
+        .take(32)
+        .map(|byte| format!("{byte:02X}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let encoding = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        "UTF-8 com BOM"
+    } else if bytes.starts_with(&[0xFF, 0xFE]) {
+        "UTF-16 LE"
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        "UTF-16 BE"
+    } else if std::str::from_utf8(&bytes).is_ok() {
+        "UTF-8 sem BOM"
+    } else {
+        "desconhecida/nao UTF-8"
+    };
+    let contains_git_lfs = bytes.starts_with(b"version https://git-lfs.github.com/spec/v1");
+    let starts_html = String::from_utf8_lossy(&bytes)
+        .trim_start()
+        .starts_with('<');
+    format!(
+        "Tamanho: {size} bytes. SHA-256: {sha256}. Encoding aparente: {encoding}. Primeiros bytes: {first_bytes}. GitLFS: {contains_git_lfs}. HTML: {starts_html}."
+    )
 }
 
 fn active_children() -> &'static Mutex<HashMap<String, SharedChild>> {
@@ -844,6 +878,43 @@ mod tests {
     }
 
     #[test]
+    fn rejects_manifest_with_utf8_bom_like_desktop_parser() {
+        let path = std::env::temp_dir().join("cronos-utf8-bom-local-whisper-manifest.json");
+        let mut bytes = vec![0xEF, 0xBB, 0xBF];
+        bytes.extend_from_slice(valid_manifest().as_bytes());
+        fs::write(&path, bytes).unwrap();
+        let result = read_manifest(&path);
+        let _ = fs::remove_file(path);
+        let error = result.err().unwrap_or_default();
+        assert!(error.contains("VOICE_MANIFEST_INVALID"));
+        assert!(error.contains("UTF-8 com BOM"));
+    }
+
+    #[test]
+    fn rejects_manifest_with_invalid_json_payloads() {
+        assert_manifest_bytes_rejected("empty", &[]);
+        assert_manifest_bytes_rejected("only-bom", &[0xEF, 0xBB, 0xBF]);
+        let mut utf16 = vec![0xFF, 0xFE];
+        for unit in valid_manifest().encode_utf16() {
+            utf16.extend_from_slice(&unit.to_le_bytes());
+        }
+        assert_manifest_bytes_rejected("utf16-le", &utf16);
+        assert_manifest_rejected("html", "<html>erro</html>");
+        assert_manifest_rejected(
+            "git-lfs-pointer",
+            "version https://git-lfs.github.com/spec/v1\noid sha256:test\nsize 123",
+        );
+        assert_manifest_rejected("truncated-json", "{\"provider\":\"cronos-local-whisper\"");
+    }
+
+    #[test]
+    fn rejects_manifest_with_missing_required_fields() {
+        let missing_runtime =
+            valid_manifest().replace(r#""runtimeFile":"bin/whisper-cli.exe","#, "");
+        assert_manifest_rejected("missing-runtime-file", &missing_runtime);
+    }
+
+    #[test]
     fn keeps_webview_logs_out_of_transcript() {
         let text = sanitize_transcript("system_info: test\n Ola Cronos \n");
         assert_eq!(text, "Ola Cronos");
@@ -868,6 +939,14 @@ mod tests {
     }
 
     fn assert_manifest_rejected(name: &str, manifest: &str) {
+        let path = std::env::temp_dir().join(format!("cronos-{name}-manifest.json"));
+        fs::write(&path, manifest).unwrap();
+        let result = read_manifest(&path);
+        let _ = fs::remove_file(path);
+        assert!(result.is_err(), "manifest {name} should be rejected");
+    }
+
+    fn assert_manifest_bytes_rejected(name: &str, manifest: &[u8]) {
         let path = std::env::temp_dir().join(format!("cronos-{name}-manifest.json"));
         fs::write(&path, manifest).unwrap();
         let result = read_manifest(&path);

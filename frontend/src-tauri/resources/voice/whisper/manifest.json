@@ -1,4 +1,4 @@
-﻿{
+{
     "provider":  "cronos-local-whisper",
     "runtimeVersion":  "whisper.cpp v1.8.5",
     "runtimeCommit":  "f24588a272ae8e23280d9c220536437164e6ed28",
@@ -52,5 +52,5 @@
                         ],
     "audioFormat":  "mono PCM WAV 16 kHz 16-bit",
     "license":  "MIT",
-    "createdAt":  "2026-07-22T00:48:31Z"
+    "createdAt":  "2026-07-22T16:08:34Z"
 }

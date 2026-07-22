@@ -56,6 +56,83 @@ function Invoke-Step {
   }
 }
 
+function Assert-Utf8JsonNoBom {
+  param([string]$Path)
+  $bytes = [System.IO.File]::ReadAllBytes($Path)
+  if ($bytes.Length -eq 0) {
+    throw "Manifest JSON vazio: $Path"
+  }
+  if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+    throw "Manifest JSON possui UTF-8 BOM e falharia no parser Rust: $Path"
+  }
+  if ($bytes.Length -ge 2 -and (($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) -or ($bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF))) {
+    throw "Manifest JSON esta em UTF-16 e falharia no parser Rust: $Path"
+  }
+  $strictUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
+  try {
+    $text = $strictUtf8.GetString($bytes)
+  } catch {
+    throw "Manifest JSON nao e UTF-8 valido: $Path. $($_.Exception.Message)"
+  }
+  if ($text.TrimStart().StartsWith("<")) {
+    throw "Manifest JSON parece HTML: $Path"
+  }
+  if ($text.StartsWith("version https://git-lfs.github.com/spec/v1")) {
+    throw "Manifest JSON e ponteiro Git LFS: $Path"
+  }
+  try {
+    return $text | ConvertFrom-Json
+  } catch {
+    throw "Manifest JSON nao parseavel: $Path. $($_.Exception.Message)"
+  }
+}
+
+function Assert-DeliveredWhisperManifest {
+  param([string]$BuildDir)
+  $baseDir = Join-Path $BuildDir "resources\voice\whisper"
+  $manifestPath = Join-Path $baseDir "manifest.json"
+  $manifest = Assert-Utf8JsonNoBom -Path $manifestPath
+  $required = @("provider", "runtimeVersion", "runtimeFile", "runtimeSha256", "runtimeSize", "modelName", "modelFile", "modelSha256", "modelSize", "modelVariant", "multilingual", "integrityValidated")
+  foreach ($field in $required) {
+    if (-not $manifest.PSObject.Properties.Name.Contains($field)) {
+      throw "Manifest local de voz entregue sem campo obrigatorio: $field"
+    }
+  }
+  foreach ($relative in @($manifest.runtimeFile, $manifest.modelFile)) {
+    if ([System.IO.Path]::IsPathRooted([string]$relative)) {
+      throw "Manifest local de voz entregue contem caminho absoluto: $relative"
+    }
+    $path = Join-Path $baseDir ([string]$relative)
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+      throw "Manifest local de voz entregue referencia arquivo ausente: $path"
+    }
+  }
+  $runtimePath = Join-Path $baseDir ([string]$manifest.runtimeFile)
+  $modelPath = Join-Path $baseDir ([string]$manifest.modelFile)
+  $runtimeHash = (Get-FileHash -LiteralPath $runtimePath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $modelHash = (Get-FileHash -LiteralPath $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($runtimeHash -ne ([string]$manifest.runtimeSha256).ToLowerInvariant()) {
+    throw "Manifest local de voz entregue possui SHA-256 divergente para runtime."
+  }
+  if ($modelHash -ne ([string]$manifest.modelSha256).ToLowerInvariant()) {
+    throw "Manifest local de voz entregue possui SHA-256 divergente para modelo."
+  }
+  if ((Get-Item -LiteralPath $runtimePath).Length -ne [int64]$manifest.runtimeSize) {
+    throw "Manifest local de voz entregue possui tamanho divergente para runtime."
+  }
+  if ((Get-Item -LiteralPath $modelPath).Length -ne [int64]$manifest.modelSize) {
+    throw "Manifest local de voz entregue possui tamanho divergente para modelo."
+  }
+  @{
+    manifest = $manifestPath
+    bytes = (Get-Item -LiteralPath $manifestPath).Length
+    runtime = $runtimePath
+    model = $modelPath
+    provider = $manifest.provider
+    modelName = $manifest.modelName
+  }
+}
+
 function Save-Report {
   param([string]$Status, [string]$ErrorMessage = $null, [string]$BuildDir = $null)
   $reportDir = Split-Path -Parent $ReportPath
@@ -186,7 +263,8 @@ try {
     if ($missing.Count -gt 0) {
       throw "Build isolada incompleta: $($missing -join ', ')"
     }
-    @{ required = $required.Count; missing = 0 }
+    $voice = Assert-DeliveredWhisperManifest -BuildDir $script:BuildDir
+    @{ required = $required.Count; missing = 0; voice = $voice }
   }
 
   Save-Report -Status "passed" -BuildDir $script:BuildDir
