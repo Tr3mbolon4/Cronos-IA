@@ -1,6 +1,8 @@
+import json
 import os
 import platform
 import shutil
+import sys
 import time
 
 from cronos.core.config import settings
@@ -86,6 +88,51 @@ def core_health() -> dict:
             "recommendedAction": "Validar reproducao local apos Chat real aprovado.",
         },
     }
+
+
+def runtime_identity() -> dict:
+    build_info = _build_info()
+    llm = llm_provider.status()
+    return {
+        "appVersion": build_info.get("version") or settings.version,
+        "gitCommit": build_info.get("gitCommit") or "unknown",
+        "buildTimestamp": build_info.get("buildTimestamp") or "unknown",
+        "buildId": build_info.get("buildId") or "unknown",
+        "backendExecutable": sys.executable,
+        "backendPid": os.getpid(),
+        "parentPid": settings.parent_pid,
+        "resourceDir": str(settings.resource_dir),
+        "dataDir": str(settings.data_dir),
+        "environment": settings.env,
+        "provider": llm.get("provider") or "none",
+        "model": llm.get("model") or "none",
+        "modelPath": llm.get("modelPath"),
+        "providerReady": bool(llm.get("ready")),
+        "fallbackEnabled": False,
+        "runtime": llm.get("runtime"),
+        "runtimePort": llm.get("port"),
+        "llmStatus": llm,
+    }
+
+
+def response_headers() -> dict[str, str]:
+    build_info = _build_info()
+    return {
+        "X-Cronos-Version": str(build_info.get("version") or settings.version),
+        "X-Cronos-Commit": str(build_info.get("gitCommit") or "unknown"),
+        "X-Cronos-Backend-Pid": str(os.getpid()),
+        "X-Cronos-Provider": "cronos-local-llama",
+    }
+
+
+def _build_info() -> dict:
+    path = settings.resource_dir / "build-info.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as error:
+        return {"error": str(error)}
 
 
 def _memory_status() -> dict:

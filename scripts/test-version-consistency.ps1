@@ -54,7 +54,8 @@ Assert-FileContains -Name "backend config" -Path (Join-Path $root "backend\crono
 Assert-FileContains -Name "backend main" -Path (Join-Path $root "backend\cronos\main.py") -Pattern "version=`"$([regex]::Escape($Version))`""
 Assert-FileContains -Name "frontend App" -Path (Join-Path $root "frontend\src\App.tsx") -Pattern "const CRONOS_VERSION = 'v$([regex]::Escape($Version))'"
 Assert-FileContains -Name "runtimeConnection" -Path (Join-Path $root "frontend\src\services\runtimeConnection.ts") -Pattern "version: '$([regex]::Escape($Version))'"
-Assert-FileContains -Name "Tauri runtime session" -Path (Join-Path $root "frontend\src-tauri\src\runtime\backend.rs") -Pattern "`"app_version`": `"$([regex]::Escape($Version))`""
+Assert-FileContains -Name "Tauri runtime fallback version" -Path (Join-Path $root "frontend\src-tauri\src\runtime\backend.rs") -Pattern "\.unwrap_or\(`"$([regex]::Escape($Version))`"\)"
+Assert-FileContains -Name "Tauri runtime session version" -Path (Join-Path $root "frontend\src-tauri\src\runtime\backend.rs") -Pattern "`"app_version`": app_version"
 
 if ($ManifestPath) {
     $resolvedManifest = if ([System.IO.Path]::IsPathRooted($ManifestPath)) { $ManifestPath } else { Join-Path $root $ManifestPath }

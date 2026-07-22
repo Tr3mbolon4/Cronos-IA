@@ -88,6 +88,26 @@ export type RetrievalSummary = {
   loaded: boolean
 }
 
+export type RuntimeIdentity = {
+  appVersion: string
+  gitCommit: string
+  buildTimestamp: string
+  buildId: string
+  backendExecutable: string
+  backendPid: number
+  parentPid?: string
+  resourceDir: string
+  dataDir: string
+  environment: string
+  provider: string
+  model: string
+  modelPath?: string | null
+  providerReady: boolean
+  fallbackEnabled: boolean
+  runtime?: string | null
+  runtimePort?: number | null
+}
+
 export type MemorySummary = {
   id: number
   title: string

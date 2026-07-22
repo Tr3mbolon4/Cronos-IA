@@ -117,7 +117,7 @@ export function RouteRenderer({
   if (route === '/projects') return <ProjectsPage />
   if (route === '/learning') return <LearningPage />
   if (route === '/tools') return <ToolsPage />
-  if (route === '/system') return <SystemPage hardware={hardware} retrieval={retrieval} apiBaseUrl={apiClient.baseUrlForDisplay()} />
+  if (route === '/system') return <SystemPage hardware={hardware} retrieval={retrieval} apiBaseUrl={apiClient.baseUrlForDisplay()} client={apiClient} />
   if (route === '/settings') return <SettingsPage reducedMotion={reducedMotion} onReducedMotionChange={onReducedMotionChange} voice={voice} />
   if (route === '/security') return <SecurityPage owner={owner} onBackup={onBackup} onLock={onLock} />
   return <NotFoundPage />

@@ -75,6 +75,9 @@ class CronosHandler(BaseHTTPRequestHandler):
                         },
                     }
                 )
+            elif path == "/runtime/identity":
+                self._require_runtime_token()
+                self._send(diagnostics.runtime_identity())
             elif path == "/llm/status":
                 self._session()
                 self._send(llm_provider.status())
@@ -245,6 +248,8 @@ class CronosHandler(BaseHTTPRequestHandler):
         raw = b"" if status == 204 else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self._cors()
+        for header, value in diagnostics.response_headers().items():
+            self.send_header(header, value)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
@@ -269,6 +274,7 @@ class CronosHandler(BaseHTTPRequestHandler):
         self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Cronos-Runtime-Token")
+        self.send_header("Access-Control-Expose-Headers", "X-Cronos-Version,X-Cronos-Commit,X-Cronos-Backend-Pid,X-Cronos-Provider")
 
     def log_message(self, format: str, *args: object) -> None:
         print(f"{self.address_string()} - {format % args}")

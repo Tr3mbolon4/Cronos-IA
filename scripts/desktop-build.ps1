@@ -14,6 +14,7 @@ function Invoke-Native {
 }
 
 Set-Location $root
+& (Join-Path $PSScriptRoot "write-build-info.ps1") -Version "v0.3.0" | Out-Null
 & (Join-Path $PSScriptRoot "build-backend.ps1")
 & (Join-Path $PSScriptRoot "prepare-sidecar.ps1")
 

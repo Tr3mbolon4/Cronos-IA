@@ -12,7 +12,7 @@ export type RuntimeConnection = {
 const fallbackConnection: RuntimeConnection = {
   base_url: import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000',
   state: 'web',
-  version: '0.2.0',
+  version: '0.3.0',
   session_id: '',
   backend_pid: null,
   runtime_token: '',

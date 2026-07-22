@@ -35,3 +35,4 @@ frontend/src-tauri/resources/ai/llm/bin/*.exe
 frontend/src-tauri/resources/ai/llm/bin/*.dll
 frontend/src-tauri/resources/ai/llm/models/*.gguf
 frontend/src-tauri/resources/ai/embeddings/models/*.gguf
+frontend/src-tauri/resources/build-info.json

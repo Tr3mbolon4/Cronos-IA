@@ -14,7 +14,7 @@ import { RouteRenderer } from './app/RouteRenderer'
 import { useVoiceController } from './features/voice/useVoiceController'
 
 const DEFAULT_API_URL = import.meta.env.VITE_CRONOS_API_URL || 'http://127.0.0.1:8000'
-const CRONOS_VERSION = 'v0.2.0'
+const CRONOS_VERSION = 'v0.3.0'
 
 function App() {
   const { route, navigate } = useAppRouter()

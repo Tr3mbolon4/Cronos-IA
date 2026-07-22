@@ -32,7 +32,7 @@ def _default_resource_dir() -> Path:
 class Settings:
     def __init__(self) -> None:
         self.app_name = "CRONOS"
-        self.version = "0.2.0"
+        self.version = "0.3.0"
         self.env = os.environ.get("CRONOS_ENV", "development")
         self.data_dir = _default_data_dir()
         self.log_dir = Path(os.environ.get("CRONOS_LOG_DIR", self.data_dir / "logs"))

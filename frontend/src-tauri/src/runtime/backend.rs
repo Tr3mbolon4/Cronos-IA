@@ -145,7 +145,7 @@ impl BackendRuntime {
                                     let version = value
                                         .get("version")
                                         .and_then(Value::as_str)
-                                        .unwrap_or("0.2.0")
+                                        .unwrap_or("0.3.0")
                                         .to_string();
                                     let backend_pid = value
                                         .get("pid")
@@ -223,6 +223,8 @@ impl BackendRuntime {
             &connection.session_id,
             connection.backend_pid,
             port,
+            &connection.version,
+            &resource_dir,
         )?;
 
         let mut state = self.state.lock().map_err(|_| "runtime lock poisoned")?;
@@ -431,6 +433,8 @@ fn write_session_file(
     session_id: &str,
     backend_pid: Option<u32>,
     port: u16,
+    app_version: &str,
+    resource_dir: &Path,
 ) -> Result<(), String> {
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -439,10 +443,12 @@ fn write_session_file(
     let payload = serde_json::json!({
         "session_id": session_id,
         "pid": backend_pid,
-        "executable_path": "binaries/cronos-backend",
+        "backend_executable_hint": "cronos-backend sidecar started by Tauri shell",
+        "resource_dir": resource_dir.to_string_lossy().to_string(),
         "started_at": started_at,
-        "app_version": "0.2.0",
-        "port": port
+        "app_version": app_version,
+        "port": port,
+        "status": "ready"
     });
     fs::write(
         directories.runtime.join("current-session.json"),

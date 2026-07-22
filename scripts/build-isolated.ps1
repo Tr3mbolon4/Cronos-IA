@@ -81,8 +81,14 @@ try {
     @{ stopped = $true }
   }
 
+  Invoke-Step "write-build-identity" {
+    Set-Location $root
+    & (Join-Path $PSScriptRoot "write-build-info.ps1") -Version "v0.3.0" | ConvertFrom-Json
+  }
+
   Invoke-Step "validate-resources" {
     $required = @(
+      "frontend\src-tauri\resources\build-info.json",
       "frontend\src-tauri\resources\ai\llm\manifest.json",
       "frontend\src-tauri\resources\ai\llm\bin\llama-server.exe",
       "frontend\src-tauri\resources\ai\llm\models\qwen2.5-1.5b-instruct-q4_k_m.gguf",
@@ -152,6 +158,7 @@ try {
     $required = @(
       "cronos-desktop.exe",
       "cronos-backend.exe",
+      "resources\build-info.json",
       "resources\ai\llm\manifest.json",
       "resources\ai\llm\bin\llama-server.exe",
       "resources\ai\llm\models\qwen2.5-1.5b-instruct-q4_k_m.gguf",

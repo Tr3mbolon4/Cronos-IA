@@ -1,8 +1,12 @@
+param(
+    [string]$Version = "0.3.0"
+)
+
 $ErrorActionPreference = "Stop"
 
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
-& (Join-Path $PSScriptRoot "test-version-consistency.ps1")
+& (Join-Path $PSScriptRoot "test-version-consistency.ps1") -Version $Version
 if (-not $?) { exit 1 }
 
 $codexPython = "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
