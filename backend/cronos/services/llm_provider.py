@@ -69,6 +69,8 @@ class CronosLocalLlamaProvider(LLMProvider):
         self.port: int | None = None
         self.last_error = ""
         self._manifest: dict | None = None
+        self._stdout_log = None
+        self._stderr_log = None
 
     def get_status(self) -> dict:
         try:
@@ -141,13 +143,19 @@ class CronosLocalLlamaProvider(LLMProvider):
             "--ctx-size",
             str(manifest["contextLength"]),
         ]
+        settings.log_dir.mkdir(parents=True, exist_ok=True)
+        llama_log_path = settings.log_dir / "llama-server.log"
+        self._stdout_log = llama_log_path.open("ab")
+        self._stderr_log = llama_log_path.open("ab")
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         self.process = subprocess.Popen(
             args,
             cwd=str(self.base_dir),
             stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=self._stdout_log,
+            stderr=self._stderr_log,
             shell=False,
+            creationflags=creationflags,
         )
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
@@ -164,6 +172,7 @@ class CronosLocalLlamaProvider(LLMProvider):
         process = self.process
         self.process = None
         if process is None or process.poll() is not None:
+            self._close_logs()
             return
         process.terminate()
         try:
@@ -171,6 +180,7 @@ class CronosLocalLlamaProvider(LLMProvider):
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
+        self._close_logs()
 
     def health_check(self) -> bool:
         if not self.port:
@@ -226,6 +236,16 @@ class CronosLocalLlamaProvider(LLMProvider):
             "offline": True,
             "network": "127.0.0.1",
         }
+
+    def _close_logs(self) -> None:
+        for handle in (self._stdout_log, self._stderr_log):
+            try:
+                if handle:
+                    handle.close()
+            except Exception:
+                pass
+        self._stdout_log = None
+        self._stderr_log = None
 
     def _read_manifest(self) -> dict:
         if not self.manifest_path.exists():

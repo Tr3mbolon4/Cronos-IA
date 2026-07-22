@@ -88,10 +88,11 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(history[0]["role"], "user")
 
     def test_legacy_mvp_fallback_history_is_not_sent_to_llm_prompt(self):
-        chat._save_message("user", "ola")
+        chat._save_message("user", "ola", conversation_id="principal")
         chat._save_message(
             "assistant",
             "Estou rodando localmente no MVP do CRONOS. Ainda nao tenho um modelo de IA completo conectado. Recebi: ola",
+            conversation_id="principal",
         )
         provider = FakeLLMProvider()
         llm_provider.set_provider_for_tests(provider)
@@ -113,6 +114,53 @@ class ChatTests(unittest.TestCase):
         history = chat.history()
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0]["role"], "user")
+
+    def test_general_chat_route_does_not_use_document_context(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+
+        response = chat.send_message("Ola, qual seu nome?", conversation_id="conversa-b")
+
+        self.assertEqual(response["route"], chat.GENERAL_CHAT)
+        self.assertEqual(response["diagnostics"]["retrievedChunkCount"], 0)
+        self.assertFalse(response["diagnostics"]["usedDocuments"])
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertIn("Seu nome e CRONOS", prompt_text)
+        self.assertNotIn("Contexto documental recuperado", prompt_text)
+
+    def test_new_conversation_is_not_contaminated_by_previous_messages(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+        chat.send_message("Como abrir o disco C?", conversation_id="conversa-a")
+
+        response = chat.send_message("Ola, qual seu nome?", conversation_id="conversa-b")
+
+        self.assertEqual(response["route"], chat.GENERAL_CHAT)
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertNotIn("disco C", prompt_text)
+        history_a = chat.history(conversation_id="conversa-a")
+        history_b = chat.history(conversation_id="conversa-b")
+        self.assertEqual(len(history_a), 2)
+        self.assertEqual(len(history_b), 2)
+
+    def test_document_question_uses_document_route(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+
+        response = chat.send_message("No documento enviado, qual e o codigo de validacao?", conversation_id="doc-qa")
+
+        self.assertEqual(response["route"], chat.DOCUMENT_QA)
+
+    def test_current_conversation_memory_query_stays_local(self):
+        provider = FakeLLMProvider()
+        llm_provider.set_provider_for_tests(provider)
+        chat.send_message("O codigo e CRONOS-123", conversation_id="memoria-local")
+
+        response = chat.send_message("Qual foi o codigo que falei nesta conversa?", conversation_id="memoria-local")
+
+        self.assertEqual(response["route"], chat.MEMORY_QUERY)
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertIn("CRONOS-123", prompt_text)
 
 
 if __name__ == "__main__":

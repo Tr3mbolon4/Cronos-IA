@@ -86,8 +86,8 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif path == "/auth/session":
                 self._send(self._session())
             elif path == "/chat/history":
-                self._session()
-                self._send(chat.history())
+                session = self._session()
+                self._send(chat.history(owner_id=int(session["owner"]["id"]), conversation_id=_query_param(parsed.query, "conversation_id") or "principal"))
             elif path == "/documents":
                 self._send(document_routes.handle_get(path, parsed.query, self._session()))
             elif document_routes.is_document_path(path):
@@ -124,7 +124,7 @@ class CronosHandler(BaseHTTPRequestHandler):
             elif path == "/chat":
                 session = self._session()
                 payload = self._json_body()
-                self._send(chat.send_message(payload.get("message", ""), int(session["owner"]["id"])))
+                self._send(chat.send_message(payload.get("message", ""), int(session["owner"]["id"]), payload.get("conversation_id", "principal")))
             elif path == "/documents/upload":
                 session = self._session()
                 filename, content = self._multipart_file()
@@ -300,6 +300,13 @@ def allowed_cors_origin(origin: str) -> str:
         return origin
 
     return "http://127.0.0.1:5173"
+
+
+def _query_param(query: str, name: str) -> str | None:
+    from urllib.parse import parse_qs
+
+    values = parse_qs(query).get(name)
+    return values[0] if values else None
 
 
 def main() -> None:

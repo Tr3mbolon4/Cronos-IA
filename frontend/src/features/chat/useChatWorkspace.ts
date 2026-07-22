@@ -59,7 +59,7 @@ export function useChatWorkspace({
     if (!token) return
     setLoading(true)
     try {
-      const history = await client.get<Message[]>('/chat/history')
+      const history = await client.get<Message[]>(`/chat/history?conversation_id=${encodeURIComponent(activeConversationId)}`)
       setMessages(history)
       onHistoryChange(history)
       setOffline(false)
@@ -70,7 +70,7 @@ export function useChatWorkspace({
     } finally {
       setLoading(false)
     }
-  }, [client, onCoreState, onHistoryChange, pushNotice, token])
+  }, [activeConversationId, client, onCoreState, onHistoryChange, pushNotice, token])
 
   useEffect(() => setMessages(initialMessages), [initialMessages])
 
@@ -82,6 +82,11 @@ export function useChatWorkspace({
   useEffect(() => {
     saveActiveConversation(activeConversationId)
   }, [activeConversationId])
+
+  useEffect(() => {
+    if (!token || activeConversationId === provisionalId) return
+    refreshHistory().catch(() => undefined)
+  }, [activeConversationId, provisionalId, refreshHistory, token])
 
   useEffect(() => {
     function handleKeys(event: KeyboardEvent) {
@@ -131,17 +136,14 @@ export function useChatWorkspace({
     setDraft('')
     setReplyTarget(null)
     try {
-      const response = await client.post<Message>('/chat', { message: clean }, { headers: authHeaders(token), timeoutMs: 30000 })
+      const response = await client.post<Message>('/chat', { message: clean, conversation_id: activeConversationId }, { headers: authHeaders(token), timeoutMs: 30000 })
       setMessages((current) => {
         const withoutOptimistic = current.map((item) => item === optimistic ? { ...optimistic, status: 'sent' as const } : item)
         const next = [...withoutOptimistic, { ...response, status: 'received' as const }]
         onHistoryChange(next)
         return next
       })
-      if (activeConversationId !== PRIMARY_CONVERSATION_ID) {
-        setActiveConversationId(PRIMARY_CONVERSATION_ID)
-        setProvisionalId(null)
-      }
+      if (activeConversationId === provisionalId) setProvisionalId(null)
       onCoreState('success')
       pushNotice('Mensagem enviada.', 'success')
       await refreshHistory()
@@ -164,6 +166,8 @@ export function useChatWorkspace({
     const id = `draft-${Date.now()}`
     setProvisionalId(id)
     setActiveConversationId(id)
+    setMessages([])
+    onHistoryChange([])
     setMeta((current) => ({ ...current, [id]: { title: 'Nova conversa' } }))
     pushNotice('Nova conversa em rascunho. Ela sera persistida no primeiro envio.', 'info')
   }

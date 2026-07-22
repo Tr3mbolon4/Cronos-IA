@@ -16,7 +16,7 @@ const filterLabels: Record<ConversationFilter, string> = {
 export function ChatPage(props: ChatPageProps) {
   const visibleConversations = filterConversations(props.conversations, props.filter, props.debouncedSearchTerm)
   const activeConversation = props.conversations.find((item) => item.id === props.activeConversationId) || props.conversations[0]
-  const activeMessages = props.activeConversationId === 'principal' ? props.messages : []
+  const activeMessages = props.messages
 
   return (
     <section className={`chat-route chat-workspace-v3 ${props.contextOpen ? 'context-visible' : 'context-hidden'}`} data-visual="chat">

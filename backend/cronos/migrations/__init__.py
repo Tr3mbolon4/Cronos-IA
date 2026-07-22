@@ -3,6 +3,7 @@ from . import (
     m0002_memory_knowledge_schema,
     m0003_document_library_schema,
     m0004_retrieval_embeddings_schema,
+    m0005_chat_conversations,
 )
 
 MIGRATIONS = [
@@ -10,4 +11,5 @@ MIGRATIONS = [
     m0002_memory_knowledge_schema.MIGRATION,
     m0003_document_library_schema.MIGRATION,
     m0004_retrieval_embeddings_schema.MIGRATION,
+    m0005_chat_conversations.MIGRATION,
 ]
