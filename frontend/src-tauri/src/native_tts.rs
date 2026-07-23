@@ -5,16 +5,17 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[cfg(windows)]
 use windows::core::{HSTRING, PCWSTR};
 #[cfg(windows)]
-use windows::Win32::Media::Speech::{ISpVoice, SpVoice, SPF_ASYNC, SPF_PURGEBEFORESPEAK};
+use windows::Win32::Media::Speech::{ISpVoice, SpVoice, SPF_ASYNC, SPF_PURGEBEFORESPEAK, SPVOICESTATUS, SPRS_DONE};
 #[cfg(windows)]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
 
 const LOG_FILE_NAME: &str = "tts.log";
+const TTS_MAX_DURATION_SECS: u64 = 300;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,7 +73,7 @@ pub fn native_tts_speak(request: NativeTtsRequest) -> Result<NativeTtsStatus, St
     }
     set_status(base_status("playing", started_at.clone(), 0, None, String::new()));
     append_tts_log(&format!(
-        "tts_provider=cronos-native-windows-sapi process=internal-thread pid=none parent_pid=cronos-desktop command=\"COM SAPI ISpVoice::Speak(SPF_ASYNC)\" state=playing orphanCount=0"
+        "voice_state=STARTING_TTS tts_provider=cronos-native-windows-sapi process=internal-thread pid=none parent_pid=cronos-desktop command=\"COM SAPI ISpVoice::Speak(SPF_ASYNC)\" state=playing orphanCount=0"
     ));
     thread::spawn(move || {
         let result = run_sapi_speech(text, request.rate, request.volume, rx, started);
@@ -83,7 +84,8 @@ pub fn native_tts_speak(request: NativeTtsRequest) -> Result<NativeTtsStatus, St
             Err(error) => ("failed", error),
         };
         append_tts_log(&format!(
-            "tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state={} elapsedMs={} exit_code=0 orphanCount=0 diagnostic={}",
+            "voice_state={} tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state={} elapsedMs={} exit_code=0 orphanCount=0 diagnostic={}",
+            if state == "completed" { "FINISHED_TTS" } else { "TTS_STOPPED" },
             state,
             elapsed,
             sanitize_log_text(&diagnostic)
@@ -166,12 +168,14 @@ fn run_sapi_speech(text: String, rate: f32, volume: f32, rx: mpsc::Receiver<TtsC
 
 #[cfg(windows)]
 unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::Receiver<TtsCommand>) -> Result<TtsCompletion, String> {
+    let started = Instant::now();
     let voice: ISpVoice = CoCreateInstance(&SpVoice, None, CLSCTX_ALL).map_err(|error| format!("SAPI indisponivel: {error}"))?;
     voice.SetRate(((rate - 1.0) * 5.0).round().clamp(-10.0, 10.0) as i32).map_err(|error| error.to_string())?;
     voice.SetVolume((volume * 100.0).round().clamp(0.0, 100.0) as u16).map_err(|error| error.to_string())?;
     let text = HSTRING::from(text);
     let mut stream_number = 0_u32;
     voice.Speak(PCWSTR(text.as_ptr()), SPF_ASYNC.0 as u32, Some(&mut stream_number)).map_err(|error| error.to_string())?;
+    append_tts_log("voice_state=PLAYING_TTS sapi_state=started");
     loop {
         match rx.try_recv() {
             Ok(TtsCommand::Pause) => {
@@ -188,9 +192,17 @@ unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::
             Err(mpsc::TryRecvError::Empty) => {}
             Err(mpsc::TryRecvError::Disconnected) => return Ok(TtsCompletion::Stopped),
         }
-        if voice.WaitUntilDone(80).is_ok() {
+        let mut status = SPVOICESTATUS::default();
+        voice.GetStatus(&mut status, std::ptr::null_mut()).map_err(|error| error.to_string())?;
+        if status.dwRunningState == SPRS_DONE.0 as u32 {
             return Ok(TtsCompletion::Completed);
         }
+        if started.elapsed() > Duration::from_secs(TTS_MAX_DURATION_SECS) {
+            let empty = HSTRING::from("");
+            let _ = voice.Speak(PCWSTR(empty.as_ptr()), (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32, None);
+            return Err(format!("TTS_TIMEOUT: SAPI permaneceu em execucao por mais de {} segundos.", TTS_MAX_DURATION_SECS));
+        }
+        thread::sleep(Duration::from_millis(80));
     }
 }
 

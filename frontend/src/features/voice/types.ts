@@ -105,4 +105,5 @@ export type VoiceController = {
   testMicrophone: () => Promise<void>
   stopMicrophoneTest: () => void
   testVoice: (text: string) => void
+  markRuntimeState: (state: 'SENDING' | 'WAITING_LLM' | 'GENERATING_RESPONSE', reason?: string) => void
 }

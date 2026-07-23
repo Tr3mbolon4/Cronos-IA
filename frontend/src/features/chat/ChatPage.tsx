@@ -18,6 +18,15 @@ export function ChatPage(props: ChatPageProps) {
   const activeConversation = props.conversations.find((item) => item.id === props.activeConversationId) || props.conversations[0]
   const activeMessages = props.messages
   const spokenMessageRef = useRef('')
+  const waitingLoggedRef = useRef(false)
+
+  useEffect(() => {
+    if (props.submitting && !waitingLoggedRef.current) {
+      props.voice.markRuntimeState('WAITING_LLM', 'chat_submitting')
+      waitingLoggedRef.current = true
+    }
+    if (!props.submitting) waitingLoggedRef.current = false
+  }, [props.submitting, props.voice])
 
   useEffect(() => {
     const latest = activeMessages[activeMessages.length - 1]
@@ -26,6 +35,7 @@ export function ChatPage(props: ChatPageProps) {
     if (spokenMessageRef.current === key) return
     const createdAt = Date.parse(latest.created_at || '')
     if (!Number.isFinite(createdAt) || Date.now() - createdAt > 120000) return
+    props.voice.markRuntimeState('GENERATING_RESPONSE', 'assistant_message_received')
     const shouldSpeak = props.voice.settings.autoSpeak === 'all' || (props.voice.settings.autoSpeak === 'voice-only' && props.voice.settings.conversationMode)
     if (!shouldSpeak) return
     spokenMessageRef.current = key
@@ -240,7 +250,7 @@ function MessageComposer(props: ChatPageProps) {
   const voiceStatus = voiceComposerStatus(voice.state, voice.error)
 
   return (
-    <form className="message-composer" onSubmit={(event) => { props.voice.clearTranscript(); props.onSubmit(event) }}>
+    <form className="message-composer" onSubmit={(event) => { props.voice.markRuntimeState('SENDING', 'composer_submit'); props.voice.clearTranscript(); props.onSubmit(event) }}>
       {props.replyTarget && (
         <div className="reply-preview">
           <span>Respondendo {props.replyTarget.role === 'user' ? 'Proprietario' : 'CRONOS'}: {trimMessage(props.replyTarget.content, 84)}</span>
