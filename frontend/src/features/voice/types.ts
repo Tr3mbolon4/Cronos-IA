@@ -45,6 +45,12 @@ export type VoiceSettings = {
   volume: number
   transcriptionMode: 'review' | 'copy' | 'show-only' | 'auto-send'
   autoSpeak: 'never' | 'voice-only' | 'all' | 'ask'
+  conversationMode: boolean
+  silenceMs: number
+  vadSensitivity: number
+  maxRecordingMs: number
+  bargeIn: boolean
+  visualMode: 'immersive' | 'chat' | 'compact'
   stopOnConversationChange: boolean
   storeAudio: boolean
   wakeWordEnabled: boolean
@@ -59,6 +65,10 @@ export type VoiceDevice = {
 
 export type VoiceTranscript = {
   text: string
+  rawText?: string
+  normalizedText?: string
+  normalizationConfidence?: number
+  corrections?: string[]
   confidence: number | null
   providerId: string
   language: string

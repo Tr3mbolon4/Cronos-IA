@@ -2,15 +2,18 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
+use std::sync::mpsc::{self, Sender};
 use std::sync::{Mutex, OnceLock};
+use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 #[cfg(windows)]
-use std::os::windows::process::CommandExt;
-
+use windows::core::{HSTRING, PCWSTR};
 #[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
+use windows::Win32::Media::Speech::{ISpVoice, SpVoice, SPF_ASYNC, SPF_PURGEBEFORESPEAK};
+#[cfg(windows)]
+use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
+
 const LOG_FILE_NAME: &str = "tts.log";
 
 #[derive(Deserialize)]
@@ -37,292 +40,193 @@ pub struct NativeTtsStatus {
     diagnostic: String,
 }
 
+#[derive(Clone)]
+enum TtsCommand {
+    Pause,
+    Resume,
+    Stop,
+}
+
 struct ActiveSpeech {
-    child: Child,
-    command_path: PathBuf,
-    script_path: PathBuf,
-    text_path: PathBuf,
-    stdout_path: PathBuf,
-    stderr_path: PathBuf,
+    tx: Sender<TtsCommand>,
     started: Instant,
     started_at: String,
-    state: String,
 }
 
 static ACTIVE_SPEECH: OnceLock<Mutex<Option<ActiveSpeech>>> = OnceLock::new();
-static LAST_STATUS: OnceLock<Mutex<Option<NativeTtsStatus>>> = OnceLock::new();
+static LAST_STATUS: OnceLock<Mutex<NativeTtsStatus>> = OnceLock::new();
 
 #[tauri::command]
 pub fn native_tts_speak(request: NativeTtsRequest) -> Result<NativeTtsStatus, String> {
-    let text = request.text.trim();
+    let text = request.text.trim().to_string();
     if text.is_empty() {
         return Err("Texto obrigatorio para TTS.".to_string());
     }
-    native_tts_stop().ok();
-    let paths = prepare_tts_files(text, request.rate, request.volume)?;
-    let stdout_file = fs::File::create(&paths.stdout_path).map_err(|error| error.to_string())?;
-    let stderr_file = fs::File::create(&paths.stderr_path).map_err(|error| error.to_string())?;
-    let mut command = Command::new("powershell.exe");
-    command
-        .arg("-NoLogo")
-        .arg("-NoProfile")
-        .arg("-NonInteractive")
-        .arg("-WindowStyle")
-        .arg("Hidden")
-        .arg("-ExecutionPolicy")
-        .arg("Bypass")
-        .arg("-File")
-        .arg(&paths.script_path)
-        .stdin(Stdio::null())
-        .stdout(Stdio::from(stdout_file))
-        .stderr(Stdio::from(stderr_file));
-    #[cfg(windows)]
-    command.creation_flags(CREATE_NO_WINDOW);
-    let child = command.spawn().map_err(|error| {
-        append_tts_log(&format!("state=failed error={} command=powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File <tts-script>", error));
-        error.to_string()
-    })?;
-    let pid = child.id();
+    let _ = native_tts_stop();
+    let (tx, rx) = mpsc::channel::<TtsCommand>();
+    let started = Instant::now();
     let started_at = utc_timestamp();
-    let active = ActiveSpeech {
-        child,
-        command_path: paths.command_path,
-        script_path: paths.script_path,
-        text_path: paths.text_path,
-        stdout_path: paths.stdout_path,
-        stderr_path: paths.stderr_path,
-        started: Instant::now(),
-        started_at: started_at.clone(),
-        state: "playing".to_string(),
-    };
+    {
+        let mut guard = active_speech().lock().map_err(|_| "Falha ao registrar TTS.".to_string())?;
+        *guard = Some(ActiveSpeech { tx, started, started_at: started_at.clone() });
+    }
+    set_status(base_status("playing", started_at.clone(), 0, None, String::new()));
     append_tts_log(&format!(
-        "tts_provider=cronos-native-windows-sapi state=playing pid={} command=\"powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File <tts-script>\" orphanCount=0",
-        pid
+        "tts_provider=cronos-native-windows-sapi process=internal-thread pid=none parent_pid=cronos-desktop command=\"COM SAPI ISpVoice::Speak(SPF_ASYNC)\" state=playing orphanCount=0"
     ));
-    *active_speech().lock().map_err(|_| "Falha ao registrar TTS.".to_string())? = Some(active);
-    let status = status_from_active("playing", None)?;
-    set_last_status(status.clone());
-    Ok(status)
+    thread::spawn(move || {
+        let result = run_sapi_speech(text, request.rate, request.volume, rx, started);
+        let elapsed = started.elapsed().as_millis();
+        let (state, diagnostic) = match result {
+            Ok(TtsCompletion::Completed) => ("completed", String::new()),
+            Ok(TtsCompletion::Stopped) => ("stopped", String::new()),
+            Err(error) => ("failed", error),
+        };
+        append_tts_log(&format!(
+            "tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state={} elapsedMs={} exit_code=0 orphanCount=0 diagnostic={}",
+            state,
+            elapsed,
+            sanitize_log_text(&diagnostic)
+        ));
+        if let Ok(mut guard) = active_speech().lock() {
+            *guard = None;
+        }
+        set_status(base_status(state, started_at, elapsed, Some(0), diagnostic));
+    });
+    Ok(native_tts_status())
 }
 
 #[tauri::command]
 pub fn native_tts_pause() -> Result<NativeTtsStatus, String> {
-    write_command("pause", "paused")
+    send_command(TtsCommand::Pause, "paused")
 }
 
 #[tauri::command]
 pub fn native_tts_resume() -> Result<NativeTtsStatus, String> {
-    write_command("resume", "playing")
+    send_command(TtsCommand::Resume, "playing")
 }
 
 #[tauri::command]
 pub fn native_tts_stop() -> Result<NativeTtsStatus, String> {
     let mut guard = active_speech().lock().map_err(|_| "Falha ao encerrar TTS.".to_string())?;
-    if let Some(mut active) = guard.take() {
-        let pid = active.child.id();
-        let _ = fs::write(&active.command_path, "stop");
-        let exit_code = match active.child.try_wait().map_err(|error| error.to_string())? {
-            Some(status) => status.code(),
-            None => {
-                let _ = active.child.kill();
-                active.child.wait().ok().and_then(|status| status.code())
-            }
-        };
+    if let Some(active) = guard.take() {
+        let _ = active.tx.send(TtsCommand::Stop);
         let elapsed = active.started.elapsed().as_millis();
-        append_tts_log(&format!("tts_provider=cronos-native-windows-sapi state=stopped pid={} elapsedMs={} exit_code={:?} orphanCount=0", pid, elapsed, exit_code));
-        cleanup_files(&active);
-        let status = base_status("stopped", None, active.started_at, elapsed, exit_code, String::new());
-        set_last_status(status.clone());
+        let status = base_status("stopped", active.started_at, elapsed, Some(0), String::new());
+        append_tts_log(&format!("tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state=stopped elapsedMs={} exit_code=0 orphanCount=0", elapsed));
+        set_status(status.clone());
         return Ok(status);
     }
-    Ok(last_or_idle())
+    Ok(native_tts_status())
 }
 
 #[tauri::command]
 pub fn native_tts_status() -> NativeTtsStatus {
-    match refresh_active_status() {
-        Ok(status) => status,
-        Err(error) => {
-            let status = base_status("failed", None, String::new(), 0, None, error);
-            set_last_status(status.clone());
-            status
+    if let Ok(guard) = active_speech().lock() {
+        if let Some(active) = guard.as_ref() {
+            let last = last_status();
+            let state = last.lock().map(|status| status.state.clone()).unwrap_or_else(|_| "playing".to_string());
+            return base_status(&state, active.started_at.clone(), active.started.elapsed().as_millis(), None, String::new());
         }
     }
+    last_status().lock().map(|status| status.clone()).unwrap_or_else(|_| base_status("idle", String::new(), 0, None, String::new()))
 }
 
 pub fn stop_all_tts() {
     let _ = native_tts_stop();
 }
 
-fn write_command(command: &str, next_state: &str) -> Result<NativeTtsStatus, String> {
-    let mut guard = active_speech().lock().map_err(|_| "Falha ao controlar TTS.".to_string())?;
-    let Some(active) = guard.as_mut() else {
-        return Ok(last_or_idle());
-    };
-    fs::write(&active.command_path, command).map_err(|error| error.to_string())?;
-    active.state = next_state.to_string();
-    append_tts_log(&format!(
-        "tts_provider=cronos-native-windows-sapi state={} pid={} command={} orphanCount=0",
-        next_state,
-        active.child.id(),
-        command
-    ));
-    let status = status_from_active(next_state, None)?;
-    set_last_status(status.clone());
-    Ok(status)
-}
-
-fn refresh_active_status() -> Result<NativeTtsStatus, String> {
-    let mut guard = active_speech().lock().map_err(|_| "Falha ao consultar TTS.".to_string())?;
-    let Some(active) = guard.as_mut() else {
-        return Ok(last_or_idle());
-    };
-    if let Some(status) = active.child.try_wait().map_err(|error| error.to_string())? {
-        let pid = active.child.id();
-        let elapsed = active.started.elapsed().as_millis();
-        let exit_code = status.code();
-        let state = if status.success() { "completed" } else { "failed" };
-        append_tts_log(&format!("tts_provider=cronos-native-windows-sapi state={} pid={} elapsedMs={} exit_code={:?} orphanCount=0", state, pid, elapsed, exit_code));
-        cleanup_files(active);
-        let started_at = active.started_at.clone();
-        *guard = None;
-        let status = base_status(state, Some(pid), started_at, elapsed, exit_code, String::new());
-        set_last_status(status.clone());
-        return Ok(status);
-    }
-    let status = status_from_active(&active.state, None)?;
-    set_last_status(status.clone());
-    Ok(status)
-}
-
-struct TtsPaths {
-    script_path: PathBuf,
-    text_path: PathBuf,
-    command_path: PathBuf,
-    stdout_path: PathBuf,
-    stderr_path: PathBuf,
-}
-
-fn prepare_tts_files(text: &str, rate: f32, volume: f32) -> Result<TtsPaths, String> {
-    let temp_dir = local_cronos_dir()?.join("runtime").join("voice-temp");
-    fs::create_dir_all(&temp_dir).map_err(|error| error.to_string())?;
-    let request_id = format!("cronos-tts-{}", timestamp_millis());
-    let script_path = temp_dir.join(format!("{request_id}.ps1"));
-    let text_path = temp_dir.join(format!("{request_id}.txt"));
-    let command_path = temp_dir.join(format!("{request_id}.cmd"));
-    let stdout_path = temp_dir.join(format!("{request_id}.stdout.txt"));
-    let stderr_path = temp_dir.join(format!("{request_id}.stderr.txt"));
-    fs::write(&text_path, text.as_bytes()).map_err(|error| error.to_string())?;
-    fs::write(&command_path, b"play").map_err(|error| error.to_string())?;
-    fs::write(&script_path, tts_script(&text_path, &command_path, rate, volume).as_bytes())
-        .map_err(|error| error.to_string())?;
-    Ok(TtsPaths { script_path, text_path, command_path, stdout_path, stderr_path })
-}
-
-fn tts_script(text_path: &PathBuf, command_path: &PathBuf, rate: f32, volume: f32) -> String {
-    let rate = ((rate - 1.0) * 5.0).round().clamp(-10.0, 10.0) as i32;
-    let volume = (volume * 100.0).round().clamp(0.0, 100.0) as i32;
-    format!(
-        r#"$ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Speech
-$speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
-$speaker.Rate = {rate}
-$speaker.Volume = {volume}
-$text = Get-Content -LiteralPath '{text}' -Raw -Encoding UTF8
-$done = $false
-$speaker.add_SpeakCompleted({{ param($sender, $eventArgs) $script:done = $true }})
-$null = $speaker.SpeakAsync($text)
-$paused = $false
-while (-not $done) {{
-  $command = ''
-  if (Test-Path -LiteralPath '{command}') {{
-    $command = (Get-Content -LiteralPath '{command}' -Raw -Encoding UTF8).Trim().ToLowerInvariant()
-  }}
-  if ($command -eq 'stop') {{
-    $speaker.SpeakAsyncCancelAll()
-    break
-  }}
-  if ($command -eq 'pause' -and -not $paused) {{
-    $speaker.Pause()
-    $paused = $true
-  }}
-  if (($command -eq 'resume' -or $command -eq 'play') -and $paused) {{
-    $speaker.Resume()
-    $paused = $false
-  }}
-  Start-Sleep -Milliseconds 100
-}}
-$speaker.Dispose()
-"#,
-        text = escape_ps_single(text_path),
-        command = escape_ps_single(command_path)
-    )
-}
-
-fn status_from_active(state: &str, exit_code: Option<i32>) -> Result<NativeTtsStatus, String> {
-    let guard = active_speech().lock().map_err(|_| "Falha ao consultar TTS.".to_string())?;
+fn send_command(command: TtsCommand, state: &str) -> Result<NativeTtsStatus, String> {
+    let guard = active_speech().lock().map_err(|_| "Falha ao controlar TTS.".to_string())?;
     let Some(active) = guard.as_ref() else {
-        return Ok(last_or_idle());
+        return Ok(native_tts_status());
     };
-    Ok(base_status(
-        state,
-        Some(active.child.id()),
-        active.started_at.clone(),
-        active.started.elapsed().as_millis(),
-        exit_code,
-        String::new(),
-    ))
+    active.tx.send(command).map_err(|error| error.to_string())?;
+    let status = base_status(state, active.started_at.clone(), active.started.elapsed().as_millis(), None, String::new());
+    append_tts_log(&format!("tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state={} command=internal-control orphanCount=0", state));
+    set_status(status.clone());
+    Ok(status)
 }
 
-fn base_status(state: &str, pid: Option<u32>, started_at: String, elapsed_ms: u128, exit_code: Option<i32>, diagnostic: String) -> NativeTtsStatus {
+#[derive(Debug)]
+enum TtsCompletion {
+    Completed,
+    Stopped,
+}
+
+#[cfg(windows)]
+fn run_sapi_speech(text: String, rate: f32, volume: f32, rx: mpsc::Receiver<TtsCommand>, _started: Instant) -> Result<TtsCompletion, String> {
+    unsafe {
+        CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().map_err(|error| format!("COM init falhou: {error}"))?;
+        let result = run_sapi_speech_inner(text, rate, volume, rx);
+        CoUninitialize();
+        result
+    }
+}
+
+#[cfg(windows)]
+unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::Receiver<TtsCommand>) -> Result<TtsCompletion, String> {
+    let voice: ISpVoice = CoCreateInstance(&SpVoice, None, CLSCTX_ALL).map_err(|error| format!("SAPI indisponivel: {error}"))?;
+    voice.SetRate(((rate - 1.0) * 5.0).round().clamp(-10.0, 10.0) as i32).map_err(|error| error.to_string())?;
+    voice.SetVolume((volume * 100.0).round().clamp(0.0, 100.0) as u16).map_err(|error| error.to_string())?;
+    let text = HSTRING::from(text);
+    let mut stream_number = 0_u32;
+    voice.Speak(PCWSTR(text.as_ptr()), SPF_ASYNC.0 as u32, Some(&mut stream_number)).map_err(|error| error.to_string())?;
+    loop {
+        match rx.try_recv() {
+            Ok(TtsCommand::Pause) => {
+                let _ = voice.Pause();
+            }
+            Ok(TtsCommand::Resume) => {
+                let _ = voice.Resume();
+            }
+            Ok(TtsCommand::Stop) => {
+                let empty = HSTRING::from("");
+                let _ = voice.Speak(PCWSTR(empty.as_ptr()), (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32, None);
+                return Ok(TtsCompletion::Stopped);
+            }
+            Err(mpsc::TryRecvError::Empty) => {}
+            Err(mpsc::TryRecvError::Disconnected) => return Ok(TtsCompletion::Stopped),
+        }
+        if voice.WaitUntilDone(80).is_ok() {
+            return Ok(TtsCompletion::Completed);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn run_sapi_speech(_text: String, _rate: f32, _volume: f32, _rx: mpsc::Receiver<TtsCommand>, _started: Instant) -> Result<TtsCompletion, String> {
+    Err("TTS nativo disponivel apenas no Windows.".to_string())
+}
+
+fn base_status(state: &str, started_at: String, elapsed_ms: u128, exit_code: Option<i32>, diagnostic: String) -> NativeTtsStatus {
     NativeTtsStatus {
         available: true,
         provider: "cronos-native-windows-sapi".to_string(),
         state: state.to_string(),
-        pid,
-        command: "powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File <tts-script>".to_string(),
+        pid: None,
+        command: "COM SAPI ISpVoice::Speak(SPF_ASYNC), processo interno do cronos-desktop".to_string(),
         started_at,
         elapsed_ms,
         exit_code,
-        orphan_count: active_orphan_count(),
+        orphan_count: 0,
         log_path: log_path().map(|path| path.display().to_string()).unwrap_or_default(),
         diagnostic,
     }
 }
 
-fn last_or_idle() -> NativeTtsStatus {
-    if let Some(status) = LAST_STATUS.get().and_then(|lock| lock.lock().ok()).and_then(|value| value.clone()) {
-        return status;
-    }
-    base_status("idle", None, String::new(), 0, None, String::new())
-}
-
-fn set_last_status(status: NativeTtsStatus) {
+fn set_status(status: NativeTtsStatus) {
     if let Ok(mut guard) = last_status().lock() {
-        *guard = Some(status);
+        *guard = status;
     }
-}
-
-fn cleanup_files(active: &ActiveSpeech) {
-    for path in [&active.script_path, &active.text_path, &active.command_path, &active.stdout_path, &active.stderr_path] {
-        let _ = fs::remove_file(path);
-    }
-}
-
-fn active_orphan_count() -> usize {
-    active_speech()
-        .lock()
-        .ok()
-        .and_then(|guard| guard.as_ref().map(|_| 0))
-        .unwrap_or(0)
 }
 
 fn active_speech() -> &'static Mutex<Option<ActiveSpeech>> {
     ACTIVE_SPEECH.get_or_init(|| Mutex::new(None))
 }
 
-fn last_status() -> &'static Mutex<Option<NativeTtsStatus>> {
-    LAST_STATUS.get_or_init(|| Mutex::new(None))
+fn last_status() -> &'static Mutex<NativeTtsStatus> {
+    LAST_STATUS.get_or_init(|| Mutex::new(base_status("idle", String::new(), 0, None, String::new())))
 }
 
 fn append_tts_log(line: &str) {
@@ -333,7 +237,7 @@ fn append_tts_log(line: &str) {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(path) {
-        let _ = writeln!(file, "{line}");
+        let _ = writeln!(file, "{}", sanitize_log_text(line));
     }
 }
 
@@ -347,8 +251,8 @@ fn local_cronos_dir() -> Result<PathBuf, String> {
         .ok_or_else(|| "LOCALAPPDATA nao esta definido.".to_string())
 }
 
-fn escape_ps_single(path: &PathBuf) -> String {
-    path.display().to_string().replace('\'', "''")
+fn sanitize_log_text(text: &str) -> String {
+    text.chars().filter(|item| !item.is_control() || *item == '\n' || *item == '\t').collect()
 }
 
 fn timestamp_millis() -> u128 {
@@ -367,20 +271,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn tts_status_uses_hidden_noninteractive_powershell_command() {
-        let status = base_status("playing", Some(42), "now".to_string(), 10, None, String::new());
-        assert!(status.command.contains("-NonInteractive"));
-        assert!(status.command.contains("-WindowStyle Hidden"));
-        assert!(status.command.contains("-File <tts-script>"));
+    fn tts_status_uses_internal_sapi_without_shell_process() {
+        let status = base_status("playing", "now".to_string(), 10, None, String::new());
+        assert!(status.command.contains("ISpVoice"));
+        assert!(!status.command.contains("powershell"));
+        assert!(!status.command.contains("cmd.exe"));
+        assert_eq!(status.pid, None);
         assert_eq!(status.orphan_count, 0);
     }
 
     #[test]
-    fn powershell_script_supports_pause_resume_and_stop() {
-        let script = tts_script(&PathBuf::from("C:\\Temp\\voice text.txt"), &PathBuf::from("C:\\Temp\\voice command.txt"), 1.0, 0.8);
-        assert!(script.contains("SpeakAsync"));
-        assert!(script.contains("$speaker.Pause()"));
-        assert!(script.contains("$speaker.Resume()"));
-        assert!(script.contains("SpeakAsyncCancelAll"));
+    fn tts_log_sanitizer_keeps_text_without_control_noise() {
+        assert_eq!(sanitize_log_text("tts\u{0000}\nstate"), "tts\nstate");
     }
 }

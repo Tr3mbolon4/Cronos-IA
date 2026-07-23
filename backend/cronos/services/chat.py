@@ -1,5 +1,6 @@
 import json
 import re
+import time
 import unicodedata
 
 from cronos.core.db import connect
@@ -72,6 +73,7 @@ def history(limit: int = 50, owner_id: int = 1, conversation_id: str = "principa
 
 
 def send_message(content: str, owner_id: int = 1, conversation_id: str = "principal", document_ids: list[int] | None = None) -> dict:
+    started = time.perf_counter()
     clean = content.strip()
     if not clean:
         raise CronosError(400, "Mensagem obrigatoria.", code="CHAT_MESSAGE_REQUIRED")
@@ -83,7 +85,7 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
     recent = history(20, owner_id, conversation_id)
     context = _context_for_route(route, owner_id, clean, active_document_ids)
     if route == DOCUMENT_QA and active_document_ids and not context.get("items"):
-        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
+        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids, message=clean, recent=recent, started=started)
         response = "Ainda estou processando o documento. Aguarde alguns segundos."
         _save_message("assistant", response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
         _write_chat_diagnostic(clean, [{"role": "system", "content": "DOCUMENT_QA sem chunks recuperados."}], response, diagnostics)
@@ -97,7 +99,7 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
         }
     grounded_response = _document_direct_response(clean, context) if route == DOCUMENT_QA else None
     if grounded_response:
-        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
+        diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids, message=clean, recent=recent, started=started)
         _save_message("assistant", grounded_response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
         _write_chat_diagnostic(clean, [{"role": "system", "content": "DOCUMENT_QA respondido por verificador documental."}], grounded_response, diagnostics)
         return {
@@ -110,6 +112,13 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
         }
     prompt = _prompt_messages(_sanitize_legacy_fallbacks(recent), context, route)
     response = llm_provider.generate(prompt)
+    relevance_score = _response_relevance_score(clean, response)
+    retry_count = 0
+    if route == GENERAL_CHAT and _needs_current_question_retry(clean, response, relevance_score):
+        retry_count = 1
+        retry_prompt = _current_question_retry_prompt(clean, route)
+        response = llm_provider.generate(retry_prompt)
+        relevance_score = _response_relevance_score(clean, response)
     if route == DOCUMENT_QA and context.get("items") and _is_document_refusal(response):
         response = _document_grounded_fallback(clean, context)
     if _is_legacy_fallback(response):
@@ -118,7 +127,18 @@ def send_message(content: str, owner_id: int = 1, conversation_id: str = "princi
             "Resposta legada de fallback bloqueada. O modelo local precisa gerar uma resposta real.",
             code="LLM_LEGACY_FALLBACK_BLOCKED",
         )
-    diagnostics = _diagnostics(route, context, owner_id=owner_id, conversation_id=conversation_id, document_ids=active_document_ids)
+    diagnostics = _diagnostics(
+        route,
+        context,
+        owner_id=owner_id,
+        conversation_id=conversation_id,
+        document_ids=active_document_ids,
+        message=clean,
+        recent=recent,
+        started=started,
+        relevance_score=relevance_score,
+        retry_count=retry_count,
+    )
     _save_message("assistant", response, owner_id=owner_id, conversation_id=conversation_id, route=route, diagnostics=diagnostics)
     _write_chat_diagnostic(clean, prompt, response, diagnostics)
     return {
@@ -182,6 +202,17 @@ def _prompt_messages(recent: list[dict], context: dict, route: str) -> list[dict
     elif route == DOCUMENT_QA:
         messages.append({"role": "system", "content": "Nenhum documento relevante foi recuperado acima do limite minimo."})
     if recent:
+        current_message = str(recent[-1].get("content", "")) if recent else ""
+        messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "Prioridade absoluta: responda a ultima mensagem do proprietario. "
+                    f"Mensagem atual: {current_message}. "
+                    "Use o historico apenas quando ele for diretamente necessario para entender pronomes, referencias ou continuidade."
+                ),
+            }
+        )
         transcript = "\n".join(
             f"[{index}] {row['role']}: {row['content']}"
             for index, row in enumerate(recent[-20:], start=1)
@@ -200,6 +231,21 @@ def _prompt_messages(recent: list[dict], context: dict, route: str) -> list[dict
         role = row["role"] if row["role"] in {"user", "assistant", "system"} else "user"
         messages.append({"role": role, "content": row["content"]})
     return messages
+
+
+def _current_question_retry_prompt(message: str, route: str) -> list[dict]:
+    return [
+        {
+            "role": "system",
+            "content": (
+                "Seu nome e CRONOS. Responda em portugues do Brasil. "
+                "A resposta anterior foi descartada por baixa aderencia a pergunta atual. "
+                "Ignore assuntos anteriores e responda somente a pergunta abaixo, de forma direta e util."
+            ),
+        },
+        {"role": "system", "content": f"Rota selecionada pelo CRONOS: {route}. Retry maximo: 1."},
+        {"role": "user", "content": message},
+    ]
 
 
 def _local_context(owner_id: int, query: str, document_ids: list[int] | None = None) -> dict:
@@ -231,25 +277,76 @@ def _context_for_route(route: str, owner_id: int, query: str, document_ids: list
     return {**context, "items": filtered, "total": len(filtered)}
 
 
-def _diagnostics(route: str, context: dict, *, owner_id: int | None = None, conversation_id: str | None = None, document_ids: list[int] | None = None) -> dict:
+def _diagnostics(
+    route: str,
+    context: dict,
+    *,
+    owner_id: int | None = None,
+    conversation_id: str | None = None,
+    document_ids: list[int] | None = None,
+    message: str = "",
+    recent: list[dict] | None = None,
+    started: float | None = None,
+    relevance_score: float | None = None,
+    retry_count: int = 0,
+) -> dict:
     items = context.get("items", [])
     llm = llm_provider.status()
     top_score = max([float(item.get("score_final") or 0) for item in items], default=0.0)
+    elapsed_ms = int((time.perf_counter() - started) * 1000) if started else 0
     return {
         "route": route,
+        "current_message": message[:500],
+        "intent": _message_intent(message),
         "conversation_id": conversation_id,
         "document_ids": _clean_document_ids(document_ids),
         "usedConversationHistory": True,
+        "history_count": len(recent or []),
         "usedPermanentMemory": False,
+        "memory_used": False,
         "usedDocuments": bool(items),
         "retrievedChunkCount": len(items),
         "topScore": round(top_score, 6),
         "provider": llm.get("provider"),
         "model": llm.get("model"),
+        "final_model": llm.get("model"),
+        "relevance_score": round(relevance_score if relevance_score is not None else 1.0, 6),
+        "retry_count": retry_count,
+        "latency_ms": elapsed_ms,
         "attachedDocumentIds": _document_ids_from_items(items),
         "retrieval": {"mode": context.get("mode"), "provider": context.get("provider")},
         "retrievalAudit": _retrieval_audit(owner_id, document_ids) if owner_id and document_ids else None,
     }
+
+
+def _message_intent(message: str) -> str:
+    normalized = _normalize_ascii(message)
+    if re.search(r"\b(ip|ping|cmd|terminal|powershell|windows|rede|porta)\b", normalized):
+        return "TECHNICAL_HELP"
+    if re.search(r"\b(documento|pdf|resuma|leia|pagina|citacao)\b", normalized):
+        return "DOCUMENT_QA"
+    if re.search(r"\b(codigo que falei|lembra|historico|mensagem anterior)\b", normalized):
+        return "MEMORY_QUERY"
+    return "GENERAL"
+
+
+def _response_relevance_score(message: str, response: str) -> float:
+    terms = set(_meaningful_terms(message))
+    if not terms:
+        return 1.0
+    normalized_response = _normalize_ascii(response)
+    hits = sum(1 for term in terms if term in normalized_response)
+    return hits / len(terms)
+
+
+def _needs_current_question_retry(message: str, response: str, relevance_score: float) -> bool:
+    intent = _message_intent(message)
+    normalized_response = _normalize_ascii(response)
+    if intent == "TECHNICAL_HELP" and relevance_score < 0.34:
+        return True
+    if re.search(r"\b(ip|ping)\b", _normalize_ascii(message)) and not re.search(r"\b(ip|ping|rede|comando|cmd|terminal|windows)\b", normalized_response):
+        return True
+    return False
 
 
 def _first_document_chunks(owner_id: int, document_ids: list[int]) -> list[dict]:

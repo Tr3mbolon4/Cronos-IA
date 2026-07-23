@@ -144,6 +144,8 @@ pub fn transcribe_local_audio(
         .arg(&wav_path)
         .arg("-l")
         .arg(&language)
+        .arg("--prompt")
+        .arg(technical_prompt(&language))
         .arg("-otxt")
         .arg("-of")
         .arg(&output_base)
@@ -709,6 +711,14 @@ fn normalize_language(language: &str) -> String {
     }
 }
 
+fn technical_prompt(language: &str) -> &'static str {
+    if language == "pt" {
+        "Transcreva em portugues do Brasil. Preserve termos tecnicos: IP, ping, ipconfig, CMD, PowerShell, GPU, RAM, PDF, CRONOS."
+    } else {
+        "Transcribe technical commands and product names exactly."
+    }
+}
+
 fn sha256_file(path: &Path) -> Result<String, String> {
     let mut file = fs::File::open(path).map_err(|error| error.to_string())?;
     let mut hasher = Sha256::new();
@@ -818,6 +828,14 @@ mod tests {
         assert!(validate_request_id("abc-123").is_ok());
         assert!(validate_request_id("../abc").is_err());
         assert!(validate_request_id("").is_err());
+    }
+
+    #[test]
+    fn portuguese_prompt_preserves_network_terms() {
+        let prompt = technical_prompt(&normalize_language("pt-BR"));
+        assert!(prompt.contains("IP"));
+        assert!(prompt.contains("ping"));
+        assert!(prompt.contains("ipconfig"));
     }
 
     #[test]

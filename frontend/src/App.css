@@ -3708,6 +3708,41 @@ blockquote {
   filter: drop-shadow(0 0 12px color-mix(in srgb, var(--core-state) 55%, transparent));
 }
 
+.chat-workspace-v3.visual-compact .conversation-header-v3 {
+  flex-basis: 58px;
+  min-height: 58px;
+  max-height: 58px;
+}
+
+.chat-workspace-v3.visual-compact .conversation-header-v3 .cronos-core-v3.compact {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+}
+
+.chat-core-presence {
+  flex: 0 0 132px;
+  min-height: 132px;
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid rgba(116, 168, 211, .12);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(0, 183, 255, .14), transparent 34%),
+    linear-gradient(90deg, transparent, rgba(40, 124, 255, .08), transparent);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.chat-core-presence .cronos-core-v3 {
+  width: min(170px, 28vh);
+  height: min(170px, 28vh);
+}
+
+.chat-core-presence .core-caption {
+  display: none;
+}
+
 .conversation-title-block {
   align-content: center;
   min-height: 0;

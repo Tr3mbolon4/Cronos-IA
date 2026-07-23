@@ -17,12 +17,31 @@ export function ChatPage(props: ChatPageProps) {
   const visibleConversations = filterConversations(props.conversations, props.filter, props.debouncedSearchTerm)
   const activeConversation = props.conversations.find((item) => item.id === props.activeConversationId) || props.conversations[0]
   const activeMessages = props.messages
+  const spokenMessageRef = useRef('')
+
+  useEffect(() => {
+    const latest = activeMessages[activeMessages.length - 1]
+    if (!latest || latest.role !== 'assistant' || props.submitting) return
+    const key = String(messageKey(latest, activeMessages.length - 1))
+    if (spokenMessageRef.current === key) return
+    const createdAt = Date.parse(latest.created_at || '')
+    if (!Number.isFinite(createdAt) || Date.now() - createdAt > 120000) return
+    const shouldSpeak = props.voice.settings.autoSpeak === 'all' || (props.voice.settings.autoSpeak === 'voice-only' && props.voice.settings.conversationMode)
+    if (!shouldSpeak) return
+    spokenMessageRef.current = key
+    props.voice.speak(latest.content)
+  }, [activeMessages, props.submitting, props.voice])
 
   return (
-    <section className={`chat-route chat-workspace-v3 ${props.contextOpen ? 'context-visible' : 'context-hidden'}`} data-visual="chat">
+    <section className={`chat-route chat-workspace-v3 visual-${props.voice.settings.visualMode} ${props.contextOpen ? 'context-visible' : 'context-hidden'}`} data-visual="chat">
       <ConversationSidebar {...props} conversations={visibleConversations} />
       <main className="conversation-stage-v3" aria-label="Conversa ativa">
         <ConversationHeader {...props} conversation={activeConversation} messageCount={activeMessages.length} />
+        {props.voice.settings.visualMode === 'immersive' && (
+          <div className="chat-core-presence" aria-hidden="true">
+            <CronosCore state={props.coreState} showLabel />
+          </div>
+        )}
         <MessageTimeline {...props} messages={activeMessages} />
         <MessageComposer {...props} />
       </main>
@@ -202,6 +221,8 @@ function MessageActions({ isOwner, message, onAction }: { isOwner: boolean; mess
 
 function MessageComposer(props: ChatPageProps) {
   const copiedTranscriptRef = useRef('')
+  const autoSubmitRef = useRef('')
+  const submitButtonRef = useRef<HTMLButtonElement>(null)
   const { onDraftChange, voice } = props
 
   useEffect(() => {
@@ -209,8 +230,12 @@ function MessageComposer(props: ChatPageProps) {
     if (voice.state === 'reviewing' && voice.draft && transcriptId && copiedTranscriptRef.current !== transcriptId) {
       onDraftChange(voice.draft)
       copiedTranscriptRef.current = transcriptId
+      if ((voice.settings.transcriptionMode === 'auto-send' || voice.settings.conversationMode) && autoSubmitRef.current !== transcriptId) {
+        autoSubmitRef.current = transcriptId
+        window.setTimeout(() => submitButtonRef.current?.click(), 0)
+      }
     }
-  }, [voice.state, voice.draft, voice.transcript?.createdAt, onDraftChange])
+  }, [voice.state, voice.draft, voice.transcript?.createdAt, voice.settings.transcriptionMode, voice.settings.conversationMode, onDraftChange])
 
   const voiceStatus = voiceComposerStatus(voice.state, voice.error)
 
@@ -255,7 +280,7 @@ function MessageComposer(props: ChatPageProps) {
         <VoiceButton voice={props.voice} compact />
         {props.submitting
           ? <button type="button" className="composer-action-button warn" onClick={props.onStopResponse}><Square size={16} /> Parar</button>
-          : <button type="submit" className="composer-action-button primary" disabled={!props.draft.trim() || props.offline}><Send size={16} /> Enviar</button>}
+          : <button ref={submitButtonRef} type="submit" className="composer-action-button primary" disabled={!props.draft.trim() || props.offline}><Send size={16} /> Enviar</button>}
       </div>
       {voiceStatus && (
         <div className={`composer-voice-status ${voiceStatus.tone}`} role="status">

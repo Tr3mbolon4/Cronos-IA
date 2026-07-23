@@ -225,8 +225,13 @@ function runWebSpeechRecognition(settings: VoiceSettings): Promise<VoiceTranscri
         return
       }
       resolved = true
+      const normalized = normalizePortugueseTranscript(text)
       resolve({
-        text,
+        text: normalized.text,
+        rawText: text,
+        normalizedText: normalized.text,
+        normalizationConfidence: normalized.confidence,
+        corrections: normalized.corrections,
         confidence: Number.isFinite(item.confidence) ? item.confidence : null,
         providerId: WEBVIEW_STT_PROVIDER_ID,
         language: settings.language,
@@ -258,12 +263,45 @@ export async function runSpeechRecognition(settings: VoiceSettings, provider: Vo
       language: settings.language,
     },
   })
+  const normalized = normalizePortugueseTranscript(result.text)
   return {
-    text: result.text,
+    text: normalized.text,
+    rawText: result.text,
+    normalizedText: normalized.text,
+    normalizationConfidence: normalized.confidence,
+    corrections: normalized.corrections,
     confidence: null,
     providerId: result.provider,
     language: result.language,
     createdAt: new Date().toISOString(),
+  }
+}
+
+export function normalizePortugueseTranscript(text: string) {
+  const trimmed = text.trim()
+  const compact = trimmed
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}.: ]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const corrections: string[] = []
+  let normalized = trimmed
+
+  const looksLikePingIpQuestion =
+    /\b(compingao|compingar|com pingar|como pingao|como pingar|pingar)\s+(o\s+)?ip\b/.test(compact)
+    || /\bcomo\s+ping(ar)?\s+(um\s+)?ip\b/.test(compact)
+
+  if (looksLikePingIpQuestion && !/\b\d{1,3}(\.\d{1,3}){3}\b/.test(compact)) {
+    normalized = 'Como pingar o IP?'
+    corrections.push('pt-BR:compingao-ip->como-pingar-o-ip')
+  }
+
+  return {
+    text: normalized,
+    confidence: corrections.length ? 0.92 : 1,
+    corrections,
   }
 }
 

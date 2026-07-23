@@ -20,6 +20,14 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
           <input type="checkbox" checked={voice.settings.enabled} onChange={(event) => voice.updateSettings({ enabled: event.target.checked })} />
           Habilitar recursos de voz
         </label>
+        <label className="inline-toggle">
+          <input type="checkbox" checked={voice.settings.conversationMode} onChange={(event) => voice.updateSettings({ conversationMode: event.target.checked, transcriptionMode: event.target.checked ? 'auto-send' : voice.settings.transcriptionMode })} />
+          Conversa continua
+        </label>
+        <label className="inline-toggle">
+          <input type="checkbox" checked={voice.settings.bargeIn} onChange={(event) => voice.updateSettings({ bargeIn: event.target.checked })} />
+          Interromper fala ao ouvir
+        </label>
         <label>Microfone
           <select value={voice.settings.selectedMicrophoneId} onChange={(event) => voice.updateSettings({ selectedMicrophoneId: event.target.value })}>
             <option value="">Padrao do sistema</option>
@@ -63,6 +71,16 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
             <option value="voice-only">Somente quando enviado por voz</option>
             <option value="all">Todas as respostas</option>
             <option value="ask">Perguntar antes</option>
+          </select>
+        </label>
+        <label>Silencio<input type="range" min="600" max="2200" step="100" value={voice.settings.silenceMs} onChange={(event) => voice.updateSettings({ silenceMs: Number(event.target.value) })} /></label>
+        <label>Sensibilidade<input type="range" min="6" max="45" step="1" value={voice.settings.vadSensitivity} onChange={(event) => voice.updateSettings({ vadSensitivity: Number(event.target.value) })} /></label>
+        <label>Tempo maximo<input type="range" min="10000" max="90000" step="5000" value={voice.settings.maxRecordingMs} onChange={(event) => voice.updateSettings({ maxRecordingMs: Number(event.target.value) })} /></label>
+        <label>Visual do nucleo
+          <select value={voice.settings.visualMode} onChange={(event) => voice.updateSettings({ visualMode: event.target.value as typeof voice.settings.visualMode })}>
+            <option value="chat">Chat</option>
+            <option value="immersive">Imersivo</option>
+            <option value="compact">Compacto</option>
           </select>
         </label>
       </div>

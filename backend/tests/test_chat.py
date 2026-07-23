@@ -63,6 +63,19 @@ class DocumentRefusalLLMProvider(FakeLLMProvider):
         return "Não consigo ler documentos fisicamente."
 
 
+class SequenceLLMProvider(FakeLLMProvider):
+    def __init__(self, responses: list[str]) -> None:
+        super().__init__()
+        self.responses = responses
+        self.calls = 0
+
+    def generate(self, messages: list[dict], *, timeout: int = 120) -> str:
+        self.messages = messages
+        response = self.responses[min(self.calls, len(self.responses) - 1)]
+        self.calls += 1
+        return response
+
+
 class ChatTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()
@@ -215,6 +228,27 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(response["route"], chat.MEMORY_QUERY)
         prompt_text = "\n".join(item["content"] for item in provider.messages)
         self.assertIn("CRONOS-123", prompt_text)
+
+    def test_current_technical_question_retries_when_response_is_off_topic(self):
+        provider = SequenceLLMProvider([
+            "Resposta real do provider local para: Me fale sobre a biblioteca",
+            "Voce pode organizar sua biblioteca e importar documentos.",
+            "Para descobrir seu IP no Windows, abra o terminal e use ipconfig.",
+        ])
+        llm_provider.set_provider_for_tests(provider)
+        chat.send_message("Me fale sobre a biblioteca", conversation_id="tech-current")
+
+        response = chat.send_message("Como descobrir meu IP?", conversation_id="tech-current")
+
+        self.assertEqual(response["route"], chat.GENERAL_CHAT)
+        self.assertEqual(provider.calls, 3)
+        self.assertIn("ipconfig", response["content"])
+        self.assertEqual(response["diagnostics"]["intent"], "TECHNICAL_HELP")
+        self.assertEqual(response["diagnostics"]["retry_count"], 1)
+        self.assertGreaterEqual(response["diagnostics"]["relevance_score"], 0.3)
+        prompt_text = "\n".join(item["content"] for item in provider.messages)
+        self.assertIn("Como descobrir meu IP?", prompt_text)
+        self.assertNotIn("biblioteca", prompt_text.lower())
 
     @staticmethod
     def text_pdf(pages: list[str]) -> bytes:
