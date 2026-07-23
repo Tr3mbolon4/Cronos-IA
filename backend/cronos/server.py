@@ -1,6 +1,7 @@
 import argparse
 import hmac
 import json
+import logging
 import os
 import re
 import sys
@@ -33,7 +34,7 @@ DEFAULT_ALLOWED_ORIGINS = {
 
 
 def _runtime_event(event: str, **payload: object) -> None:
-    print(json.dumps({"event": event, **payload}, ensure_ascii=False), flush=True)
+    _write_stdout_line(json.dumps({"event": event, **payload}, ensure_ascii=False))
 
 
 class CronosHandler(BaseHTTPRequestHandler):
@@ -296,7 +297,7 @@ class CronosHandler(BaseHTTPRequestHandler):
         )
 
     def log_message(self, format: str, *args: object) -> None:
-        print(f"{self.address_string()} - {format % args}")
+        _write_stdout_line(f"{self.address_string()} - {format % args}")
 
     def _begin_http_trace(self) -> None:
         self._request_started_at = time.monotonic()
@@ -319,7 +320,7 @@ class CronosHandler(BaseHTTPRequestHandler):
         stacktrace = getattr(self, "_last_stacktrace", None)
         if stacktrace:
             payload["stacktrace"] = stacktrace[-3000:]
-        print(json.dumps(payload, ensure_ascii=False), flush=True)
+        _write_stdout_line(json.dumps(payload, ensure_ascii=False))
 
 
 def allowed_cors_origin(origin: str) -> str:
@@ -370,7 +371,36 @@ def _truncate_json(value: object, limit: int = 1600) -> object:
     return serialized[:limit] + "...[truncated]"
 
 
+def _configure_utf8_stdio() -> None:
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is not None and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+    logging.basicConfig(encoding="utf-8", errors="replace", level=logging.INFO)
+
+
+def _write_stdout_line(text: str) -> None:
+    line = f"{text}\n"
+    try:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+    except UnicodeEncodeError:
+        buffer = getattr(sys.stdout, "buffer", None)
+        if buffer is not None:
+            buffer.write(line.encode("utf-8", errors="replace"))
+            buffer.flush()
+            return
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        sys.stdout.write(line.encode(encoding, errors="replace").decode(encoding, errors="replace"))
+        sys.stdout.flush()
+
+
 def main() -> None:
+    _configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="CRONOS local backend")
     parser.add_argument("--host", default=os.environ.get("CRONOS_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("CRONOS_PORT", "8000")))
@@ -446,7 +476,7 @@ def _write_technical_error(error: Exception) -> None:
     try:
         settings.ensure_directories()
         log_path = settings.log_dir / "cronos-backend.log"
-        with log_path.open("a", encoding="utf-8") as handle:
+        with log_path.open("a", encoding="utf-8", errors="replace") as handle:
             handle.write(f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} STARTUP_FAILED {error}\n")
             handle.write(traceback.format_exc())
             handle.write("\n")

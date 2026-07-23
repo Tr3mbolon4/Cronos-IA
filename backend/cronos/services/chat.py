@@ -467,7 +467,7 @@ def _write_chat_diagnostic(message: str, prompt: list[dict], response: str, diag
         "responsePreview": response[:240],
         "createdAt": utcnow().isoformat(),
     }
-    with (settings.log_dir / "chat-routing.log").open("a", encoding="utf-8") as handle:
+    with (settings.log_dir / "chat-routing.log").open("a", encoding="utf-8", errors="replace") as handle:
         handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
 

@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import io
+import sys
 from pathlib import Path
 
 from pypdf import PdfWriter
@@ -12,7 +14,9 @@ from cronos.core.knowledge_config import knowledge_config
 from cronos.core.security import utcnow
 from cronos.models.document import normalize_document_text
 from cronos.api import document_routes, library_routes
-from cronos.services import auth, document_extraction_service, document_ingestion_service, knowledge_service
+from cronos import server
+from cronos.services import auth, document_extraction_service, document_ingestion_service, embedding_service, knowledge_service, retrieval_service
+from cronos.services.embedding_provider import DeterministicEmbeddingProvider
 
 
 class DocumentLibraryTests(unittest.TestCase):
@@ -73,6 +77,43 @@ class DocumentLibraryTests(unittest.TestCase):
         retried = document_ingestion_service.import_pdf(self.owner_id, "scan.pdf", blank)
         self.assertFalse(retried.get("duplicate", False))
         self.assertNotEqual(retried["document"]["id"], failed["document"]["id"])
+
+    def test_unicode_document_import_index_and_stdout_logging_are_utf8_safe(self) -> None:
+        unicode_text = "Lista \uf0b7 bullet • intervalo – travessao — reticencias … aprovado ✓ ç ã é ê 中文 日本語 😀"
+        original_extract = document_extraction_service.extract_pdf_pages
+        original_stdout = sys.stdout
+        buffer = io.BytesIO()
+        wrapped_stdout = io.TextIOWrapper(buffer, encoding="cp1252", errors="strict")
+
+        def unicode_extract(path: Path) -> dict:
+            return {
+                "pages": [{"page_number": 1, "text": unicode_text, "status": "completed", "error_message": None}],
+                "status": "completed",
+                "code": None,
+                "page_count": 1,
+            }
+
+        document_extraction_service.extract_pdf_pages = unicode_extract
+        embedding_service.set_provider_for_tests(DeterministicEmbeddingProvider(dimension=384))
+        sys.stdout = wrapped_stdout
+        try:
+            server._write_stdout_line(json_for_test({"event": "http_request", "text": unicode_text}))
+            result = document_ingestion_service.import_pdf(self.owner_id, "unicode.pdf", self.text_pdf(["placeholder"]))
+            rebuilt = retrieval_service.rebuild_index(self.owner_id, {"filters": {"document_id": result["document"]["id"]}})
+        finally:
+            sys.stdout = original_stdout
+            wrapped_stdout.flush()
+            document_extraction_service.extract_pdf_pages = original_extract
+            embedding_service.set_provider_for_tests(None)
+
+        self.assertEqual(result["source"]["indexing_status"], "completed")
+        self.assertEqual(result["chunk_count"], 1)
+        self.assertEqual(rebuilt["indexed"], 1)
+        chunks = knowledge_service.list_chunks(self.owner_id, result["document"]["id"], {})["items"]
+        self.assertIn("\uf0b7", chunks[0]["text_content"])
+        self.assertIn("中文", chunks[0]["text_content"])
+        self.assertIn("😀", chunks[0]["text_content"])
+        self.assertIn("中文".encode("utf-8"), buffer.getvalue())
 
     def test_reindex_is_idempotent_and_preserves_file(self) -> None:
         result = document_ingestion_service.import_pdf(self.owner_id, "reindex.pdf", self.text_pdf(["Texto para reindexar."]))
@@ -220,6 +261,12 @@ class DocumentLibraryTests(unittest.TestCase):
         with path.open("wb") as handle:
             writer.write(handle)
         return path.read_bytes()
+
+
+def json_for_test(payload: dict) -> str:
+    import json
+
+    return json.dumps(payload, ensure_ascii=False)
 
 
 if __name__ == "__main__":
