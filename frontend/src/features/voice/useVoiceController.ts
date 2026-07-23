@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreState } from '../../app/types'
 import { startLocalAudioCapture } from './providers/localAudioCapture'
-import { cancelLocalSpeechRecognition, getSttProviderStatuses, listAudioDevices, LOCAL_STT_PROVIDER_ID, runSpeechRecognition, speechSynthesisStatus, wakeWordStatus } from './providers/webVoiceProviders'
+import { cancelLocalSpeechRecognition, getSttProviderStatuses, listAudioDevices, LOCAL_STT_PROVIDER_ID, nativeTtsStatus, pauseNativeTts, resumeNativeTts, runSpeechRecognition, speechSynthesisStatus, speakNativeTts, stopNativeTts, wakeWordStatus } from './providers/webVoiceProviders'
 import type { VoiceController, VoiceDevice, VoiceProviderStatus, VoiceSettings, VoiceState, VoiceTranscript } from './types'
 import { loadVoiceSettings, saveVoiceSettings } from './voiceStorage'
 
@@ -21,6 +21,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   const operationRef = useRef(0)
   const requestIdRef = useRef('')
   const captureRef = useRef<{ stop: () => Uint8Array; cancel: () => void } | null>(null)
+  const speechPollRef = useRef<number | null>(null)
 
   const [sttProviders, setSttProviders] = useState<VoiceProviderStatus[]>([])
   const ttsProvider = useMemo(() => speechSynthesisStatus(), [])
@@ -59,7 +60,11 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     refreshDevices().catch(() => undefined)
     refreshVoices()
     window.speechSynthesis?.addEventListener('voiceschanged', refreshVoices)
-    return () => window.speechSynthesis?.removeEventListener('voiceschanged', refreshVoices)
+    return () => {
+      window.speechSynthesis?.removeEventListener('voiceschanged', refreshVoices)
+      if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+      stopNativeTts().catch(() => undefined)
+    }
   }, [refreshDevices, refreshSttProviders, refreshVoices])
 
   function updateSettings(patch: Partial<VoiceSettings>) {
@@ -153,51 +158,80 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     const requestId = requestIdRef.current
     captureRef.current?.cancel()
     stopStream()
-    window.speechSynthesis?.cancel()
+    stopNativeTts().catch(() => undefined)
     void cancelLocalSpeechRecognition(requestId)
     setState('cancelled')
     onCoreState('ready')
   }
 
   function speak(text: string) {
-    if (!window.speechSynthesis || !text.trim()) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = settings.language
-    utterance.rate = settings.rate
-    utterance.volume = settings.volume
-    const selected = voices.find((voice) => voice.voiceURI === settings.selectedVoiceURI)
-    if (selected) utterance.voice = selected
-    utterance.onstart = () => {
+    if (!text.trim()) return
+    if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+    stopNativeTts()
+      .catch(() => undefined)
+      .finally(() => speakNativeTts(text, settings.rate, settings.volume))
+      .then(() => {
       setState('speaking')
       onCoreState('speaking')
-    }
-    utterance.onend = () => {
-      setState('completed')
-      onCoreState('ready')
-    }
-    utterance.onerror = () => {
-      setState('error')
-      onCoreState('error')
-    }
-    window.speechSynthesis.speak(utterance)
+      startSpeechPolling()
+    })
+      .catch((error) => {
+        setError(error instanceof Error ? error.message : 'Nao foi possivel iniciar o TTS local.')
+        setState('error')
+        onCoreState('error')
+      })
   }
 
   function pauseSpeech() {
-    window.speechSynthesis?.pause()
-    setState('paused')
+    pauseNativeTts()
+      .then(() => setState('paused'))
+      .catch((error) => {
+        setError(error instanceof Error ? error.message : 'Nao foi possivel pausar o TTS.')
+        setState('error')
+        onCoreState('error')
+      })
   }
 
   function resumeSpeech() {
-    window.speechSynthesis?.resume()
-    setState('speaking')
-    onCoreState('speaking')
+    resumeNativeTts()
+      .then(() => {
+        setState('speaking')
+        onCoreState('speaking')
+        startSpeechPolling()
+      })
+      .catch((error) => {
+        setError(error instanceof Error ? error.message : 'Nao foi possivel retomar o TTS.')
+        setState('error')
+        onCoreState('error')
+      })
   }
 
   function stopSpeech() {
-    window.speechSynthesis?.cancel()
-    setState('completed')
-    onCoreState('ready')
+    stopNativeTts()
+      .catch(() => undefined)
+      .finally(() => {
+        if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+        speechPollRef.current = null
+        setState('completed')
+        onCoreState('ready')
+      })
+  }
+
+  function startSpeechPolling() {
+    if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+    speechPollRef.current = window.setInterval(() => {
+      nativeTtsStatus()
+        .then((status) => {
+          if (status.state === 'completed' || status.state === 'failed' || status.state === 'stopped') {
+            if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+            speechPollRef.current = null
+            setState(status.state === 'failed' ? 'error' : 'completed')
+            onCoreState(status.state === 'failed' ? 'error' : 'ready')
+            if (status.diagnostic) setError(status.diagnostic)
+          }
+        })
+        .catch(() => undefined)
+    }, 500)
   }
 
   async function testMicrophone() {

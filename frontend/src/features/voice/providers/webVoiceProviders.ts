@@ -80,6 +80,20 @@ type LocalWhisperTranscript = {
   warning: string
 }
 
+export type NativeTtsStatus = {
+  available: boolean
+  provider: string
+  state: string
+  pid: number | null
+  command: string
+  startedAt: string
+  elapsedMs: number
+  exitCode: number | null
+  orphanCount: number
+  logPath: string
+  diagnostic: string
+}
+
 const localWhisperUnavailable: VoiceProviderStatus = {
   id: LOCAL_STT_PROVIDER_ID,
   name: 'CRONOS Local Whisper',
@@ -149,16 +163,16 @@ export async function getSttProviderStatuses(): Promise<VoiceProviderStatus[]> {
 }
 
 export function speechSynthesisStatus(): VoiceProviderStatus {
-  const available = typeof window.speechSynthesis !== 'undefined'
   return {
-    id: 'web-speech-synthesis',
-    name: 'Windows/WebView Speech Synthesis',
+    id: 'cronos-native-windows-sapi',
+    name: 'CRONOS Native Windows TTS',
     version: 'runtime',
     capability: 'tts',
-    available,
-    state: available ? 'ready' : 'unavailable',
-    diagnostic: available ? 'TTS disponivel via vozes instaladas no sistema/WebView.' : 'TTS indisponivel neste runtime.',
+    available: true,
+    state: 'ready',
+    diagnostic: 'TTS local via Windows SAPI executado pelo Tauri sem janela de terminal.',
     local: true,
+    offline: true,
   }
 }
 
@@ -256,4 +270,24 @@ export async function runSpeechRecognition(settings: VoiceSettings, provider: Vo
 export async function cancelLocalSpeechRecognition(requestId: string) {
   if (!requestId) return
   await invoke('cancel_local_transcription', { requestId }).catch(() => undefined)
+}
+
+export function speakNativeTts(text: string, rate: number, volume: number) {
+  return invoke<NativeTtsStatus>('native_tts_speak', { request: { text, rate, volume } })
+}
+
+export function pauseNativeTts() {
+  return invoke<NativeTtsStatus>('native_tts_pause')
+}
+
+export function resumeNativeTts() {
+  return invoke<NativeTtsStatus>('native_tts_resume')
+}
+
+export function stopNativeTts() {
+  return invoke<NativeTtsStatus>('native_tts_stop')
+}
+
+export function nativeTtsStatus() {
+  return invoke<NativeTtsStatus>('native_tts_status')
 }
