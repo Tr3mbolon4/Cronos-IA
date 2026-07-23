@@ -8,6 +8,7 @@ import threading
 import time
 import traceback
 import uuid
+from collections.abc import Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -39,9 +40,11 @@ class CronosHandler(BaseHTTPRequestHandler):
     server_version = "CRONOS/0.1"
 
     def do_OPTIONS(self) -> None:
+        self._begin_http_trace()
         self._send({}, status=204)
 
     def do_GET(self) -> None:
+        self._begin_http_trace()
         try:
             parsed = urlparse(self.path)
             path = parsed.path
@@ -107,9 +110,11 @@ class CronosHandler(BaseHTTPRequestHandler):
         except CronosError as error:
             self._error(error)
         except Exception as error:
+            self._last_stacktrace = traceback.format_exc()
             self._error(CronosError(500, str(error)))
 
     def do_POST(self) -> None:
+        self._begin_http_trace()
         try:
             path = urlparse(self.path).path
             if path == "/setup/owner":
@@ -160,9 +165,11 @@ class CronosHandler(BaseHTTPRequestHandler):
         except CronosError as error:
             self._error(error)
         except Exception as error:
+            self._last_stacktrace = traceback.format_exc()
             self._error(CronosError(500, str(error)))
 
     def do_PATCH(self) -> None:
+        self._begin_http_trace()
         try:
             path = urlparse(self.path).path
             if memory_routes.is_memory_path(path):
@@ -173,9 +180,11 @@ class CronosHandler(BaseHTTPRequestHandler):
         except CronosError as error:
             self._error(error)
         except Exception as error:
+            self._last_stacktrace = traceback.format_exc()
             self._error(CronosError(500, str(error)))
 
     def do_DELETE(self) -> None:
+        self._begin_http_trace()
         try:
             path = urlparse(self.path).path
             if memory_routes.is_memory_path(path):
@@ -187,13 +196,17 @@ class CronosHandler(BaseHTTPRequestHandler):
         except CronosError as error:
             self._error(error)
         except Exception as error:
+            self._last_stacktrace = traceback.format_exc()
             self._error(CronosError(500, str(error)))
 
     def _json_body(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
         if length == 0:
+            self._request_payload = {}
             return {}
-        return json.loads(self.rfile.read(length).decode("utf-8"))
+        payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        self._request_payload = _redact(payload)
+        return payload
 
     def _multipart_file(self) -> tuple[str, bytes]:
         content_type = self.headers.get("Content-Type", "")
@@ -210,7 +223,9 @@ class CronosHandler(BaseHTTPRequestHandler):
             disposition = header.decode("utf-8", errors="ignore")
             filename_match = re.search(r'filename="?([^";\r\n]+)"?', disposition)
             filename = filename_match.group(1) if filename_match else "upload.bin"
-            return filename, content.rstrip(b"\r\n-")
+            file_content = content.rstrip(b"\r\n-")
+            self._request_payload = {"filename": filename, "file_size": len(file_content), "content_type": content_type.split(";")[0]}
+            return filename, file_content
         raise CronosError(400, "Arquivo nao encontrado no envio.")
 
     def _session(self) -> dict:
@@ -246,6 +261,7 @@ class CronosHandler(BaseHTTPRequestHandler):
 
     def _send(self, payload: object, status: int = 200) -> None:
         raw = b"" if status == 204 else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self._log_http_request(status, payload)
         self.send_response(status)
         self._cors()
         for header, value in diagnostics.response_headers().items():
@@ -282,6 +298,29 @@ class CronosHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         print(f"{self.address_string()} - {format % args}")
 
+    def _begin_http_trace(self) -> None:
+        self._request_started_at = time.monotonic()
+        self._request_payload = None
+        self._last_stacktrace = None
+
+    def _log_http_request(self, status: int, response_payload: object) -> None:
+        started_at = getattr(self, "_request_started_at", None)
+        elapsed_ms = round((time.monotonic() - started_at) * 1000, 2) if started_at else None
+        parsed = urlparse(self.path)
+        payload = {
+            "event": "http_request",
+            "method": self.command,
+            "url": parsed.path,
+            "status": status,
+            "elapsed_ms": elapsed_ms,
+            "payload": _truncate_json(getattr(self, "_request_payload", None)),
+            "response": _truncate_json(_redact(response_payload)),
+        }
+        stacktrace = getattr(self, "_last_stacktrace", None)
+        if stacktrace:
+            payload["stacktrace"] = stacktrace[-3000:]
+        print(json.dumps(payload, ensure_ascii=False), flush=True)
+
 
 def allowed_cors_origin(origin: str) -> str:
     configured = {
@@ -307,6 +346,28 @@ def _query_param(query: str, name: str) -> str | None:
 
     values = parse_qs(query).get(name)
     return values[0] if values else None
+
+
+def _redact(value: object) -> object:
+    secret_keys = {"authorization", "password", "pin", "token", "runtime_token", "x-cronos-runtime-token"}
+    if isinstance(value, Mapping):
+        redacted = {}
+        for key, item in value.items():
+            lowered = str(key).lower()
+            redacted[key] = "***redacted***" if any(secret in lowered for secret in secret_keys) else _redact(item)
+        return redacted
+    if isinstance(value, list):
+        return [_redact(item) for item in value[:20]]
+    return value
+
+
+def _truncate_json(value: object, limit: int = 1600) -> object:
+    if value is None:
+        return None
+    serialized = json.dumps(value, ensure_ascii=False, default=str)
+    if len(serialized) <= limit:
+        return value
+    return serialized[:limit] + "...[truncated]"
 
 
 def main() -> None:

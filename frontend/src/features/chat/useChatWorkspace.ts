@@ -326,11 +326,11 @@ export function useChatWorkspace({
       updateAttachment(attachment.id, { status: 'UPLOADING', progress: 12, reason: 'Enviando para a Biblioteca.' })
       let result: ImportResult
       try {
-        result = await importDocument(client, attachment.file)
+        result = await importDocumentWithRetry(attachment.file)
       } catch (error) {
-        updateAttachment(attachment.id, { status: 'FAILED', progress: 100, reason: readableApiError(error) || 'Falha ao indexar documento.' })
-        pushNotice('Falha ao indexar documento.', 'error')
-        throw error
+        const message = await documentPipelineErrorMessage('upload', error)
+        updateAttachment(attachment.id, { status: 'FAILED', progress: 100, reason: message })
+        throw new Error(message)
       }
       imported.push(result)
       updateAttachment(attachment.id, {
@@ -342,17 +342,24 @@ export function useChatWorkspace({
         reason: result.source.extraction_status === 'failed' ? 'Falha ao extrair texto do PDF.' : 'Texto extraido.',
       })
       if (result.source.extraction_status === 'failed' || result.chunk_count === 0) {
-        updateAttachment(attachment.id, { status: 'FAILED', progress: 100, reason: result.source.error_message || 'Falha ao indexar documento.' })
-        pushNotice('Falha ao indexar documento.', 'error')
-        throw new Error(result.source.error_message || 'Falha ao indexar documento.')
+        const message = result.source.error_message || 'Falha ao extrair texto pesquisavel do documento.'
+        updateAttachment(attachment.id, { status: 'FAILED', progress: 100, reason: message })
+        throw new Error(message)
       }
       updateAttachment(attachment.id, { status: 'CHUNKING', progress: 60, reason: `${result.chunk_count} chunks criados.` })
       updateAttachment(attachment.id, { status: 'EMBEDDING', progress: 74, reason: 'Gerando embeddings ausentes.' })
-      const index = await rebuildIndex(client, { filters: { document_id: result.document.id } })
+      let index: Awaited<ReturnType<typeof rebuildIndex>>
+      try {
+        index = await rebuildIndex(client, { filters: { document_id: result.document.id } }, { timeoutMs: 180000 })
+      } catch (error) {
+        const message = await documentPipelineErrorMessage('indexacao', error)
+        updateAttachment(attachment.id, { status: 'FAILED', progress: 100, reason: message, documentId: result.document.id })
+        throw new Error(message)
+      }
       updateAttachment(attachment.id, {
         status: 'INDEXING',
         progress: 90,
-        reason: index.provider_available ? `${index.embeddings} embeddings no indice.` : 'Fallback lexical ativo; documento pesquisavel por texto.',
+        reason: index.provider_available ? `${index.embeddings} embeddings no indice.` : `Fallback lexical ativo; ${index.error || 'documento pesquisavel por texto.'}`,
       })
       updateAttachment(attachment.id, { status: 'READY', progress: 100, reason: 'Documento pronto para consulta.' })
     }
@@ -366,5 +373,40 @@ export function useChatWorkspace({
 
   function updateAttachment(id: string, patch: Partial<AttachmentDraft>) {
     setAttachments((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item))
+  }
+
+  async function importDocumentWithRetry(file: File): Promise<ImportResult> {
+    try {
+      return await importDocument(client, file)
+    } catch (error) {
+      if (!isTransientDocumentPipelineError(error)) throw error
+      await assertBackendReadiness('upload', error)
+      return importDocument(client, file)
+    }
+  }
+
+  async function documentPipelineErrorMessage(stage: string, error: unknown): Promise<string> {
+    if (isTransientDocumentPipelineError(error)) {
+      try {
+        const health = await assertBackendReadiness(stage, error)
+        return `Falha na etapa de ${stage}: backend respondeu /health=${String(health.readiness || health.status || 'ok')}, mas a operacao excedeu o tempo ou foi interrompida. Tente novamente.`
+      } catch {
+        return readableApiError(error)
+      }
+    }
+    return readableApiError(error)
+  }
+
+  async function assertBackendReadiness(stage: string, originalError: unknown): Promise<Record<string, unknown>> {
+    const health = await client.get<Record<string, unknown>>('/health', { timeoutMs: 5000 })
+    if (String(health.readiness || health.status).toLowerCase().includes('ready') || health.status === 'ok') {
+      return health
+    }
+    throw originalError instanceof Error ? originalError : new Error(`Backend indisponivel durante ${stage}.`)
+  }
+
+  function isTransientDocumentPipelineError(error: unknown): boolean {
+    if (error instanceof TypeError && error.message.toLowerCase().includes('failed to fetch')) return true
+    return Boolean(error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'CRONOS_TIMEOUT')
   }
 }

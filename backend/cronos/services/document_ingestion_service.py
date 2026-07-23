@@ -25,13 +25,11 @@ def import_pdf(owner_id: int, filename: str, content: bytes, *, allow_duplicate:
     with connect() as db:
         duplicate = document_source_repository.find_duplicate(db, owner_id, file_hash)
         if duplicate and not allow_duplicate:
-            document_repository.record_audit(db, "document_duplicate_detected", f"document_id={duplicate['document_id']} hash={file_hash[:12]}")
-            raise document_error(
-                "DOCUMENT_DUPLICATE",
-                "Documento identico ja existe.",
-                409,
-                {"document_id": duplicate["document_id"], "source_id": duplicate["id"], "filename": duplicate["document_title"]},
-            )
+            duplicate_summary = _summary_for_duplicate(db, owner_id, duplicate)
+            if duplicate_summary:
+                document_repository.record_audit(db, "document_duplicate_resumed", f"document_id={duplicate['document_id']} hash={file_hash[:12]}")
+                return {**duplicate_summary, "duplicate": True}
+            document_repository.record_audit(db, "document_duplicate_reprocess_allowed", f"document_id={duplicate['document_id']} hash={file_hash[:12]}")
 
     stored_filename = f"{utcnow().strftime('%Y%m%d%H%M%S')}_{uuid4().hex}_{safe_name}"
     target = _stored_path(stored_filename)
@@ -244,6 +242,30 @@ def _store_pages_and_chunks(db, owner_id: int, document: dict, source: dict, pag
 
 def _summary(document: dict, source: dict, summary: dict) -> dict:
     return {"document": document, "source": source, **summary}
+
+
+def _summary_for_duplicate(db, owner_id: int, duplicate: dict) -> dict | None:
+    if duplicate.get("extraction_status") == "failed" or duplicate.get("indexing_status") == "failed":
+        return None
+    document = document_repository.get_document(db, owner_id, int(duplicate["document_id"]))
+    if not document:
+        return None
+    counts = db.execute(
+        """
+        SELECT
+            COUNT(DISTINCT p.id) AS page_count,
+            COUNT(DISTINCT c.id) AS chunk_count
+        FROM document_sources s
+        LEFT JOIN document_pages p ON p.source_id = s.id AND p.deleted_at IS NULL
+        LEFT JOIN document_chunks c ON c.source_id = s.id AND c.deleted_at IS NULL
+        WHERE s.owner_id = ? AND s.id = ? AND s.deleted_at IS NULL
+        """,
+        (owner_id, duplicate["id"]),
+    ).fetchone()
+    chunk_count = int(counts["chunk_count"] if counts else 0)
+    if chunk_count <= 0:
+        return None
+    return _summary(document, dict(duplicate), {"page_count": int(counts["page_count"] or 0), "chunk_count": chunk_count})
 
 
 def _safe_filename(filename: str) -> str:

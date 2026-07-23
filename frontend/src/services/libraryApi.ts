@@ -7,7 +7,7 @@ export function listDocuments(client: ApiClient, includeDeleted = false) {
 }
 
 export function importDocument(client: ApiClient, file: File) {
-  return client.upload<ImportResult>('/documents/import', file)
+  return client.upload<ImportResult>('/documents/import', file, 'file', { timeoutMs: 120000 })
 }
 
 export function getDocument(client: ApiClient, id: number, includeDeleted = true) {

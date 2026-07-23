@@ -105,18 +105,27 @@ export class ApiClient {
     const headers = new Headers(options.headers)
     if (this.runtimeToken) headers.set('X-Cronos-Runtime-Token', this.runtimeToken)
     if (this.authToken) headers.set('Authorization', `Bearer ${this.authToken}`)
+    const method = String(options.method || 'GET')
+    const url = `${this.baseUrl}${path}`
+    const startedAt = performance.now()
+    const payload = summarizeRequestBody(options.body)
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, { ...options, headers, signal: options.signal || controller.signal })
+      const response = await fetch(url, { ...options, headers, signal: options.signal || controller.signal })
+      const responseText = response.status === 204 ? '' : await response.text()
+      const responsePayload = parseResponseText(responseText)
+      logHttpCall({ url: path, method, status: response.status, elapsedMs: performance.now() - startedAt, payload, response: responsePayload })
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({ detail: 'Erro inesperado.' }))
-        throw new ApiError(response.status, payload)
+        throw new ApiError(response.status, (responsePayload || { detail: 'Erro inesperado.' }) as ApiErrorPayload)
       }
       if (response.status === 204) return undefined as T
-      return response.json()
+      return responsePayload as T
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
+        logHttpCall({ url: path, method, status: 408, elapsedMs: performance.now() - startedAt, payload, error: `Timeout apos ${timeout} ms.` })
         throw new ApiError(408, { code: 'CRONOS_TIMEOUT', detail: `Timeout apos ${timeout} ms.` })
       }
+      if (error instanceof ApiError) throw error
+      logHttpCall({ url: path, method, elapsedMs: performance.now() - startedAt, payload, error: error instanceof Error ? error.message : String(error) })
       throw error
     } finally {
       window.clearTimeout(timer)
@@ -131,4 +140,55 @@ export function readableApiError(error: unknown) {
   }
   if (error instanceof Error) return error.message
   return 'Erro inesperado.'
+}
+
+function parseResponseText(text: string): unknown {
+  if (!text.trim()) return undefined
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text.slice(0, 800)
+  }
+}
+
+function summarizeRequestBody(body: BodyInit | null | undefined): unknown {
+  if (body instanceof FormData) {
+    const files: Array<{ field: string; filename: string; size: number; type: string }> = []
+    body.forEach((value, key) => {
+      if (value instanceof File) files.push({ field: key, filename: value.name, size: value.size, type: value.type })
+    })
+    return { multipart: true, files }
+  }
+  if (typeof body === 'string') return redactPayload(parseResponseText(body))
+  return body ? '[body]' : undefined
+}
+
+function logHttpCall(entry: { url: string; method: string; status?: number; elapsedMs: number; payload?: unknown; response?: unknown; error?: string }) {
+  const safe = {
+    event: 'http_client_request',
+    url: entry.url,
+    method: entry.method,
+    status: entry.status,
+    elapsed_ms: Math.round(entry.elapsedMs),
+    payload: redactPayload(entry.payload),
+    response: redactPayload(entry.response),
+    error: entry.error,
+  }
+  if (entry.error) {
+    console.error('[CRONOS HTTP]', safe)
+    return
+  }
+  console.info('[CRONOS HTTP]', safe)
+}
+
+function redactPayload(value: unknown): unknown {
+  const secretKeys = ['authorization', 'password', 'pin', 'token', 'runtime_token', 'x-cronos-runtime-token']
+  if (Array.isArray(value)) return value.slice(0, 20).map(redactPayload)
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+      key,
+      secretKeys.some((secret) => key.toLowerCase().includes(secret)) ? '***redacted***' : redactPayload(item),
+    ]))
+  }
+  return value
 }

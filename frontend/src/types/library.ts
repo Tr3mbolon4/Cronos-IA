@@ -66,4 +66,5 @@ export type ImportResult = {
   source: DocumentSource
   page_count: number
   chunk_count: number
+  duplicate?: boolean
 }

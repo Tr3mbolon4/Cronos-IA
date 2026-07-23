@@ -54,16 +54,25 @@ class DocumentLibraryTests(unittest.TestCase):
         self.assertEqual(item["page"]["page_number"], 2)
         self.assertIn("manual-cronos.pdf - pagina 2", item["citation"]["citation_label"])
 
-    def test_duplicate_detection_and_same_name_different_content(self) -> None:
+    def test_duplicate_import_resumes_existing_document_and_same_name_different_content(self) -> None:
         first = self.text_pdf(["Conteudo unico para duplicidade."])
-        document_ingestion_service.import_pdf(self.owner_id, "manual.pdf", first)
-        with self.assertRaises(CronosError) as duplicate:
-            document_ingestion_service.import_pdf(self.owner_id, "manual.pdf", first)
-        self.assertEqual(duplicate.exception.code, "DOCUMENT_DUPLICATE")
+        initial = document_ingestion_service.import_pdf(self.owner_id, "manual.pdf", first)
+        duplicate = document_ingestion_service.import_pdf(self.owner_id, "manual.pdf", first)
+        self.assertTrue(duplicate["duplicate"])
+        self.assertEqual(duplicate["document"]["id"], initial["document"]["id"])
+        self.assertGreater(duplicate["chunk_count"], 0)
 
         second = self.text_pdf(["Mesmo nome com conteudo diferente deve ser permitido."])
         result = document_ingestion_service.import_pdf(self.owner_id, "manual.pdf", second)
         self.assertEqual(result["document"]["filename"], "manual.pdf")
+
+    def test_failed_duplicate_does_not_block_reprocess(self) -> None:
+        blank = self.blank_pdf()
+        failed = document_ingestion_service.import_pdf(self.owner_id, "scan.pdf", blank)
+        self.assertEqual(failed["source"]["indexing_status"], "failed")
+        retried = document_ingestion_service.import_pdf(self.owner_id, "scan.pdf", blank)
+        self.assertFalse(retried.get("duplicate", False))
+        self.assertNotEqual(retried["document"]["id"], failed["document"]["id"])
 
     def test_reindex_is_idempotent_and_preserves_file(self) -> None:
         result = document_ingestion_service.import_pdf(self.owner_id, "reindex.pdf", self.text_pdf(["Texto para reindexar."]))
