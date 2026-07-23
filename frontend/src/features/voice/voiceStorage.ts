@@ -16,7 +16,10 @@ export const defaultVoiceSettings: VoiceSettings = {
   silenceMs: 1100,
   vadSensitivity: 18,
   maxRecordingMs: 45000,
-  bargeIn: true,
+  bargeIn: false,
+  autoReturnToListening: false,
+  voiceWatchdogEnabled: true,
+  vadEnabled: true,
   visualMode: 'chat',
   stopOnConversationChange: true,
   storeAudio: false,
@@ -26,7 +29,8 @@ export const defaultVoiceSettings: VoiceSettings = {
 export function loadVoiceSettings(): VoiceSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    return raw ? { ...defaultVoiceSettings, ...JSON.parse(raw) } : defaultVoiceSettings
+    const parsed = raw ? JSON.parse(raw) : {}
+    return { ...defaultVoiceSettings, ...parsed }
   } catch {
     return defaultVoiceSettings
   }

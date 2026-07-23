@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCw, Square } from 'lucide-react'
+import { Pause, Play, RefreshCw, RotateCw, Square } from 'lucide-react'
 import type { VoiceController } from '../types'
 
 export function SpeechControls({ text, voice }: { text: string; voice: VoiceController }) {
@@ -9,6 +9,7 @@ export function SpeechControls({ text, voice }: { text: string; voice: VoiceCont
       <button type="button" disabled={voice.state !== 'speaking'} onClick={voice.pauseSpeech}><Pause size={13} /> Pausar</button>
       <button type="button" disabled={voice.state !== 'paused'} onClick={voice.resumeSpeech}><RotateCw size={13} /> Retomar</button>
       <button type="button" disabled={voice.state !== 'speaking' && voice.state !== 'paused'} onClick={voice.stopSpeech}><Square size={13} /> Parar</button>
+      <button type="button" onClick={() => voice.recoverVoiceRuntime('speech_controls_recover_button')}><RefreshCw size={13} /> Recuperar voz</button>
     </div>
   )
 }

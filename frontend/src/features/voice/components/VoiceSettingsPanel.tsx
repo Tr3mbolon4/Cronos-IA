@@ -22,11 +22,23 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
         </label>
         <label className="inline-toggle">
           <input type="checkbox" checked={voice.settings.conversationMode} onChange={(event) => voice.updateSettings({ conversationMode: event.target.checked, transcriptionMode: event.target.checked ? 'auto-send' : voice.settings.transcriptionMode })} />
-          Conversa continua
+          Conversa continua experimental
+        </label>
+        <label className="inline-toggle">
+          <input type="checkbox" checked={voice.settings.autoReturnToListening} onChange={(event) => voice.updateSettings({ autoReturnToListening: event.target.checked })} />
+          Retornar ao microfone automaticamente
         </label>
         <label className="inline-toggle">
           <input type="checkbox" checked={voice.settings.bargeIn} onChange={(event) => voice.updateSettings({ bargeIn: event.target.checked })} />
           Interromper fala ao ouvir
+        </label>
+        <label className="inline-toggle">
+          <input type="checkbox" checked={voice.settings.vadEnabled} onChange={(event) => voice.updateSettings({ vadEnabled: event.target.checked })} />
+          VAD automatico
+        </label>
+        <label className="inline-toggle">
+          <input type="checkbox" checked={voice.settings.voiceWatchdogEnabled} onChange={(event) => voice.updateSettings({ voiceWatchdogEnabled: event.target.checked })} />
+          Watchdog de voz
         </label>
         <label>Microfone
           <select value={voice.settings.selectedMicrophoneId} onChange={(event) => voice.updateSettings({ selectedMicrophoneId: event.target.value })}>
@@ -115,6 +127,7 @@ export function VoiceSettingsPanel({ voice }: { voice: VoiceController }) {
           <textarea defaultValue={testText} onBlur={(event) => event.currentTarget.dataset.text = event.currentTarget.value} />
           <button type="button" onClick={(event) => voice.testVoice(event.currentTarget.parentElement?.querySelector('textarea')?.value || testText)}>Reproduzir</button>
           <button type="button" onClick={voice.stopSpeech}>Parar</button>
+          <button type="button" onClick={() => voice.recoverVoiceRuntime('settings_recover_button')}>Recuperar voz</button>
         </section>
       </div>
       <p className="privacy-note">Audio nao e armazenado por padrao. Wake word Cronos esta preparada na arquitetura, mas permanece desabilitada ate validacao local real.</p>

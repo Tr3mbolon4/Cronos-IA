@@ -50,6 +50,9 @@ export type VoiceSettings = {
   vadSensitivity: number
   maxRecordingMs: number
   bargeIn: boolean
+  autoReturnToListening: boolean
+  voiceWatchdogEnabled: boolean
+  vadEnabled: boolean
   visualMode: 'immersive' | 'chat' | 'compact'
   stopOnConversationChange: boolean
   storeAudio: boolean
@@ -102,6 +105,7 @@ export type VoiceController = {
   pauseSpeech: () => void
   resumeSpeech: () => void
   stopSpeech: () => void
+  recoverVoiceRuntime: (reason?: string) => void
   testMicrophone: () => Promise<void>
   stopMicrophoneTest: () => void
   testVoice: (text: string) => void

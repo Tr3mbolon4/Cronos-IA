@@ -2,6 +2,8 @@ const fs = require('fs')
 const path = require('path')
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'src', 'features', 'voice', 'voiceRuntimeDiagnostics.ts'), 'utf8')
+const controllerSource = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'src', 'features', 'voice', 'useVoiceController.ts'), 'utf8')
+const storageSource = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'src', 'features', 'voice', 'voiceStorage.ts'), 'utf8')
 const requiredStates = [
   'IDLE',
   'LISTENING',
@@ -42,4 +44,13 @@ const returned = states.filter((state) => state === 'RETURN_TO_LISTENING').lengt
 if (finished !== 20 || returned !== 20) {
   throw new Error(`Ciclos incompletos: FINISHED_TTS=${finished} RETURN_TO_LISTENING=${returned}`)
 }
-console.log(JSON.stringify({ ok: true, cycles: 20, states: states.length, tail }))
+if (!storageSource.includes('autoReturnToListening: false')) {
+  throw new Error('Retorno automatico ao microfone deve permanecer desligado por padrao.')
+}
+if (!controllerSource.includes('auto_return_disabled')) {
+  throw new Error('Controlador deve retornar para IDLE quando o retorno automatico estiver desligado.')
+}
+if (!controllerSource.includes('recoverVoiceRuntime')) {
+  throw new Error('Controlador deve expor recuperacao manual do runtime de voz.')
+}
+console.log(JSON.stringify({ ok: true, cycles: 20, states: states.length, tail, safeDefault: 'auto_return_disabled' }))

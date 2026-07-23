@@ -4,6 +4,7 @@ use tauri::WindowEvent;
 mod local_whisper;
 mod native_tts;
 mod runtime;
+mod voice_runtime_log;
 
 pub fn run() {
     tauri::Builder::default()
@@ -27,6 +28,7 @@ pub fn run() {
             native_tts::native_tts_resume,
             native_tts::native_tts_stop,
             native_tts::native_tts_status,
+            voice_runtime_log::write_voice_runtime_event,
         ])
         .setup(|app| {
             let runtime = runtime::BackendRuntime::new();

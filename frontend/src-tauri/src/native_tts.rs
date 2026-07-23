@@ -14,6 +14,8 @@ use windows::Win32::Media::Speech::{ISpVoice, SpVoice, SPF_ASYNC, SPF_PURGEBEFOR
 #[cfg(windows)]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
 
+use crate::voice_runtime_log::append_voice_runtime_text;
+
 const LOG_FILE_NAME: &str = "tts.log";
 const TTS_MAX_DURATION_SECS: u64 = 300;
 
@@ -75,8 +77,11 @@ pub fn native_tts_speak(request: NativeTtsRequest) -> Result<NativeTtsStatus, St
     append_tts_log(&format!(
         "voice_state=STARTING_TTS tts_provider=cronos-native-windows-sapi process=internal-thread pid=none parent_pid=cronos-desktop command=\"COM SAPI ISpVoice::Speak(SPF_ASYNC)\" state=playing orphanCount=0"
     ));
+    append_voice_runtime_text("STARTING_TTS", "provider=cronos-native-windows-sapi command=ISpVoice::Speak(SPF_ASYNC)");
     thread::spawn(move || {
-        let result = run_sapi_speech(text, request.rate, request.volume, rx, started);
+        append_voice_runtime_text("TTS_THREAD_STARTED", "provider=cronos-native-windows-sapi");
+        let result = std::panic::catch_unwind(|| run_sapi_speech(text, request.rate, request.volume, rx, started))
+            .unwrap_or_else(|_| Err("TTS_PANIC: thread SAPI encerrou por panic.".to_string()));
         let elapsed = started.elapsed().as_millis();
         let (state, diagnostic) = match result {
             Ok(TtsCompletion::Completed) => ("completed", String::new()),
@@ -90,6 +95,10 @@ pub fn native_tts_speak(request: NativeTtsRequest) -> Result<NativeTtsStatus, St
             elapsed,
             sanitize_log_text(&diagnostic)
         ));
+        append_voice_runtime_text(
+            if state == "completed" { "FINISHED_TTS" } else { "TTS_STOPPED" },
+            &format!("state={state} elapsedMs={elapsed} diagnostic={}", sanitize_log_text(&diagnostic)),
+        );
         if let Ok(mut guard) = active_speech().lock() {
             *guard = None;
         }
@@ -116,6 +125,7 @@ pub fn native_tts_stop() -> Result<NativeTtsStatus, String> {
         let elapsed = active.started.elapsed().as_millis();
         let status = base_status("stopped", active.started_at, elapsed, Some(0), String::new());
         append_tts_log(&format!("tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state=stopped elapsedMs={} exit_code=0 orphanCount=0", elapsed));
+        append_voice_runtime_text("TTS_STOP_REQUESTED", &format!("elapsedMs={elapsed}"));
         set_status(status.clone());
         return Ok(status);
     }
@@ -146,6 +156,7 @@ fn send_command(command: TtsCommand, state: &str) -> Result<NativeTtsStatus, Str
     active.tx.send(command).map_err(|error| error.to_string())?;
     let status = base_status(state, active.started_at.clone(), active.started.elapsed().as_millis(), None, String::new());
     append_tts_log(&format!("tts_provider=cronos-native-windows-sapi process=internal-thread pid=none state={} command=internal-control orphanCount=0", state));
+    append_voice_runtime_text("TTS_CONTROL", &format!("state={state}"));
     set_status(status.clone());
     Ok(status)
 }
@@ -176,6 +187,7 @@ unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::
     let mut stream_number = 0_u32;
     voice.Speak(PCWSTR(text.as_ptr()), SPF_ASYNC.0 as u32, Some(&mut stream_number)).map_err(|error| error.to_string())?;
     append_tts_log("voice_state=PLAYING_TTS sapi_state=started");
+    append_voice_runtime_text("PLAYING_TTS", &format!("sapi_stream_number={stream_number}"));
     loop {
         match rx.try_recv() {
             Ok(TtsCommand::Pause) => {
@@ -187,6 +199,7 @@ unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::
             Ok(TtsCommand::Stop) => {
                 let empty = HSTRING::from("");
                 let _ = voice.Speak(PCWSTR(empty.as_ptr()), (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32, None);
+                append_voice_runtime_text("TTS_STOPPED", "sapi_stop_command_received");
                 return Ok(TtsCompletion::Stopped);
             }
             Err(mpsc::TryRecvError::Empty) => {}
@@ -195,11 +208,13 @@ unsafe fn run_sapi_speech_inner(text: String, rate: f32, volume: f32, rx: mpsc::
         let mut status = SPVOICESTATUS::default();
         voice.GetStatus(&mut status, std::ptr::null_mut()).map_err(|error| error.to_string())?;
         if status.dwRunningState == SPRS_DONE.0 as u32 {
+            append_voice_runtime_text("FINISHED_TTS", "sapi_running_state=SPRS_DONE");
             return Ok(TtsCompletion::Completed);
         }
         if started.elapsed() > Duration::from_secs(TTS_MAX_DURATION_SECS) {
             let empty = HSTRING::from("");
             let _ = voice.Speak(PCWSTR(empty.as_ptr()), (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32, None);
+            append_voice_runtime_text("TTS_TIMEOUT", "sapi_timeout_stop_sent");
             return Err(format!("TTS_TIMEOUT: SAPI permaneceu em execucao por mais de {} segundos.", TTS_MAX_DURATION_SECS));
         }
         thread::sleep(Duration::from_millis(80));

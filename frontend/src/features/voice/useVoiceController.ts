@@ -33,6 +33,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   const runtimeStateStartedAtRef = useRef(Date.now())
   const speechStartedRef = useRef(false)
   const lastVoiceAtRef = useRef(0)
+  const settingsRef = useRef(settings)
 
   const [sttProviders, setSttProviders] = useState<VoiceProviderStatus[]>([])
   const ttsProvider = useMemo(() => speechSynthesisStatus(), [])
@@ -84,6 +85,10 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     stateRef.current = state
   }, [state])
 
+  useEffect(() => {
+    settingsRef.current = settings
+  }, [settings])
+
   function updateSettings(patch: Partial<VoiceSettings>) {
     setSettings((current) => {
       const next = { ...current, ...patch }
@@ -101,7 +106,23 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     setInputLevel(0)
   }
 
+  function clearVoiceTimers() {
+    if (timerRef.current) window.clearInterval(timerRef.current)
+    if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+    if (returnToListeningRef.current) window.clearTimeout(returnToListeningRef.current)
+    timerRef.current = null
+    speechPollRef.current = null
+    returnToListeningRef.current = null
+  }
+
   async function startPushToTalk() {
+    const isSpeechActive = stateRef.current === 'speaking' || stateRef.current === 'paused'
+    if (isSpeechActive && settings.bargeIn) {
+      await withTimeout(stopNativeTts(), 3500, 'tts_barge_in_stop_timeout').catch(() => undefined)
+    } else if (isSpeechActive || ['requesting_permission', 'recording', 'transcribing'].includes(stateRef.current)) {
+      transitionRuntimeState(runtimeStateRef.current, `start_blocked_state=${stateRef.current}`)
+      return
+    }
     if (!settings.enabled) {
       setError('Recursos de voz estao desabilitados nas configuracoes.')
       setState('unavailable')
@@ -120,9 +141,6 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     }
     transitionRuntimeState('LISTENING')
     setError('')
-    if (settings.bargeIn && (stateRef.current === 'speaking' || stateRef.current === 'paused')) {
-      await stopNativeTts().catch(() => undefined)
-    }
     setState('requesting_permission')
     onCoreState('listening')
     try {
@@ -141,8 +159,9 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
       timerRef.current = window.setInterval(() => {
         const elapsed = Date.now() - startedAtRef.current
         setElapsedMs(elapsed)
-        if (settings.selectedSttProvider !== LOCAL_STT_PROVIDER_ID) setInputLevel((value) => (value > 88 ? 18 : value + 17))
-        if (settings.conversationMode && elapsed >= settings.maxRecordingMs) stopPushToTalk()
+        const currentSettings = settingsRef.current
+        if (currentSettings.selectedSttProvider !== LOCAL_STT_PROVIDER_ID) setInputLevel((value) => (value > 88 ? 18 : value + 17))
+        if (currentSettings.conversationMode && elapsed >= currentSettings.maxRecordingMs) stopPushToTalk()
       }, 160)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Permissao de microfone negada ou dispositivo indisponivel.')
@@ -155,7 +174,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   function stopPushToTalk() {
     if (stateRef.current !== 'recording') return
     let audioBytes: Uint8Array | undefined
-    if (settings.selectedSttProvider === LOCAL_STT_PROVIDER_ID) {
+    if (settingsRef.current.selectedSttProvider === LOCAL_STT_PROVIDER_ID) {
       audioBytes = captureRef.current?.stop()
     }
     stopStream()
@@ -165,7 +184,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     transitionRuntimeState('TRANSCRIBING')
     setState('transcribing')
     onCoreState('processing')
-    runSpeechRecognition(settings, sttProvider, audioBytes, requestId)
+    runSpeechRecognition(settingsRef.current, sttProvider, audioBytes, requestId)
       .then((result) => {
         if (operationId !== operationRef.current) return
         setTranscript(result)
@@ -198,12 +217,15 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
 
   function speak(text: string) {
     if (!text.trim()) return
+    operationRef.current += 1
+    const operationId = operationRef.current
     if (speechPollRef.current) window.clearInterval(speechPollRef.current)
     transitionRuntimeState('STARTING_TTS')
-    stopNativeTts()
+    withTimeout(stopNativeTts(), 3500, 'tts_stop_before_speak_timeout')
       .catch(() => undefined)
-      .finally(() => speakNativeTts(text, settings.rate, settings.volume))
+      .finally(() => withTimeout(speakNativeTts(text, settings.rate, settings.volume), 7000, 'tts_start_timeout'))
       .then(() => {
+      if (operationId !== operationRef.current) return
       stateRef.current = 'speaking'
       setState('speaking')
       transitionRuntimeState('PLAYING_TTS')
@@ -219,7 +241,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }
 
   function pauseSpeech() {
-    pauseNativeTts()
+    withTimeout(pauseNativeTts(), 3500, 'tts_pause_timeout')
       .then(() => setState('paused'))
       .catch((error) => {
         setError(error instanceof Error ? error.message : 'Nao foi possivel pausar o TTS.')
@@ -229,7 +251,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }
 
   function resumeSpeech() {
-    resumeNativeTts()
+    withTimeout(resumeNativeTts(), 3500, 'tts_resume_timeout')
       .then(() => {
         setState('speaking')
         onCoreState('speaking')
@@ -243,7 +265,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   }
 
   function stopSpeech() {
-    stopNativeTts()
+    withTimeout(stopNativeTts(), 3500, 'tts_stop_timeout')
       .catch(() => undefined)
       .finally(() => {
         if (speechPollRef.current) window.clearInterval(speechPollRef.current)
@@ -259,7 +281,13 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
   function startSpeechPolling() {
     if (speechPollRef.current) window.clearInterval(speechPollRef.current)
     const started = Date.now()
+    const operationId = operationRef.current
     speechPollRef.current = window.setInterval(() => {
+      if (operationId !== operationRef.current) {
+        if (speechPollRef.current) window.clearInterval(speechPollRef.current)
+        speechPollRef.current = null
+        return
+      }
       if (Date.now() - started > TTS_OPERATION_TIMEOUT_MS) {
         stopNativeTts().catch(() => undefined)
         if (speechPollRef.current) window.clearInterval(speechPollRef.current)
@@ -271,7 +299,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
         onCoreState('error')
         return
       }
-      nativeTtsStatus()
+      withTimeout(nativeTtsStatus(), 3500, 'tts_status_timeout')
         .then((status) => {
           if (status.state === 'completed' || status.state === 'failed' || status.state === 'stopped') {
             if (speechPollRef.current) window.clearInterval(speechPollRef.current)
@@ -304,10 +332,11 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     transitionRuntimeState('RETURN_TO_LISTENING', reason)
     returnToListeningRef.current = window.setTimeout(() => {
       returnToListeningRef.current = null
-      if (!settings.conversationMode || !settings.enabled) {
+      const currentSettings = settingsRef.current
+      if (!currentSettings.conversationMode || !currentSettings.enabled || !currentSettings.autoReturnToListening) {
         stateRef.current = 'idle'
         setState('idle')
-        transitionRuntimeState('IDLE', 'conversation_mode_disabled')
+        transitionRuntimeState('IDLE', currentSettings.autoReturnToListening ? 'conversation_mode_disabled' : 'auto_return_disabled')
         onCoreState('ready')
         return
       }
@@ -328,42 +357,53 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     const previous = runtimeStateRef.current
     runtimeStateRef.current = next
     runtimeStateStartedAtRef.current = Date.now()
-    logVoiceRuntimeTransition({ previous, next, reason })
+    logVoiceRuntimeTransition({ previous, next, reason, operationId: operationRef.current, voiceState: stateRef.current })
   }
 
   function startStateWatchdog() {
     if (stateWatchdogRef.current) return
     stateWatchdogRef.current = window.setInterval(() => {
+      if (!settingsRef.current.voiceWatchdogEnabled) return
       const ageMs = Date.now() - runtimeStateStartedAtRef.current
       if (ageMs <= VOICE_STATE_TIMEOUT_MS) return
       const current = runtimeStateRef.current
-      logVoiceRuntimeTransition({ previous: current, next: current, reason: `blocked>${VOICE_STATE_TIMEOUT_MS}ms`, blockedMs: ageMs, stack: new Error('voice-state-watchdog').stack })
-      if (current === 'RETURN_TO_LISTENING') {
-        stateRef.current = 'idle'
-        setState('idle')
-        transitionRuntimeState('IDLE', 'return_to_listening_timeout')
-        onCoreState('ready')
-      }
+      logVoiceRuntimeTransition({ previous: current, next: current, reason: `blocked>${VOICE_STATE_TIMEOUT_MS}ms`, blockedMs: ageMs, stack: new Error('voice-state-watchdog').stack, operationId: operationRef.current, voiceState: stateRef.current })
+      if (current === 'RETURN_TO_LISTENING' || current === 'STARTING_TTS' || current === 'FINISHED_TTS') recoverVoiceRuntime(`${current.toLowerCase()}_timeout`)
     }, 1000)
   }
 
   function handleInputLevel(level: number) {
     setInputLevel(level)
-    if (!settings.conversationMode || stateRef.current !== 'recording') return
+    if (!settingsRef.current.vadEnabled || !settingsRef.current.conversationMode || stateRef.current !== 'recording') return
     const now = Date.now()
-    const threshold = Math.max(4, Math.min(80, settings.vadSensitivity))
+    const threshold = Math.max(4, Math.min(80, settingsRef.current.vadSensitivity))
     if (level >= threshold) {
       speechStartedRef.current = true
       lastVoiceAtRef.current = now
       return
     }
-    if (speechStartedRef.current && now - lastVoiceAtRef.current >= settings.silenceMs) {
+    if (speechStartedRef.current && now - lastVoiceAtRef.current >= settingsRef.current.silenceMs) {
       stopPushToTalk()
     }
   }
 
   async function testMicrophone() {
     await startPushToTalk()
+  }
+
+  function recoverVoiceRuntime(reason = 'manual_recovery') {
+    operationRef.current += 1
+    const requestId = requestIdRef.current
+    captureRef.current?.cancel()
+    clearVoiceTimers()
+    stopStream()
+    stopNativeTts().catch(() => undefined)
+    void cancelLocalSpeechRecognition(requestId)
+    stateRef.current = 'idle'
+    setState('idle')
+    setError('')
+    transitionRuntimeState('IDLE', reason)
+    onCoreState('ready')
   }
 
   return {
@@ -397,6 +437,7 @@ export function useVoiceController(onCoreState: (state: CoreState) => void): Voi
     pauseSpeech,
     resumeSpeech,
     stopSpeech,
+    recoverVoiceRuntime,
     testMicrophone,
     stopMicrophoneTest: cancelVoice,
     testVoice: speak,
@@ -409,4 +450,14 @@ function createVoiceRequestId() {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`
   return raw.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 80)
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(label)), timeoutMs)
+    promise
+      .then((value) => resolve(value))
+      .catch((error) => reject(error))
+      .finally(() => window.clearTimeout(timer))
+  })
 }

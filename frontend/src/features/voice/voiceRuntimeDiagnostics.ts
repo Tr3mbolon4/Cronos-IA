@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+
 export type VoiceRuntimeState =
   | 'IDLE'
   | 'LISTENING'
@@ -17,6 +19,8 @@ export type VoiceRuntimeLogEntry = {
   reason: string
   blockedMs?: number
   stack?: string
+  operationId?: number
+  voiceState?: string
 }
 
 const LOG_KEY = 'cronos.voice.runtime.log.v1'
@@ -30,6 +34,9 @@ export function logVoiceRuntimeTransition(entry: Omit<VoiceRuntimeLogEntry, 'at'
   } catch {
     localStorage.setItem(LOG_KEY, JSON.stringify([payload]))
   }
+  void invoke<string>('write_voice_runtime_event', { event: payload }).catch((error) => {
+    console.warn('[CRONOS voice runtime] persistent log failed', error)
+  })
   console.info('[CRONOS voice runtime]', payload)
 }
 
