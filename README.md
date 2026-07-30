@@ -2,9 +2,13 @@
 
 Projeto CRONOS: aplicativo pessoal, local, instalavel e protegido para Windows.
 
-## Estado atual
+> Status: MVP desktop em evolucao, com foco em execucao local, privacidade e empacotamento Windows.
 
-Esta base contem o MVP local inicial:
+## Visao Geral
+
+O CRONOS combina uma interface desktop Tauri com frontend React/TypeScript e backend Python local. O objetivo do projeto e oferecer um assistente pessoal offline/local para organizacao, diagnostico e interacao com documentos, preservando dados no ambiente do usuario.
+
+## Funcionalidades
 
 - backend local em Python;
 - frontend React/TypeScript;
@@ -15,18 +19,28 @@ Esta base contem o MVP local inicial:
 - upload e leitura de PDF;
 - perguntas sobre PDF com citacoes simples;
 - diagnostico de hardware;
-- backup local em `.zip`.
+- backup local em `.zip`;
 - identidade visual oficial escura/neon inspirada no nucleo CRONOS.
 
 O instalador `CronosSetup.exe` ainda depende da etapa final de empacotamento/assinatura. A base desktop ja possui shell Tauri 2 com backend Python real integrado como sidecar, usando porta local dinamica, token runtime em memoria e diretorios em `%LOCALAPPDATA%\CRONOS`.
+
+## Tecnologias
+
+- Python
+- React
+- TypeScript
+- Tauri 2
+- Rust
+- SQLite
+- Vite
 
 ## Layout oficial
 
 A versao 1.0 adota uma interface escura com detalhes em azul neon, menu lateral modular, nucleo central animado e dashboard com conversa, tarefas, recursos do computador e atividades recentes. Os indicadores devem ser funcionais: no MVP, CPU, RAM e armazenamento ja usam metricas locais reais; GPU, VRAM e temperatura ficam preparados para a proxima etapa de deteccao.
 
-## Local de trabalho
+## Ambiente
 
-Este ambiente deve usar `G:\Cronos-IA` como local principal do projeto.
+Clone o repositorio em um diretorio local de trabalho e use os scripts em `scripts/` para desenvolvimento, testes e empacotamento.
 
 ## Repositorio
 
@@ -87,3 +101,11 @@ Artefatos locais gerados:
 - `backend\dist\cronos-backend.exe`
 - `backend\dist\cronos-backend-console.exe`
 - `frontend\src-tauri\target\release\cronos-desktop.exe`
+
+## Seguranca
+
+Nao versionar bancos locais, backups, logs, arquivos `.env`, tokens, credenciais, documentos pessoais ou dados gerados em runtime. Veja [SECURITY.md](SECURITY.md) e [docs/security-audit.md](docs/security-audit.md).
+
+## Licenca
+
+Projeto proprietario. Todos os direitos reservados.
