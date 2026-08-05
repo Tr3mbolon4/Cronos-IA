@@ -58,8 +58,8 @@ flowchart LR
 
 ## Estrutura Do Projeto
 
-- `frontend/`: interface da aplicacao.
-- `src-tauri/`: estrutura desktop Tauri.
+- `frontend/`: interface da aplicacao e estrutura desktop Tauri.
+- `frontend/src-tauri/`: configuracoes e codigo do empacotamento desktop.
 - `scripts/`: scripts auxiliares de runtime e diagnostico.
 - Demais pastas: componentes e recursos de apoio ao aplicativo.
 
@@ -69,6 +69,6 @@ Projeto em desenvolvimento / aplicacao local. O estado de producao nao esta conf
 
 ## Autor
 
-Desenvolvido por Michele Santana -- Kalion Tecnologia
+Desenvolvido por Michele Santana — Kalion Tecnologia
 
 Perfil profissional: https://github.com/Tr3mbolon4
