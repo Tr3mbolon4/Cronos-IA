@@ -50,16 +50,7 @@ try {
         throw "Diretorio de teste deveria iniciar sem proprietario configurado."
     }
 
-    $testPassword = $env:CRONOS_RUNTIME_TEST_PASSWORD
-    if (!$testPassword) {
-        $testPassword = "Runtime-" + [guid]::NewGuid().ToString("N") + "!A1"
-    }
-    $testPin = $env:CRONOS_RUNTIME_TEST_PIN
-    if (!$testPin) {
-        $testPin = (Get-Random -Minimum 1000 -Maximum 9999).ToString()
-    }
-
-    $ownerPayload = @{ name = "Alexandre"; password = $testPassword; pin = $testPin } | ConvertTo-Json
+    $ownerPayload = @{ name = "Alexandre"; password = "SenhaRuntime-2026"; pin = "2468" } | ConvertTo-Json
     $created = Invoke-RestMethod -Method Post -Uri "$baseUrl/setup/owner" -ContentType "application/json" -Body $ownerPayload -TimeoutSec 5
     $authToken = $created.token
     if (!$authToken) {

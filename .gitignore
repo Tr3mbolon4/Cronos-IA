@@ -20,19 +20,6 @@ data/*
 # Environment
 .env
 .env.*
-!.env.example
-
-# Local secrets and runtime artifacts
-*token.json*
-*credentials.json*
-*.key
-*.pem
-*.crt
-*.sqlite
-*.sqlite3
-*.db
-*.bak
-*.zip
 
 # Logs
 *.log
