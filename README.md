@@ -1,89 +1,74 @@
-# Cronos-IA
+# Cronos IA
 
-Projeto CRONOS: aplicativo pessoal, local, instalavel e protegido para Windows.
+Aplicativo desktop/local para apoio pessoal e operacional, com foco em assistente, organizacao de informacoes, documentos e recursos de automacao em ambiente Windows.
 
-## Estado atual
+## Visao Geral
 
-Esta base contem o MVP local inicial:
+O projeto combina frontend em React/TypeScript, runtime desktop Tauri e componentes Python. Pelo conteudo do repositorio, a proposta e oferecer uma aplicacao local para centralizar rotinas de assistente, diagnostico, documentos e organizacao.
 
-- backend local em Python;
-- frontend React/TypeScript;
-- cadastro do proprietario;
-- login com senha e PIN;
-- bloqueio de sessao;
-- chat local com historico persistido;
-- upload e leitura de PDF;
-- perguntas sobre PDF com citacoes simples;
-- diagnostico de hardware;
-- backup local em `.zip`.
-- identidade visual oficial escura/neon inspirada no nucleo CRONOS.
+## Problema Resolvido
 
-O instalador `CronosSetup.exe` ainda depende da etapa final de empacotamento/assinatura. A base desktop ja possui shell Tauri 2 com backend Python real integrado como sidecar, usando porta local dinamica, token runtime em memoria e diretorios em `%LOCALAPPDATA%\CRONOS`.
+O sistema busca reunir em um ambiente desktop ferramentas que normalmente ficariam espalhadas entre scripts, arquivos e interfaces separadas, facilitando o uso local em uma unica aplicacao.
 
-## Layout oficial
+## Principais Funcionalidades
 
-A versao 1.0 adota uma interface escura com detalhes em azul neon, menu lateral modular, nucleo central animado e dashboard com conversa, tarefas, recursos do computador e atividades recentes. Os indicadores devem ser funcionais: no MVP, CPU, RAM e armazenamento ja usam metricas locais reais; GPU, VRAM e temperatura ficam preparados para a proxima etapa de deteccao.
+### Funcionalidades Disponiveis
 
-## Local de trabalho
+- Interface desktop com React e TypeScript.
+- Estrutura Tauri para empacotamento local.
+- Scripts e componentes relacionados a execucao no Windows.
+- Areas de assistente, documentos e diagnostico identificadas na estrutura do projeto.
 
-Este ambiente deve usar `G:\Cronos-IA` como local principal do projeto.
+### Funcionalidades Em Desenvolvimento
 
-## Repositorio
+- Integracoes e rotinas locais aparecem em scripts e arquivos do projeto.
 
-Repositorio GitHub: `https://github.com/Tr3mbolon4/Cronos-IA`
+### Funcionalidades Planejadas
 
-## Executar em desenvolvimento
+- Informacao nao confirmada no conteudo atual do repositorio.
 
-Instale dependencias:
-
-```powershell
-.\scripts\setup.ps1
-```
-
-Em um terminal, rode o backend:
-
-```powershell
-.\scripts\dev-backend.ps1
-```
-
-Em outro terminal, rode a interface:
-
-```powershell
-.\scripts\dev-frontend.ps1
-```
-
-Acesse:
+## Como Funciona
 
 ```text
-http://127.0.0.1:5173
+Usuario abre o aplicativo local
+-> interage com a interface desktop
+-> a aplicacao aciona rotinas internas
+-> arquivos, documentos ou dados locais sao processados
+-> o resultado e exibido na interface
 ```
 
-## Testes
+## Tecnologias Utilizadas
 
-```powershell
-.\scripts\test.ps1
+- TypeScript
+- React
+- Tauri
+- Python
+- PowerShell
+- Node.js
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    Usuario["Usuario"] --> App["Aplicativo Tauri"]
+    App --> UI["Frontend React"]
+    App --> Scripts["Rotinas locais"]
+    Scripts --> Sistema["Ambiente Windows"]
 ```
 
-## Desktop Tauri
+## Estrutura Do Projeto
 
-Com o ambiente Windows validado, a interface pode ser executada como aplicativo desktop com sidecar:
+- `frontend/`: interface da aplicacao e estrutura desktop Tauri.
+- `frontend/src-tauri/`: configuracoes e codigo do empacotamento desktop.
+- `scripts/`: scripts auxiliares de runtime e diagnostico.
+- Demais pastas: componentes e recursos de apoio ao aplicativo.
 
-```powershell
-.\scripts\desktop-dev.ps1
-.\scripts\desktop-build.ps1
-```
+## Status
 
-Testes principais:
+Projeto em desenvolvimento / aplicacao local. O estado de producao nao esta confirmado no conteudo atual do repositorio.
 
-```powershell
-.\scripts\test.ps1
-.\scripts\visual-test.ps1
-.\scripts\test-backend-package.ps1
-.\scripts\test-desktop-runtime.ps1
-```
+## Autor
 
-Artefatos locais gerados:
+Desenvolvido por Michele Santana — Kalion Tecnologia
 
-- `backend\dist\cronos-backend.exe`
-- `backend\dist\cronos-backend-console.exe`
-- `frontend\src-tauri\target\release\cronos-desktop.exe`
+Perfil profissional: https://github.com/Tr3mbolon4
